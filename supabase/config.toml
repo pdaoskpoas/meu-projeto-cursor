@@ -1,0 +1,16 @@
+project_id = "wyufgltprapazpxmtaff"
+
+[functions.asaas-webhook]
+verify_jwt = false
+
+[functions.process-payment]
+verify_jwt = true
+
+[functions.check-payment-status]
+verify_jwt = true
+
+[functions.process-boost-payment]
+verify_jwt = true
+
+[functions.process-individual-payment]
+verify_jwt = true

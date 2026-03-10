@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Teste Integração Asaas</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+    
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 30px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+    }
+    
+    h1 {
+      color: #667eea;
+      margin-bottom: 10px;
+      font-size: 28px;
+    }
+    
+    .subtitle {
+      color: #666;
+      margin-bottom: 30px;
+    }
+    
+    .status {
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      font-weight: 500;
+    }
+    
+    .status.success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+    
+    .status.error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+    
+    .status.info {
+      background: #d1ecf1;
+      color: #0c5460;
+      border: 1px solid #bee5eb;
+    }
+    
+    .test-group {
+      margin-bottom: 30px;
+    }
+    
+    .test-group h2 {
+      font-size: 18px;
+      color: #333;
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .test-group h2 span {
+      font-size: 24px;
+    }
+    
+    button {
+      background: #667eea;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s;
+      margin-right: 10px;
+      margin-bottom: 10px;
+    }
+    
+    button:hover {
+      background: #5568d3;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+    
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    button.secondary {
+      background: #6c757d;
+    }
+    
+    button.secondary:hover {
+      background: #5a6268;
+    }
+    
+    button.success {
+      background: #28a745;
+    }
+    
+    button.success:hover {
+      background: #218838;
+    }
+    
+    #console {
+      background: #1e1e1e;
+      color: #d4d4d4;
+      padding: 20px;
+      border-radius: 8px;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      height: 400px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+    
+    .console-line {
+      margin-bottom: 8px;
+      line-height: 1.4;
+    }
+    
+    .console-success {
+      color: #4ec9b0;
+    }
+    
+    .console-error {
+      color: #f48771;
+    }
+    
+    .console-info {
+      color: #569cd6;
+    }
+    
+    .console-warning {
+      color: #dcdcaa;
+    }
+    
+    .input-group {
+      margin-bottom: 20px;
+    }
+    
+    .input-group label {
+      display: block;
+      margin-bottom: 8px;
+      color: #333;
+      font-weight: 500;
+    }
+    
+    .input-group input {
+      width: 100%;
+      padding: 10px;
+      border: 2px solid #e0e0e0;
+      border-radius: 6px;
+      font-size: 14px;
+      transition: border-color 0.3s;
+    }
+    
+    .input-group input:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+    
+    .badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-left: 10px;
+    }
+    
+    .badge.success {
+      background: #d4edda;
+      color: #155724;
+    }
+    
+    .badge.pending {
+      background: #fff3cd;
+      color: #856404;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <h1>🧪 Teste de Integração Asaas</h1>
+      <p class="subtitle">Valide a integração com a API do Asaas antes de migrar para produção</p>
+      
+      <div id="status" class="status info">
+        ℹ️ Aguardando execução dos testes...
+      </div>
+      
+      <div class="input-group">
+        <label for="userId">🆔 User ID (pegar do banco):</label>
+        <input 
+          type="text" 
+          id="userId" 
+          value="addb892b-e6f8-456a-a32a-11529510cafb"
+          placeholder="Insira o ID de um usuário real"
+        >
+      </div>
+      
+      <div class="test-group">
+        <h2><span>⚙️</span> Testes Básicos</h2>
+        <button onclick="runTest1()">Teste 1: Verificar Config</button>
+        <button onclick="runTest2()">Teste 2: Criar Cliente</button>
+      </div>
+      
+      <div class="test-group">
+        <h2><span>💎</span> Testes de Compra</h2>
+        <button onclick="runTest3()">Teste 3: Comprar 1 Boost (R$ 47)</button>
+        <button onclick="runTest4()">Teste 4: Pacote 5 Boosts (R$ 129,25)</button>
+        <button onclick="runTest5()">Teste 5: Assinar Plano Pro (R$ 147)</button>
+      </div>
+      
+      <div class="test-group">
+        <h2><span>📊</span> Testes de Consulta</h2>
+        <button onclick="runTest6()">Teste 6: Listar Pagamentos</button>
+        <button onclick="checkAsaasDashboard()" class="secondary">Abrir Asaas Sandbox</button>
+      </div>
+      
+      <div class="test-group">
+        <h2><span>🚀</span> Executar Todos</h2>
+        <button onclick="runAllTests()" class="success">▶️ Executar Bateria Completa</button>
+        <button onclick="clearConsole()" class="secondary">🗑️ Limpar Console</button>
+      </div>
+    </div>
+    
+    <div class="card">
+      <h2 style="margin-bottom: 15px;">📟 Console de Saída</h2>
+      <div id="console"></div>
+    </div>
+  </div>
+  
+  <script>
+    // Funções auxiliares
+    function log(message, type = 'info') {
+      const console = document.getElementById('console');
+      const line = document.createElement('div');
+      line.className = `console-line console-${type}`;
+      line.textContent = message;
+      console.appendChild(line);
+      console.scrollTop = console.scrollHeight;
+    }
+    
+    function clearConsole() {
+      document.getElementById('console').innerHTML = '';
+      updateStatus('ℹ️ Console limpo. Pronto para novos testes.', 'info');
+    }
+    
+    function updateStatus(message, type) {
+      const status = document.getElementById('status');
+      status.textContent = message;
+      status.className = `status ${type}`;
+    }
+    
+    function getUserId() {
+      return document.getElementById('userId').value.trim();
+    }
+    
+    function checkAsaasDashboard() {
+      window.open('https://sandbox.asaas.com', '_blank');
+      log('🌐 Abrindo Asaas Sandbox em nova aba...', 'info');
+    }
+    
+    // Testes (simulados - você precisará importar os módulos reais)
+    async function runTest1() {
+      log('🧪 TESTE 1: Verificando configuração...', 'info');
+      log('', 'info');
+      
+      try {
+        // Simular verificação
+        const hasApiKey = !!import.meta?.env?.VITE_ASAAS_API_KEY || false;
+        const environment = import.meta?.env?.VITE_ASAAS_ENVIRONMENT || 'não configurado';
+        
+        log('✅ API Key configurada: ' + (hasApiKey ? 'SIM' : 'NÃO'), hasApiKey ? 'success' : 'error');
+        log('✅ Ambiente: ' + environment, 'info');
+        log('✅ Sandbox: ' + (environment === 'sandbox' ? 'SIM' : 'NÃO'), 'info');
+        log('', 'info');
+        
+        if (hasApiKey) {
+          log('✅ TESTE 1 PASSOU!', 'success');
+          updateStatus('✅ Teste 1: Configuração OK', 'success');
+        } else {
+          log('❌ TESTE 1 FALHOU!', 'error');
+          log('👉 Configure VITE_ASAAS_API_KEY no arquivo .env', 'warning');
+          updateStatus('❌ Teste 1: API Key não configurada', 'error');
+        }
+      } catch (error) {
+        log('❌ Erro: ' + error.message, 'error');
+        updateStatus('❌ Teste 1 falhou', 'error');
+      }
+      
+      log('='.repeat(60), 'info');
+    }
+    
+    async function runTest2() {
+      log('🧪 TESTE 2: Criando cliente no Asaas...', 'info');
+      log('', 'info');
+      
+      const userId = getUserId();
+      if (!userId) {
+        log('❌ Erro: User ID não informado', 'error');
+        updateStatus('❌ Informe um User ID válido', 'error');
+        return;
+      }
+      
+      log('👤 User ID: ' + userId, 'info');
+      log('', 'info');
+      log('⚠️ AVISO: Para executar este teste real, você precisa:', 'warning');
+      log('1. Importar os módulos do serviço Asaas', 'warning');
+      log('2. Executar no contexto da aplicação (não HTML isolado)', 'warning');
+      log('', 'info');
+      log('💡 Sugestão: Execute no console do navegador:', 'info');
+      log('   window.asaasTests.test2_CriarCliente()', 'info');
+      log('', 'info');
+      log('='.repeat(60), 'info');
+      
+      updateStatus('⚠️ Execute os testes no console da aplicação', 'info');
+    }
+    
+    async function runTest3() {
+      log('🧪 TESTE 3: Comprando 1 boost (R$ 47,00)...', 'info');
+      runTest2(); // Mesma mensagem
+    }
+    
+    async function runTest4() {
+      log('🧪 TESTE 4: Comprando pacote 5 boosts (R$ 129,25)...', 'info');
+      runTest2();
+    }
+    
+    async function runTest5() {
+      log('🧪 TESTE 5: Assinando Plano Pro Mensal (R$ 147,00)...', 'info');
+      runTest2();
+    }
+    
+    async function runTest6() {
+      log('🧪 TESTE 6: Listando pagamentos do usuário...', 'info');
+      runTest2();
+    }
+    
+    async function runAllTests() {
+      clearConsole();
+      log('🚀 INICIANDO BATERIA DE TESTES', 'success');
+      log('='.repeat(60), 'info');
+      log('', 'info');
+      
+      await runTest1();
+      
+      log('', 'info');
+      log('📋 PRÓXIMOS PASSOS:', 'warning');
+      log('', 'info');
+      log('1. Abra o console do navegador (F12)', 'info');
+      log('2. Execute: window.asaasTests.runAllTests()', 'info');
+      log('', 'info');
+      log('OU execute testes individuais:', 'info');
+      log('   window.asaasTests.test1_VerificarConfiguracao()', 'info');
+      log('   window.asaasTests.test2_CriarCliente()', 'info');
+      log('   window.asaasTests.test3_Comprar1Boost()', 'info');
+      log('', 'info');
+      log('='.repeat(60), 'info');
+      
+      updateStatus('ℹ️ Execute os testes completos no console (F12)', 'info');
+    }
+    
+    // Inicialização
+    window.onload = function() {
+      log('✅ Página de testes carregada!', 'success');
+      log('', 'info');
+      log('📝 INSTRUÇÕES:', 'info');
+      log('', 'info');
+      log('Esta página é apenas uma interface visual.', 'info');
+      log('Para executar os testes reais:', 'info');
+      log('', 'info');
+      log('1. Acesse sua aplicação: http://localhost:8081', 'info');
+      log('2. Abra o console do navegador (F12)', 'info');
+      log('3. Execute: window.asaasTests.runAllTests()', 'info');
+      log('', 'info');
+      log('='.repeat(60), 'info');
+    };
+  </script>
+</body>
+</html>
+
+

@@ -1,0 +1,427 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ==========================================
+   SCROLL MANAGEMENT - Previne scroll mantido entre páginas
+   ========================================== */
+html {
+  /* Desabilita scroll restoration nativo do navegador */
+  /* O componente ScrollRestoration.tsx gerencia isso manualmente */
+  scroll-behavior: auto !important;
+  scrollbar-gutter: stable;
+}
+
+/* Reset de scroll para garantir comportamento consistente */
+body {
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+}
+
+:root {
+  --footer-height: 300px;
+  --header-height: 80px;
+}
+
+/* Mobile-first optimizations */
+@layer utilities {
+  .content-visibility-auto {
+    content-visibility: auto;
+    contain-intrinsic-size: 1px 800px;
+  }
+  /* Touch targets */
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Better touch experience */
+  .touch-manipulation {
+    touch-action: manipulation;
+  }
+  
+  /* Smooth scrolling for mobile */
+  .smooth-scroll {
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Mobile-optimized containers */
+  .container-mobile {
+    @apply px-4 sm:px-6 lg:px-8;
+  }
+  
+  /* Better mobile typography */
+  .text-mobile-friendly {
+    line-height: 1.6;
+    word-spacing: 0.1em;
+  }
+  
+  /* Mobile carousel improvements */
+  .carousel-mobile {
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .carousel-item-mobile {
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+  }
+  
+  /* Mobile form improvements */
+  .form-mobile input,
+  .form-mobile select,
+  .form-mobile textarea {
+    @apply min-h-[48px] text-base;
+  }
+  
+  /* Prevent zoom on input focus (iOS) */
+  .form-mobile input,
+  .form-mobile select,
+  .form-mobile textarea {
+    font-size: 16px;
+  }
+}
+
+/* Mobile-specific media queries */
+@media (max-width: 768px) {
+  /* Reduce animations on mobile for better performance */
+  .reduce-motion {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  
+  /* Better mobile grid layouts */
+  .mobile-grid-1 {
+    grid-template-columns: 1fr;
+  }
+  
+  .mobile-stack {
+    flex-direction: column;
+  }
+  
+  /* Mobile-friendly spacing */
+  .mobile-spacing {
+    padding: 1rem;
+    margin: 0.5rem 0;
+  }
+  
+  /* Hero section mobile optimizations */
+  .hero-mobile {
+    padding-top: 2rem !important;
+    padding-bottom: 2rem !important;
+  }
+  
+  /* Carousel mobile improvements */
+  .carousel-mobile {
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  
+  .carousel-mobile::-webkit-scrollbar {
+    display: none;
+  }
+  
+  /* Better mobile typography */
+  .mobile-text-sm {
+    font-size: 0.875rem;
+    line-height: 1.5;
+  }
+  
+  .mobile-text-base {
+    font-size: 1rem;
+    line-height: 1.6;
+  }
+  
+  /* Mobile button improvements */
+  .mobile-button {
+    min-height: 48px;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-bounce,
+  .animate-pulse,
+  .animate-spin,
+  .animate-scroll {
+    animation: none !important;
+  }
+}
+
+/* Tablet-specific optimizations */
+@media (min-width: 768px) and (max-width: 1024px) {
+  /* Tablet carousel optimizations */
+  .carousel-tablet {
+    scroll-snap-type: x mandatory;
+  }
+  
+  /* Tablet grid improvements */
+  .tablet-grid-2 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  /* Tablet spacing */
+  .tablet-spacing {
+    padding: 1.5rem;
+  }
+  
+  /* Hero section tablet */
+  .hero-tablet {
+    padding: 3rem 0;
+  }
+  
+  /* Better tablet touch targets */
+  .tablet-touch {
+    min-height: 44px;
+    padding: 0.75rem 1.5rem;
+  }
+}
+
+/* Professional Digital Magazine Design System
+   Elegant color palette inspired by Sypla - Premium institutional style
+   All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    /* Base Colors - Clean white foundation */
+    --background: 0 0% 100%;
+    --foreground: 0 0% 11%;
+
+    /* Card system - Pure white with subtle borders */
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 11%;
+
+    /* Popover system */
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 11%;
+
+    /* Primary - Institutional blue */
+    --primary: 220 68% 36%;
+    --primary-foreground: 0 0% 100%;
+    --primary-light: 220 68% 92%;
+
+    /* Secondary - Light blue support */
+    --secondary: 220 25% 97%;
+    --secondary-foreground: 220 85% 18%;
+
+    /* Muted tones - Light grays */
+    --muted: 0 0% 97%;
+    --muted-foreground: 0 0% 64%;
+
+    /* Accent - Premium gold */
+    --accent: 43 74% 52%;
+    --accent-foreground: 0 0% 100%;
+
+    /* Blue tones for institutional feel */
+    --blue-dark: 220 85% 18%;
+    --blue-medium: 220 68% 36%;
+    --blue-light: 220 68% 92%;
+
+    /* Neutral grays */
+    --gray-light: 0 0% 97%;
+    --gray-medium: 0 0% 64%;
+    --text-primary: 0 0% 11%;
+
+    /* Destructive */
+    --destructive: 0 65% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* Borders and inputs - Subtle grays */
+    --border: 0 0% 90%;
+    --input: 0 0% 97%;
+    --ring: 220 68% 36%;
+
+    /* Professional gradients */
+    --gradient-hero: linear-gradient(135deg, hsl(220 68% 36%), hsl(220 85% 18%));
+    --gradient-gold: linear-gradient(135deg, hsl(43 74% 52%), hsl(43 74% 60%));
+    --gradient-blue: linear-gradient(135deg, hsl(220 68% 92%), hsl(0 0% 100%));
+    --gradient-subtle: linear-gradient(180deg, hsl(0 0% 100%), hsl(0 0% 97%));
+
+    /* Professional shadows */
+    --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+    --shadow-elevated: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --shadow-premium: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+
+    /* Refined radius */
+    --radius: 0.75rem;
+
+    --sidebar-background: 0 0% 98%;
+
+    --sidebar-foreground: 240 5.3% 26.1%;
+
+    --sidebar-primary: 240 5.9% 10%;
+
+    --sidebar-primary-foreground: 0 0% 98%;
+
+    --sidebar-accent: 240 4.8% 95.9%;
+
+    --sidebar-accent-foreground: 240 5.9% 10%;
+
+    --sidebar-border: 220 13% 91%;
+
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans;
+  }
+
+  /* Professional typography */
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-sans font-semibold tracking-tight text-blue-dark;
+  }
+
+  /* Smooth transitions only for interactive elements */
+  a,
+  button,
+  input,
+  select,
+  textarea,
+  [role="button"] {
+    @apply transition-colors duration-200 ease-in-out;
+  }
+}
+
+@layer components {
+  /* Professional button variants */
+  .btn-primary {
+    @apply bg-primary text-primary-foreground px-6 py-3 rounded-lg font-medium shadow-card hover:shadow-elevated transition-all duration-200 hover:bg-primary/90;
+  }
+
+  .btn-accent {
+    @apply bg-accent text-accent-foreground px-6 py-3 rounded-lg font-medium shadow-card hover:shadow-elevated transition-all duration-200 hover:bg-accent/90;
+  }
+
+  .btn-outline {
+    @apply border border-primary text-primary bg-transparent px-6 py-3 rounded-lg font-medium hover:bg-primary hover:text-primary-foreground transition-all duration-200;
+  }
+
+  /* Professional card styles */
+  .card-professional {
+    @apply bg-card border border-border rounded-xl shadow-card hover:shadow-elevated transition-all duration-200;
+  }
+
+  .card-featured {
+    @apply bg-card border border-accent/20 rounded-xl shadow-elevated hover:shadow-premium transition-all duration-200;
+  }
+
+  /* Responsive layout utilities */
+  .container-responsive {
+    @apply w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  .section-spacing {
+    @apply py-12 sm:py-16 lg:py-20;
+  }
+
+  .grid-responsive {
+    @apply grid gap-6 sm:gap-8;
+  }
+
+  .grid-cards {
+    @apply grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4;
+  }
+
+  .grid-features {
+    @apply grid gap-8 grid-cols-1 lg:grid-cols-2;
+  }
+
+  .grid-stats {
+    @apply grid gap-6 grid-cols-2 md:grid-cols-4;
+  }
+
+  /* Spacing utilities */
+  .space-section {
+    @apply space-y-8 sm:space-y-12;
+  }
+
+  .space-content {
+    @apply space-y-4 sm:space-y-6;
+  }
+
+  .space-compact {
+    @apply space-y-2 sm:space-y-3;
+  }
+
+  /* Text and content utilities */
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .text-accent-gradient {
+    @apply bg-gradient-to-r from-accent to-accent/80 bg-clip-text text-transparent;
+  }
+
+  /* Professional focus styles */
+  .focus-professional {
+    @apply focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background;
+  }
+
+  /* Section backgrounds */
+  .section-light {
+    @apply bg-gray-light;
+  }
+
+  .section-blue {
+    @apply bg-primary-light;
+  }
+
+  /* Image utilities */
+  .img-cover {
+    @apply w-full h-full object-cover;
+  }
+
+  .img-rounded {
+    @apply rounded-xl overflow-hidden;
+  }
+}

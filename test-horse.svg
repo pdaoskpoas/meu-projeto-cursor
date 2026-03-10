@@ -1,0 +1,19 @@
+<svg width="400" height="300" xmlns="http://www.w3.org/2000/svg">
+  <rect width="400" height="300" fill="#87CEEB"/>
+  <ellipse cx="200" cy="180" rx="80" ry="50" fill="#8B4513"/>
+  <rect x="160" y="180" width="80" height="60" fill="#8B4513"/>
+  <rect x="170" y="230" width="15" height="40" fill="#654321"/>
+  <rect x="215" y="230" width="15" height="40" fill="#654321"/>
+  <ellipse cx="140" cy="150" rx="30" ry="40" fill="#8B4513"/>
+  <circle cx="130" cy="140" r="3" fill="#000"/>
+  <path d="M 110 130 Q 120 120 115 125" stroke="#8B4513" stroke-width="3" fill="none"/>
+  <path d="M 240 180 Q 260 190 250 210" stroke="#8B4513" stroke-width="8" fill="none"/>
+  <text x="200" y="50" font-family="Arial" font-size="24" fill="#333" text-anchor="middle">Teste Raça Correta</text>
+  <text x="200" y="80" font-family="Arial" font-size="16" fill="#666" text-anchor="middle">Quarto de Milha - 2020</text>
+</svg>
+
+
+
+
+
+
