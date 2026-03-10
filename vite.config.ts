@@ -27,6 +27,7 @@ export default defineConfig(({ mode }) => {
     },
     plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
     resolve: {
+      dedupe: ["react", "react-dom"],
       alias: {
         "@": path.resolve(__dirname, "./src"),
       },
@@ -36,29 +37,10 @@ export default defineConfig(({ mode }) => {
         output: {
           manualChunks(id) {
             if (!id.includes("node_modules")) return;
+            // Keep production chunking stable to avoid runtime mismatches between vendor chunks.
             if (id.includes("react") || id.includes("react-dom") || id.includes("react-router")) {
               return "react-vendor";
             }
-            if (id.includes("@tanstack")) return "tanstack";
-            if (id.includes("@supabase")) return "supabase";
-            if (id.includes("@radix-ui")) return "radix";
-            if (id.includes("react-hook-form") || id.includes("@hookform/resolvers") || id.includes("zod")) {
-              return "forms";
-            }
-            if (id.includes("date-fns") || id.includes("react-day-picker")) return "dates";
-            if (id.includes("dompurify")) return "sanitizers";
-            if (id.includes("sonner")) return "notifications";
-            if (id.includes("cmdk") || id.includes("vaul")) return "overlays";
-            if (id.includes("next-themes")) return "themes";
-            if (id.includes("browser-image-compression") || id.includes("compressorjs")) {
-              return "image-tools";
-            }
-            if (id.includes("lucide-react")) return "icons";
-            if (id.includes("framer-motion")) return "motion";
-            if (id.includes("embla-carousel")) return "carousel";
-            if (id.includes("mapbox-gl")) return "mapbox";
-            if (id.includes("recharts")) return "charts";
-            if (id.includes("@tiptap")) return "tiptap";
             return "vendor";
           },
         },
