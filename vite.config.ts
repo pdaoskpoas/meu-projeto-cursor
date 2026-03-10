@@ -32,19 +32,6 @@ export default defineConfig(({ mode }) => {
         "@": path.resolve(__dirname, "./src"),
       },
     },
-    build: {
-      rollupOptions: {
-        output: {
-          manualChunks(id) {
-            if (!id.includes("node_modules")) return;
-            // Keep production chunking stable to avoid runtime mismatches between vendor chunks.
-            if (id.includes("react") || id.includes("react-dom") || id.includes("react-router")) {
-              return "react-vendor";
-            }
-            return "vendor";
-          },
-        },
-      },
-    },
+    build: {},
   };
 });
