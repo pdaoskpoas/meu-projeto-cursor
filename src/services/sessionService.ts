@@ -5,19 +5,11 @@ interface EnsureSessionOptions {
   timeoutMs?: number;
 }
 
-const DEFAULT_TIMEOUT_MS = 5000;
-const REFRESH_THRESHOLD_MS = 10 * 60 * 1000;
-
-const withTimeout = async <T>(promise: Promise<T>, timeoutMs: number): Promise<T> =>
-  Promise.race([
-    promise,
-    new Promise<T>((_, reject) => {
-      window.setTimeout(() => reject(new Error('Session timeout')), timeoutMs);
-    })
-  ]);
+const DEFAULT_TIMEOUT_MS = 15000;
 
 export async function refreshActiveSession(timeoutMs = DEFAULT_TIMEOUT_MS) {
-  const { data, error } = await withTimeout(supabase.auth.refreshSession(), timeoutMs);
+  void timeoutMs;
+  const { data, error } = await supabase.auth.refreshSession();
 
   if (error || !data.session) {
     throw new Error('Sua sessão expirou. Faça login novamente para continuar.');
@@ -29,25 +21,21 @@ export async function refreshActiveSession(timeoutMs = DEFAULT_TIMEOUT_MS) {
 export async function ensureActiveSession(
   options: EnsureSessionOptions = {}
 ) {
-  const { forceRefresh = false, timeoutMs = DEFAULT_TIMEOUT_MS } = options;
+  const { forceRefresh = false } = options;
+  void options.timeoutMs;
 
   if (forceRefresh) {
-    return refreshActiveSession(timeoutMs);
+    return refreshActiveSession();
   }
 
-  const { data, error } = await withTimeout(supabase.auth.getSession(), timeoutMs);
+  const { data, error } = await supabase.auth.getSession();
   const session = data.session;
 
   if (error || !session) {
-    return refreshActiveSession(timeoutMs);
+    return refreshActiveSession();
   }
 
-  const expiresAtMs = session.expires_at ? session.expires_at * 1000 : null;
-  const expiresSoon = expiresAtMs ? expiresAtMs - Date.now() <= REFRESH_THRESHOLD_MS : false;
-
-  if (expiresSoon) {
-    return refreshActiveSession(timeoutMs);
-  }
-
+  // Evita refresh agressivo em foco/troca de rota.
+  // O refresh explícito fica apenas para operações críticas.
   return session;
 }

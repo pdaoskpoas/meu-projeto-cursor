@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -35,6 +35,8 @@ export const useNotifications = (): UseNotificationsReturn => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const isFetchingRef = useRef(false);
+  const requestIdRef = useRef(0);
 
   const fetchNotifications = useCallback(async () => {
     if (!user?.id) {
@@ -42,6 +44,10 @@ export const useNotifications = (): UseNotificationsReturn => {
       setLoading(false);
       return;
     }
+
+    if (isFetchingRef.current) return;
+    isFetchingRef.current = true;
+    const requestId = ++requestIdRef.current;
 
     try {
       setLoading(true);
@@ -59,12 +65,17 @@ export const useNotifications = (): UseNotificationsReturn => {
 
       if (fetchError) throw fetchError;
 
+      if (requestId !== requestIdRef.current) return;
       setNotifications(data || []);
     } catch (err: unknown) {
+      if (requestId !== requestIdRef.current) return;
       console.error('Erro ao buscar notificações:', err);
-      setError(err.message);
+      setError(err instanceof Error ? err.message : 'Erro ao buscar notificações');
     } finally {
-      setLoading(false);
+      if (requestId === requestIdRef.current) {
+        setLoading(false);
+      }
+      isFetchingRef.current = false;
     }
   }, [user?.id]);
 

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 
@@ -15,6 +15,8 @@ export const useAnimalAlerts = () => {
   const { user } = useAuth();
   const [alertCount, setAlertCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const isFetchingRef = useRef(false);
+  const requestIdRef = useRef(0);
 
   useEffect(() => {
     if (!user?.id) {
@@ -24,6 +26,10 @@ export const useAnimalAlerts = () => {
     }
 
     const fetchAlertCount = async () => {
+      if (isFetchingRef.current) return;
+      isFetchingRef.current = true;
+      const requestId = ++requestIdRef.current;
+
       try {
         setLoading(true);
 
@@ -43,12 +49,17 @@ export const useAnimalAlerts = () => {
 
         // Soma total de alertas (pausados + expirados)
         const total = (pausedCount || 0) + (expiredCount || 0);
+        if (requestId !== requestIdRef.current) return;
         setAlertCount(total);
       } catch (error) {
+        if (requestId !== requestIdRef.current) return;
         console.error('Erro ao buscar alertas de animais:', error);
         setAlertCount(0);
       } finally {
-        setLoading(false);
+        if (requestId === requestIdRef.current) {
+          setLoading(false);
+        }
+        isFetchingRef.current = false;
       }
     };
 

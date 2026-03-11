@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useCallback, useContext, useState, useEffect } from 'react';
 import { authService } from '@/services/authService';
 import type { Profile } from '@/types/supabase';
 import { formatNameUppercase } from '@/utils/nameFormat';
@@ -103,15 +103,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsLoading(true);
       try {
         // Recupera sessão atual
-        const current = await authService.getCurrentUser();
-        if (cancelled) return;
-        if (current?.profile) {
-          setUser(mapProfileToUser(current.profile));
-        } else {
-          setUser(null);
+        try {
+          const current = await authService.getCurrentUser();
+          if (cancelled) return;
+          if (current?.profile) {
+            setUser(mapProfileToUser(current.profile));
+          } else {
+            setUser(null);
+          }
+        } catch (error) {
+          console.warn('[AuthContext] Falha temporária ao reidratar usuário. Mantendo estado atual.', error);
         }
-      // Listener de mudanças de sessão
-      unsub = await authService.onAuthStateChange(async (authUser) => {
+
+        if (cancelled) return;
+
+        // Listener de mudanças de sessão
+        unsub = await authService.onAuthStateChange(async (authUser) => {
           if (authUser?.profile) {
             setUser(mapProfileToUser(authUser.profile));
           } else {
@@ -197,7 +204,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const refreshUser = async (): Promise<User | null> => {
+  const refreshUser = useCallback(async (): Promise<User | null> => {
     try {
       setIsLoading(true);
       const refreshed = await authService.getCurrentUser();
@@ -207,10 +214,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return mappedUser;
       }
       return null;
+    } catch (error) {
+      console.warn('[AuthContext] Falha temporária ao atualizar usuário. Mantendo estado atual.', error);
+      return user;
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user]);
 
   return (
     <AuthContext.Provider value={{ user, login, logout, register, refreshUser, isLoading }}>

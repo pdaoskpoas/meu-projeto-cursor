@@ -27,6 +27,13 @@ export interface AuthUser {
   profile: Profile
 }
 
+class ProfileFetchError extends Error {
+  constructor(message = 'Falha temporária ao carregar perfil do usuário') {
+    super(message)
+    this.name = 'ProfileFetchError'
+  }
+}
+
 class AuthService {
   // Login com email e senha
   async login(credentials: LoginCredentials): Promise<AuthUser | null> {
@@ -200,7 +207,9 @@ class AuthService {
 
       const profile = await this.getProfile(user.id)
       if (!profile) {
-        return null
+        // Evita oscilação user -> null -> user quando o Auth já existe,
+        // mas o profile falha temporariamente ao reidratar.
+        throw new ProfileFetchError('Perfil indisponível temporariamente')
       }
 
       return {
@@ -210,7 +219,7 @@ class AuthService {
       }
     } catch (error) {
       logSupabaseOperation('Get current user error', null, error)
-      return null
+      throw error
     }
   }
 
@@ -228,13 +237,16 @@ class AuthService {
         if (error.code === 'PGRST116') {
           return null // Perfil não encontrado
         }
-        throw handleSupabaseError(error)
+        throw new ProfileFetchError(handleSupabaseError(error).message)
       }
 
       return data as Profile
     } catch (error) {
       logSupabaseOperation('Get profile error', null, error)
-      return null
+      if (error instanceof ProfileFetchError) {
+        throw error
+      }
+      throw new ProfileFetchError()
     }
   }
 
@@ -332,15 +344,20 @@ class AuthService {
       logSupabaseOperation('Auth state change', { event })
       
       if (session?.user) {
-        const profile = await this.getProfile(session.user.id)
-        if (profile) {
-          callback({
-            id: session.user.id,
-            email: session.user.email!,
-            profile
-          })
-        } else {
-          callback(null)
+        try {
+          const profile = await this.getProfile(session.user.id)
+          if (profile) {
+            callback({
+              id: session.user.id,
+              email: session.user.email!,
+              profile
+            })
+            return
+          }
+
+          console.warn('[AuthService] Sessão ativa sem perfil carregado. Mantendo usuário atual até nova tentativa.')
+        } catch (error) {
+          console.warn('[AuthService] Falha temporária ao carregar perfil após evento de auth. Mantendo usuário atual.', error)
         }
       } else {
         callback(null)

@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { ChatMessage, ChatConversation } from '@/data/chatData';
 import { useAuth } from './AuthContext';
 import { messageService, MessageSendStatus } from '@/services/messageService';
@@ -34,15 +34,29 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [unreadCount, setUnreadCount] = useState(0);
   const [sendStatus, setSendStatus] = useState<MessageSendStatus | null>(null);
   const [loading, setLoading] = useState(false);
+  const isLoadingConversationsRef = useRef(false);
+  const conversationsRequestIdRef = useRef(0);
+  const conversationsRef = useRef<ChatConversation[]>([]);
+
+  useEffect(() => {
+    conversationsRef.current = conversations;
+  }, [conversations]);
 
   // Buscar conversas do usuário
   const loadConversations = useCallback(async () => {
+    const requestId = ++conversationsRequestIdRef.current;
+
     if (!user?.id) {
-      setConversations([]);
-      setUnreadCount(0);
+      if (requestId === conversationsRequestIdRef.current) {
+        setConversations([]);
+        setUnreadCount(0);
+      }
       return;
     }
-    
+
+    if (isLoadingConversationsRef.current) return;
+    isLoadingConversationsRef.current = true;
+
     try {
       setLoading(true);
       const convs = await messageService.getConversations(user.id);
@@ -71,17 +85,22 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
         return true;
       });
-      
+
+      if (requestId !== conversationsRequestIdRef.current) return;
       setConversations(filtered);
-      
+
       // Calcular total não lido
       const total = filtered.reduce((sum, c) => sum + (c.unreadCount || 0), 0);
       setUnreadCount(total);
     } catch (error) {
+      if (requestId !== conversationsRequestIdRef.current) return;
       console.error('Erro ao carregar conversas:', error);
       toast.error('Erro ao carregar conversas');
     } finally {
-      setLoading(false);
+      if (requestId === conversationsRequestIdRef.current) {
+        setLoading(false);
+      }
+      isLoadingConversationsRef.current = false;
     }
   }, [user?.id]);
   
@@ -319,7 +338,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!user?.id) return;
     
     const subscription = supabase
-      .channel('conversations_updates')
+      .channel(`conversations_updates_${user.id}`)
       .on(
         'postgres_changes',
         {
@@ -327,8 +346,18 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
           schema: 'public',
           table: 'conversations'
         },
-        () => {
-          loadConversations();
+        (payload) => {
+          const next = payload.new as { animal_owner_id?: string; interested_user_id?: string } | null;
+          const previous = payload.old as { animal_owner_id?: string; interested_user_id?: string } | null;
+          const isRelevant =
+            next?.animal_owner_id === user.id ||
+            next?.interested_user_id === user.id ||
+            previous?.animal_owner_id === user.id ||
+            previous?.interested_user_id === user.id;
+
+          if (isRelevant) {
+            loadConversations();
+          }
         }
       )
       .on(
@@ -338,8 +367,15 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
           schema: 'public',
           table: 'messages'
         },
-        () => {
-          loadConversations();
+        (payload) => {
+          const newMessage = payload.new as { sender_id?: string; conversation_id?: string } | null;
+          const isRelevantConversation = conversationsRef.current.some(
+            conv => conv.id === newMessage?.conversation_id
+          );
+
+          if (isRelevantConversation || newMessage?.sender_id === user.id) {
+            loadConversations();
+          }
         }
       )
       .subscribe();

@@ -1,12 +1,9 @@
-import { useSessionTimeout } from '@/hooks/useSessionTimeout';
-
 /**
- * Gerencia a saúde da sessão enquanto o usuário navega pelo sistema.
- * Mantém a autenticação sincronizada durante sessões longas.
+ * Componente preservado por compatibilidade de import.
+ * A manutenção de sessão fica a cargo do Supabase + requests resilientes.
  */
 const SessionTimeoutManager = () => {
-  useSessionTimeout();
-  return null; // Componente invisible
+  return null;
 };
 
 export default SessionTimeoutManager;

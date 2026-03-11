@@ -1,8 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { partnershipService } from '@/services/partnershipService';
-import { runResilientRequest } from '@/services/resilientRequestService';
+import { isStaleRequestError, runResilientRequest } from '@/services/resilientRequestService';
 
 interface DailyData {
   name: string;
@@ -38,6 +38,7 @@ const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set
 
 export const useStatsCharts = (activePeriod: 'all' | 'month' | 'year') => {
   const { user } = useAuth();
+  const requestIdRef = useRef(0);
   const [weeklyData, setWeeklyData] = useState<DailyData[]>([]);
   const [monthlyData, setMonthlyData] = useState<MonthlyData[]>([]);
   const [topAnimals, setTopAnimals] = useState<AnimalPerformance[]>([]);
@@ -45,39 +46,47 @@ export const useStatsCharts = (activePeriod: 'all' | 'month' | 'year') => {
   const [error, setError] = useState<string | null>(null);
 
   const fetchChartData = useCallback(async () => {
+    const requestId = ++requestIdRef.current;
+
     if (!user?.id) {
-      setLoading(false);
-      setError(null);
+      if (requestId === requestIdRef.current) {
+        setLoading(false);
+        setError(null);
+      }
       return;
     }
 
     try {
-      setLoading(true);
-      setError(null);
+      if (requestId === requestIdRef.current) {
+        setLoading(true);
+        setError(null);
+      }
 
       const cacheKey = `${user.id}:${activePeriod}`;
       const cached = chartsCache.get(cacheKey);
 
       if (cached && Date.now() - cached.timestamp < CHARTS_CACHE_TTL_MS) {
-        setWeeklyData(cached.weeklyData);
-        setMonthlyData(cached.monthlyData);
-        setTopAnimals(cached.topAnimals);
-        setLoading(false);
+        if (requestId === requestIdRef.current) {
+          setWeeklyData(cached.weeklyData);
+          setMonthlyData(cached.monthlyData);
+          setTopAnimals(cached.topAnimals);
+          setLoading(false);
+        }
         return;
       }
 
-      await runResilientRequest(async () => {
+      const nextData = await runResilientRequest(async () => {
         const userAnimals = await partnershipService.getUserAnimalsWithPartnerships(user.id);
 
         const animalIds = userAnimals?.map(a => a.id) || [];
         const animalMap = new Map(userAnimals?.map(a => [a.id, a.name]) || []);
 
         if (animalIds.length === 0) {
-          setWeeklyData([]);
-          setMonthlyData([]);
-          setTopAnimals([]);
-          setLoading(false);
-          return;
+          return {
+            weeklyData: [],
+            monthlyData: [],
+            topAnimals: []
+          };
         }
 
         const monthsToShow = activePeriod === 'year' ? 12 : 6;
@@ -175,26 +184,37 @@ export const useStatsCharts = (activePeriod: 'all' | 'month' | 'year') => {
           .sort((a, b) => b.views - a.views)
           .slice(0, 5);
 
-        chartsCache.set(cacheKey, {
+        return {
           weeklyData: weekData,
           monthlyData: periodicData,
-          topAnimals: performanceData,
-          timestamp: Date.now()
-        });
-
-        setWeeklyData(weekData);
-        setMonthlyData(periodicData);
-        setTopAnimals(performanceData);
-
-        setLoading(false);
+          topAnimals: performanceData
+        };
       }, {
-        timeoutMs: 15000,
-        errorMessage: 'O carregamento dos gráficos demorou demais.'
+        timeoutMs: 45000,
+        errorMessage: 'O carregamento dos gráficos demorou demais.',
+        requestKey: `stats-charts:${user.id}:${activePeriod}`
       });
+
+      if (requestId !== requestIdRef.current) return;
+
+      chartsCache.set(cacheKey, {
+        weeklyData: nextData.weeklyData,
+        monthlyData: nextData.monthlyData,
+        topAnimals: nextData.topAnimals,
+        timestamp: Date.now()
+      });
+
+      setWeeklyData(nextData.weeklyData);
+      setMonthlyData(nextData.monthlyData);
+      setTopAnimals(nextData.topAnimals);
     } catch (error) {
+      if (isStaleRequestError(error) || requestId !== requestIdRef.current) return;
       console.error('Erro ao buscar dados dos gráficos:', error);
-      setLoading(false);
       setError(error instanceof Error ? error.message : 'Erro ao carregar gráficos');
+    } finally {
+      if (requestId === requestIdRef.current) {
+        setLoading(false);
+      }
     }
   }, [user?.id, activePeriod]);
 

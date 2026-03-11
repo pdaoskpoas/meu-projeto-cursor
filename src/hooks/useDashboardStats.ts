@@ -1,8 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { partnershipService } from '@/services/partnershipService';
-import { runResilientRequest } from '@/services/resilientRequestService';
+import { isStaleRequestError, runResilientRequest } from '@/services/resilientRequestService';
 
 export interface DashboardStats {
   // Estatísticas do mês atual
@@ -45,6 +45,7 @@ const DASHBOARD_STATS_CACHE_TTL_MS = 30 * 1000;
 
 export const useDashboardStats = () => {
   const { user } = useAuth();
+  const requestIdRef = useRef(0);
   const [stats, setStats] = useState<DashboardStats>({
     monthlyImpressions: 0,
     monthlyClicks: 0,
@@ -59,21 +60,29 @@ export const useDashboardStats = () => {
   });
 
   const fetchDashboardStats = useCallback(async () => {
+    const requestId = ++requestIdRef.current;
+
     if (!user?.id) {
-      setStats(prev => ({ ...prev, loading: false }));
+      if (requestId === requestIdRef.current) {
+        setStats(prev => ({ ...prev, loading: false }));
+      }
       return;
     }
 
     try {
       const cached = dashboardStatsCache.get(user.id);
       if (cached && Date.now() - cached.timestamp < DASHBOARD_STATS_CACHE_TTL_MS) {
-        setStats({ ...cached.data, loading: false });
+        if (requestId === requestIdRef.current) {
+          setStats({ ...cached.data, loading: false });
+        }
         return;
       }
 
-      setStats(prev => ({ ...prev, loading: true, error: null }));
+      if (requestId === requestIdRef.current) {
+        setStats(prev => ({ ...prev, loading: true, error: null }));
+      }
 
-      await runResilientRequest(async () => {
+      const nextStats = await runResilientRequest(async () => {
         // Data do início do mês atual
         const startOfMonth = new Date();
         startOfMonth.setDate(1);
@@ -196,18 +205,24 @@ export const useDashboardStats = () => {
           error: null,
         };
 
-        dashboardStatsCache.set(user.id, {
-          data: nextStats,
-          timestamp: Date.now()
-        });
-
-        setStats(nextStats);
+        return nextStats;
       }, {
-        timeoutMs: 15000,
-        errorMessage: 'O carregamento do dashboard demorou demais.'
+        timeoutMs: 45000,
+        errorMessage: 'O carregamento do dashboard demorou demais.',
+        requestKey: `dashboard-stats:${user.id}`
       });
 
+      if (requestId !== requestIdRef.current) return;
+
+      dashboardStatsCache.set(user.id, {
+        data: nextStats,
+        timestamp: Date.now()
+      });
+
+      setStats(nextStats);
+
     } catch (error: unknown) {
+      if (isStaleRequestError(error) || requestId !== requestIdRef.current) return;
       console.error('Erro ao buscar estatísticas do dashboard:', error);
       const message = error instanceof Error ? error.message : 'Erro ao carregar estatísticas';
       setStats(prev => ({
@@ -215,6 +230,10 @@ export const useDashboardStats = () => {
         loading: false,
         error: message,
       }));
+    } finally {
+      if (requestId === requestIdRef.current) {
+        setStats(prev => ({ ...prev, loading: false }));
+      }
     }
   }, [user?.id]);
 

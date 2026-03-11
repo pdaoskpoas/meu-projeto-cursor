@@ -1,8 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { partnershipService } from '@/services/partnershipService';
-import { runResilientRequest } from '@/services/resilientRequestService';
+import { isStaleRequestError, runResilientRequest } from '@/services/resilientRequestService';
 
 interface UserStatsState {
   totalAnimals: number;
@@ -32,6 +32,7 @@ const USER_STATS_CACHE_TTL_MS = 30 * 1000;
 
 export const useUserStats = () => {
   const { user } = useAuth();
+  const requestIdRef = useRef(0);
   
   const [stats, setStats] = useState<UserStatsState>({
     totalAnimals: 0,
@@ -52,21 +53,29 @@ export const useUserStats = () => {
   });
 
   const fetchStats = useCallback(async () => {
+    const requestId = ++requestIdRef.current;
+
     if (!user?.id) {
-      setStats(prev => ({ ...prev, loading: false, error: null }));
+      if (requestId === requestIdRef.current) {
+        setStats(prev => ({ ...prev, loading: false, error: null }));
+      }
       return;
     }
 
     try {
       const cached = userStatsCache.get(user.id);
       if (cached && Date.now() - cached.timestamp < USER_STATS_CACHE_TTL_MS) {
-        setStats({ ...cached.data, loading: false });
+        if (requestId === requestIdRef.current) {
+          setStats({ ...cached.data, loading: false });
+        }
         return;
       }
 
-      setStats(prev => ({ ...prev, loading: true, error: null }));
+      if (requestId === requestIdRef.current) {
+        setStats(prev => ({ ...prev, loading: true, error: null }));
+      }
 
-      await runResilientRequest(async () => {
+      const nextStats = await runResilientRequest(async () => {
         // Calcular datas de referência
         const now = new Date();
         const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -197,23 +206,33 @@ export const useUserStats = () => {
           error: null
         };
 
-        userStatsCache.set(user.id, {
-          data: nextStats,
-          timestamp: Date.now()
-        });
-
-        setStats(nextStats);
+        return nextStats;
       }, {
-        timeoutMs: 15000,
-        errorMessage: 'O carregamento das estatísticas demorou demais.'
+        timeoutMs: 45000,
+        errorMessage: 'O carregamento das estatísticas demorou demais.',
+        requestKey: `user-stats:${user.id}`
       });
+
+      if (requestId !== requestIdRef.current) return;
+
+      userStatsCache.set(user.id, {
+        data: nextStats,
+        timestamp: Date.now()
+      });
+
+      setStats(nextStats);
     } catch (error) {
+      if (isStaleRequestError(error) || requestId !== requestIdRef.current) return;
       console.error('Erro ao buscar estatísticas:', error);
       setStats(prev => ({
         ...prev,
         loading: false,
         error: error instanceof Error ? error.message : 'Erro ao carregar estatísticas'
       }));
+    } finally {
+      if (requestId === requestIdRef.current) {
+        setStats(prev => ({ ...prev, loading: false }));
+      }
     }
   }, [user?.id]);
 

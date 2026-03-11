@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -16,6 +16,8 @@ export const useUnreadCounts = () => {
     partnerships: 0
   });
   const [loading, setLoading] = useState(true);
+  const fetchInFlightRef = useRef(false);
+  const visibilityDebounceRef = useRef<number | null>(null);
 
   const fetchUnreadCounts = useCallback(async () => {
     if (!user?.id) {
@@ -24,47 +26,46 @@ export const useUnreadCounts = () => {
       return;
     }
 
+    if (fetchInFlightRef.current) return;
+    fetchInFlightRef.current = true;
+
     try {
-      // 1. Buscar conversas com mensagens não lidas
-      // O contador deve mostrar o NÚMERO DE CONVERSAS com mensagens não lidas, não o total de mensagens
-      const { data: conversations } = await supabase
+      // 1) Buscar conversas do usuário
+      const { data: conversations, error: conversationsError } = await supabase
         .from('conversations')
         .select('id')
         .or(`animal_owner_id.eq.${user.id},interested_user_id.eq.${user.id}`);
+
+      if (conversationsError) throw conversationsError;
 
       const conversationIds = conversations?.map(c => c.id) || [];
 
       let unreadConversations = 0;
       if (conversationIds.length > 0) {
-        // Contar quantas conversas têm mensagens não lidas
-        const conversationsWithUnread = await Promise.all(
-          conversationIds.map(async (convId) => {
-            const { count } = await supabase
-              .from('messages')
-              .select('*', { count: 'exact', head: true })
-              .eq('conversation_id', convId)
-              .neq('sender_id', user.id) // Mensagens que ele não enviou
-              .is('read_at', null); // Que ainda não foram lidas
-            
-            return count && count > 0 ? 1 : 0;
-          })
-        );
-        
-        unreadConversations = conversationsWithUnread.reduce((sum, has) => sum + has, 0);
+        // 2) Buscar mensagens não lidas em lote e contar conversas únicas
+        const { data: unreadMessages, error: unreadMessagesError } = await supabase
+          .from('messages')
+          .select('conversation_id')
+          .in('conversation_id', conversationIds)
+          .neq('sender_id', user.id)
+          .is('read_at', null);
+
+        if (unreadMessagesError) throw unreadMessagesError;
+        unreadConversations = new Set((unreadMessages || []).map(msg => msg.conversation_id)).size;
       }
 
-      // 2. Buscar convites de sociedade pendentes
-      // NOTA: Migration 065 removeu o campo 'status'. Todas as parcerias são aceitas automaticamente.
-      // Para manter compatibilidade, retornamos 0 convites pendentes.
+      // 3) Convites de sociedade pendentes atualmente não existem nesse fluxo
       const pendingPartnerships = 0;
 
-      // 3. Buscar notificações não lidas (exceto notificações de mensagens)
-      const { count: unreadNotifications } = await supabase
+      // 4) Notificações não lidas (sem mensagens, contador próprio)
+      const { count: unreadNotifications, error: unreadNotificationsError } = await supabase
         .from('notifications')
         .select('*', { count: 'exact', head: true })
         .eq('user_id', user.id)
         .eq('is_read', false)
-        .neq('type', 'message_received'); // Excluir notificações de mensagens (já tem contador próprio)
+        .neq('type', 'message_received');
+
+      if (unreadNotificationsError) throw unreadNotificationsError;
 
       setCounts({
         messages: unreadConversations,
@@ -74,63 +75,55 @@ export const useUnreadCounts = () => {
     } catch (error) {
       console.error('Erro ao buscar contagens:', error);
     } finally {
+      fetchInFlightRef.current = false;
       setLoading(false);
     }
   }, [user?.id]);
 
   useEffect(() => {
+    if (!user?.id) return;
+
     fetchUnreadCounts();
 
-    // Atualizar a cada 10 segundos (reduzido de 30 para melhor UX)
-    const interval = setInterval(fetchUnreadCounts, 10000);
+    // Atualizar com frequência moderada para evitar saturação
+    const interval = setInterval(fetchUnreadCounts, 30000);
 
-    // Listener para evento customizado de atualização forçada
+    // Listener para atualização forçada
     const handleForceUpdate = () => {
       fetchUnreadCounts();
     };
     window.addEventListener('forceUpdateUnreadCounts', handleForceUpdate);
 
-    // Subscription para mensagens em tempo real
-    const messagesSubscription = supabase
-      .channel('messages_changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'messages'
-        },
-        () => {
-          fetchUnreadCounts();
-        }
-      )
-      .subscribe();
+    const scheduleFetch = () => {
+      if (visibilityDebounceRef.current) {
+        window.clearTimeout(visibilityDebounceRef.current);
+      }
 
-    // Subscription para parcerias em tempo real
-    const partnershipsSubscription = supabase
-      .channel('partnerships_changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'animal_partnerships'
-        },
-        () => {
-          fetchUnreadCounts();
-        }
-      )
-      .subscribe();
+      visibilityDebounceRef.current = window.setTimeout(() => {
+        visibilityDebounceRef.current = null;
+        fetchUnreadCounts();
+      }, 300);
+    };
 
-    // Subscription para notificações em tempo real
+    // Atualizar ao voltar para a aba
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        scheduleFetch();
+      }
+    };
+    window.addEventListener('focus', scheduleFetch);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    // Subscription com filtro por usuário (evita avalanche global)
     const notificationsSubscription = supabase
-      .channel('notifications_changes')
+      .channel(`notifications_changes_${user.id}`)
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
-          table: 'notifications'
+          table: 'notifications',
+          filter: `user_id=eq.${user.id}`
         },
         () => {
           fetchUnreadCounts();
@@ -140,12 +133,16 @@ export const useUnreadCounts = () => {
 
     return () => {
       clearInterval(interval);
+      if (visibilityDebounceRef.current) {
+        window.clearTimeout(visibilityDebounceRef.current);
+        visibilityDebounceRef.current = null;
+      }
       window.removeEventListener('forceUpdateUnreadCounts', handleForceUpdate);
-      messagesSubscription.unsubscribe();
-      partnershipsSubscription.unsubscribe();
+      window.removeEventListener('focus', scheduleFetch);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
       notificationsSubscription.unsubscribe();
     };
-  }, [fetchUnreadCounts]);
+  }, [fetchUnreadCounts, user?.id]);
 
   return { counts, loading, refetch: fetchUnreadCounts };
 };

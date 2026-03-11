@@ -23,6 +23,23 @@ interface GetUserPlanQuotaOptions {
   forceFresh?: boolean;
 }
 
+interface QuotaRpcData {
+  plan?: string;
+  plan_is_valid?: boolean;
+  remaining?: number;
+  allowedByPlan?: number;
+  allowed_by_plan?: number;
+  active?: number;
+  plan_expires_at?: string | null;
+  isValid?: boolean;
+  reason?: string;
+}
+
+interface QuotaRpcResult {
+  data: QuotaRpcData | null;
+  error: Error | null;
+}
+
 // Cache global (persiste entre renders)
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutos
 let planCache: PlanCache | null = null;
@@ -70,7 +87,12 @@ export async function getUserPlanQuota(
   };
 
   const fetchQuota = async () => {
-    const rpcPromise = supabase.rpc('check_user_publish_quota', {
+    const rpc = supabase.rpc as unknown as (
+      fn: string,
+      params: Record<string, unknown>
+    ) => Promise<QuotaRpcResult>;
+
+    const rpcPromise = rpc('check_user_publish_quota', {
       p_user_id: userId
     });
     
@@ -116,17 +138,18 @@ export async function getUserPlanQuota(
     await ensureActiveSession({ timeoutMs: 5000 });
 
     let result = await fetchQuota();
-    let { data, error } = result as { data: { isValid: boolean; reason: string } | null; error: Error | null };
+    let { data, error } = result;
 
     if (error && isAuthError(error)) {
       log('[PlanService] Sessão expirada, tentando renovar...');
       await refreshActiveSession(5000);
       
       result = await fetchQuota();
-      ({ data, error } = result as { data: { isValid: boolean; reason: string } | null; error: Error | null });
+      ({ data, error } = result);
     }
 
     if (error) throw error;
+    if (!data) throw new Error('Resposta vazia ao verificar plano');
 
     // 🔍 DEBUG: Log da resposta bruta
     log('[PlanService] Resposta bruta do Supabase:', data);
@@ -136,7 +159,7 @@ export async function getUserPlanQuota(
       plan: data.plan || 'free',
       planIsValid: data.plan_is_valid || false,  // ✅ CORRIGIDO!
       remaining: data.remaining || 0,
-      allowedByPlan: data.allowedByPlan || 0,
+      allowedByPlan: data.allowedByPlan || data.allowed_by_plan || 0,
       active: data.active || 0,
       planExpiresAt: data.plan_expires_at || null  // ✅ CORRIGIDO!
     };
