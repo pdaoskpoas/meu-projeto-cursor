@@ -194,7 +194,7 @@ export const AnimalCard: React.FC<AnimalCardProps> = ({
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  className="h-8 w-8 p-0"
+                  className="h-10 w-10 p-0"
                   onClick={handleCardClick}
                 >
                   <Eye className="h-4 w-4" />
@@ -204,7 +204,7 @@ export const AnimalCard: React.FC<AnimalCardProps> = ({
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  className="h-8 w-8 p-0"
+                  className="h-10 w-10 p-0"
                   onClick={handleEditClick}
                 >
                   <Edit3 className="h-4 w-4" />
@@ -214,7 +214,7 @@ export const AnimalCard: React.FC<AnimalCardProps> = ({
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10"
+                  className="h-10 w-10 p-0 text-destructive hover:bg-destructive/10"
                   onClick={handleDeleteClick}
                 >
                   <Trash2 className="h-4 w-4" />

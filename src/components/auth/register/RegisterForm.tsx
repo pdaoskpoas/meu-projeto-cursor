@@ -151,6 +151,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSubmit, isSubmitting, cla
           <div>
             <Input
               placeholder="CPF (000.000.000-00)"
+              inputMode="numeric"
               value={formData.cpf}
               onChange={(e) => handleInputChange('cpf', formatCPF(e.target.value))}
               maxLength={14}
@@ -218,7 +219,9 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSubmit, isSubmitting, cla
 
           <div>
             <Input
+              type="tel"
               placeholder="Telefone (00) 00000-0000"
+              inputMode="tel"
               value={formData.phone}
               onChange={(e) => handleInputChange('phone', formatPhone(e.target.value))}
               maxLength={15}

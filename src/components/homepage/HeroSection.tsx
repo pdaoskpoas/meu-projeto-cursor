@@ -16,20 +16,22 @@ const HeroSection: React.FC = () => {
       className="relative bg-gradient-to-br from-blue-50 via-white to-blue-50/50 overflow-hidden"
       aria-label="Seção principal"
     >
-      {/* Background Elements - Animações suaves */}
-      <div className="absolute inset-0 overflow-hidden">
+      {/* Background Elements — sem animações pesadas em mobile */}
+      <div className="absolute inset-0 overflow-hidden hidden sm:block">
         <div className="absolute top-0 -left-4 w-72 h-72 bg-blue-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-pulse" style={{ animationDuration: '8s' }}></div>
         <div className="absolute top-0 -right-4 w-96 h-96 bg-blue-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse" style={{ animationDuration: '10s', animationDelay: '2s' }}></div>
         <div className="absolute -bottom-8 left-20 w-80 h-80 bg-blue-100 rounded-full mix-blend-multiply filter blur-3xl opacity-25 animate-pulse" style={{ animationDuration: '12s', animationDelay: '4s' }}></div>
       </div>
+      {/* Mobile: bg simples sem animação */}
+      <div className="absolute inset-0 sm:hidden bg-gradient-to-b from-blue-50 to-white" />
 
-      <div className="relative container-responsive py-12 sm:py-16 lg:py-24">
-        <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-center">
+      <div className="relative container-responsive py-8 sm:py-16 lg:py-24">
+        <div className="grid lg:grid-cols-2 gap-6 lg:gap-16 items-center">
           {/* Content */}
-          <div className="space-y-8 lg:pr-8">
+          <div className="space-y-6 sm:space-y-8 lg:pr-8">
             {/* Title */}
-            <div className="space-y-6">
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-slate-900 leading-tight">
+            <div className="space-y-4 sm:space-y-6">
+              <h1 className="text-3xl sm:text-5xl lg:text-6xl font-bold text-slate-900 leading-tight">
                 A maior vitrine{' '}
                 <span className="text-blue-600 relative inline-block">
                   equestre do Brasil

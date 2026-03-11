@@ -144,7 +144,7 @@ const WizardContent: React.FC<{
   return (
     <>
       <DialogContent 
-        className="max-w-3xl max-h-[90vh] overflow-y-auto"
+        className="max-w-3xl w-[calc(100vw-1rem)] sm:w-full max-h-[90dvh] overflow-y-auto p-4 sm:p-6"
         onInteractOutside={(e) => {
           e.preventDefault();
           handleCloseAttempt();

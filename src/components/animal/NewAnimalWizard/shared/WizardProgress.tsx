@@ -20,6 +20,15 @@ const STEP_LABELS = [
   'Revisar'
 ];
 
+const STEP_SHORT_LABELS = [
+  'Info',
+  'Local',
+  'Fotos',
+  'Geneal.',
+  'Extras',
+  'Revisar'
+];
+
 export const WizardProgress: React.FC<WizardProgressProps> = ({
   currentStep,
   completedSteps,
@@ -35,16 +44,56 @@ export const WizardProgress: React.FC<WizardProgressProps> = ({
     return 'pending';
   };
 
+  const progressPercent = ((currentStep - 1) / 5) * 100;
+
   return (
-    <div className="w-full py-6">
-      {/* Barra de progresso */}
-      <div className="relative">
+    <div className="w-full py-4 sm:py-6">
+      {/* Mobile: indicador compacto de texto + barra linear */}
+      <div className="sm:hidden space-y-3">
+        <div className="flex items-center justify-between px-1">
+          <span className="text-sm font-semibold text-blue-600">
+            Passo {currentStep} de 6
+          </span>
+          <span className="text-sm text-gray-500">
+            {STEP_LABELS[currentStep - 1]}
+          </span>
+        </div>
+        <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+          <div
+            className="h-full bg-blue-600 rounded-full transition-all duration-300"
+            style={{ width: `${progressPercent}%` }}
+          />
+        </div>
+        {/* Mini dots para contexto visual */}
+        <div className="flex justify-between px-1">
+          {[1, 2, 3, 4, 5, 6].map((step) => {
+            const status = getStepStatus(step);
+            const isValid = stepValidations[step];
+            return (
+              <div
+                key={step}
+                className={cn(
+                  'w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all',
+                  {
+                    'bg-blue-600 text-white': status === 'current',
+                    'bg-green-500 text-white': status === 'completed' && isValid,
+                    'bg-gray-200 text-gray-400': status === 'pending'
+                  }
+                )}
+              >
+                {status === 'completed' && isValid ? '✓' : step}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Desktop/Tablet: stepper completo */}
+      <div className="hidden sm:block relative">
         <div className="absolute top-5 left-0 w-full h-1 bg-gray-200">
           <div
             className="h-full bg-blue-600 transition-all duration-300"
-            style={{
-              width: `${((currentStep - 1) / 5) * 100}%`
-            }}
+            style={{ width: `${progressPercent}%` }}
           />
         </div>
 
@@ -99,6 +148,3 @@ export const WizardProgress: React.FC<WizardProgressProps> = ({
     </div>
   );
 };
-
-
-

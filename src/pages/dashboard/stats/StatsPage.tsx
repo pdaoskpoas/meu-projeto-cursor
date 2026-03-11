@@ -195,7 +195,7 @@ const StatsPage: React.FC = () => {
           </div>
 
           {/* Cards de Resumo */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             <Card className="p-6 border-0 shadow-card hover:shadow-elevated transition-all bg-gradient-to-br from-white to-blue-50/30">
               <div className="flex items-center justify-between mb-4">
                 <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-md">

@@ -337,7 +337,7 @@ export const StepPhotosV2: React.FC = () => {
               <div
                 key={slot.id}
                 className={cn(
-                  "relative aspect-square rounded-lg overflow-hidden",
+                  "relative aspect-square rounded-lg overflow-hidden group",
                   "border-2 transition-all",
                   slot.status === 'empty' && "border-dashed border-gray-300 bg-gray-50 hover:bg-gray-100 cursor-pointer",
                   slot.status === 'uploading' && "border-blue-300 bg-blue-50",
@@ -374,20 +374,18 @@ export const StepPhotosV2: React.FC = () => {
                       className="w-full h-full object-cover"
                     />
                     
-                    {/* Overlay com ações */}
-                    <div className="absolute inset-0 bg-black/60 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleRemovePhoto(slot.id);
-                        }}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
+                    {/* Botão remover — sempre visível em mobile, hover em desktop */}
+                    <button
+                      type="button"
+                      className="absolute top-1.5 right-1.5 sm:top-2 sm:right-2 bg-red-500 hover:bg-red-600 text-white rounded-full w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center shadow-lg sm:opacity-0 sm:group-hover:opacity-100 transition-opacity z-10"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRemovePhoto(slot.id);
+                      }}
+                      aria-label="Remover foto"
+                    >
+                      <X className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                    </button>
                     
                     {/* Badge de número/principal */}
                     {index === 0 && (

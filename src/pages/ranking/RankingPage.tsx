@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Trophy } from 'lucide-react';
+import { ArrowLeft, Trophy, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import RankingFilters from './RankingFilters';
@@ -482,14 +482,15 @@ const RankingPage = () => {
             {/* Pagination */}
             {totalPages > 1 && (
               <div className="flex justify-center mt-8">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap justify-center">
                   <Button
                     variant="outline"
                     onClick={() => handlePageChange(currentPage - 1)}
                     disabled={currentPage === 1}
-                    className="h-10"
+                    className="h-10 px-3 sm:px-4 text-sm"
                   >
-                    Anterior
+                    <ChevronLeft className="h-4 w-4 sm:mr-1" />
+                    <span className="hidden sm:inline">Anterior</span>
                   </Button>
                   
                   <div className="flex items-center gap-1">
@@ -498,7 +499,7 @@ const RankingPage = () => {
                         return (
                           <span
                             key={`ellipsis-${index}`}
-                            className="h-10 w-10 flex items-center justify-center text-slate-500"
+                            className="h-10 w-8 sm:w-10 flex items-center justify-center text-slate-500"
                           >
                             ...
                           </span>
@@ -510,7 +511,7 @@ const RankingPage = () => {
                           key={page}
                           variant={currentPage === page ? "default" : "outline"}
                           onClick={() => handlePageChange(page)}
-                          className="h-10 w-10"
+                          className="h-10 w-9 sm:w-10 text-sm"
                         >
                           {page}
                         </Button>
@@ -522,9 +523,10 @@ const RankingPage = () => {
                     variant="outline"
                     onClick={() => handlePageChange(currentPage + 1)}
                     disabled={currentPage === totalPages}
-                    className="h-10"
+                    className="h-10 px-3 sm:px-4 text-sm"
                   >
-                    Próxima
+                    <span className="hidden sm:inline">Próxima</span>
+                    <ChevronRight className="h-4 w-4 sm:ml-1" />
                   </Button>
                 </div>
               </div>

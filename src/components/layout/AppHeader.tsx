@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   Menu, 
   X, 
@@ -27,7 +27,9 @@ const AppHeader: React.FC<AppHeaderProps> = ({ onToggleSidebar, sidebarOpen }) =
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const userMenuRef = useRef<HTMLDivElement>(null);
 
   const isActive = (path: string) => location.pathname === path;
   const isDashboardRoute = location.pathname.startsWith('/dashboard');
@@ -36,6 +38,41 @@ const AppHeader: React.FC<AppHeaderProps> = ({ onToggleSidebar, sidebarOpen }) =
     logout();
     setIsUserMenuOpen(false);
   };
+
+  // Fechar menu mobile ao navegar
+  useEffect(() => {
+    setIsMenuOpen(false);
+    setIsUserMenuOpen(false);
+  }, [location.pathname]);
+
+  // Fechar user dropdown ao clicar fora
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setIsUserMenuOpen(false);
+      }
+    };
+    if (isUserMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('touchstart', handleClickOutside as EventListener);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside as EventListener);
+    };
+  }, [isUserMenuOpen]);
+
+  // Bloquear scroll do body quando menu mobile está aberto
+  useEffect(() => {
+    if (isMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isMenuOpen]);
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-sm border-b border-slate-200 shadow-lg">
@@ -51,7 +88,6 @@ const AppHeader: React.FC<AppHeaderProps> = ({ onToggleSidebar, sidebarOpen }) =
                   alt="Logo Vitrine do Cavalo"
                   className="w-10 h-10 lg:w-12 lg:h-12 object-contain drop-shadow-lg"
                   onError={(e) => {
-                    // Fallback se a imagem não carregar
                     const target = e.target as HTMLImageElement;
                     target.style.display = 'none';
                     const fallback = target.nextElementSibling as HTMLElement;
@@ -130,6 +166,17 @@ const AppHeader: React.FC<AppHeaderProps> = ({ onToggleSidebar, sidebarOpen }) =
 
           {/* User Actions */}
           <div className="flex shrink-0 items-center space-x-1.5 sm:space-x-3">
+            {/* Ícone de busca rápida mobile */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="lg:hidden h-10 w-10"
+              onClick={() => navigate('/buscar')}
+              aria-label="Buscar"
+            >
+              <Search className="h-5 w-5 text-slate-600" />
+            </Button>
+
             {user ? (
               // Usuário Logado
               <>
@@ -137,7 +184,7 @@ const AppHeader: React.FC<AppHeaderProps> = ({ onToggleSidebar, sidebarOpen }) =
                 <NotificationsDropdown />
 
                 {/* Menu do Usuário */}
-                <div className="relative">
+                <div className="relative" ref={userMenuRef}>
                   <Button
                     variant="ghost"
                     onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
@@ -149,7 +196,6 @@ const AppHeader: React.FC<AppHeaderProps> = ({ onToggleSidebar, sidebarOpen }) =
                         alt={user.name}
                         className="w-8 h-8 rounded-full object-cover"
                         onError={(e) => {
-                          // Fallback se a imagem falhar
                           e.currentTarget.style.display = 'none';
                           e.currentTarget.nextElementSibling?.classList.remove('hidden');
                         }}
@@ -166,50 +212,60 @@ const AppHeader: React.FC<AppHeaderProps> = ({ onToggleSidebar, sidebarOpen }) =
                     </div>
                   </Button>
 
-                  {/* Dropdown Menu */}
+                  {/* Dropdown Menu com overlay mobile */}
                   {isUserMenuOpen && (
-                    <div className="absolute right-0 mt-2 w-[calc(100vw-1rem)] max-w-xs sm:w-64 bg-white rounded-xl shadow-xl border border-gray-200 py-2 z-50">
-                      <div className="px-4 py-3 border-b border-gray-100">
-                        <div className="font-semibold text-gray-900 break-words">{user.name}</div>
-                        <div className="text-sm text-gray-600 break-all">{user.email}</div>
-                        {user.accountType === 'institutional' && (
-                          <div className="text-xs text-blue-600 font-medium mt-1">{user.propertyName}</div>
-                        )}
+                    <>
+                      {/* Overlay invisível para fechar em mobile */}
+                      <div 
+                        className="fixed inset-0 z-40 sm:hidden" 
+                        onClick={() => setIsUserMenuOpen(false)} 
+                      />
+                      <div className="absolute right-0 mt-2 w-[calc(100vw-2rem)] max-w-xs sm:w-64 bg-white rounded-xl shadow-xl border border-gray-200 py-2 z-50">
+                        <div className="px-4 py-3 border-b border-gray-100">
+                          <div className="font-semibold text-gray-900 break-words">{user.name}</div>
+                          <div className="text-sm text-gray-600 break-all">{user.email}</div>
+                          {user.accountType === 'institutional' && (
+                            <div className="text-xs text-blue-600 font-medium mt-1">{user.propertyName}</div>
+                          )}
+                        </div>
+                        
+                        <Link
+                          to="/dashboard"
+                          className="flex items-center space-x-3 px-4 py-3 hover:bg-gray-50 transition-colors min-h-[44px]"
+                          onClick={() => setIsUserMenuOpen(false)}
+                        >
+                          <User className="h-4 w-4 text-gray-500" />
+                          <span className="text-sm font-medium">Meu Painel</span>
+                        </Link>
+                        
+                        <Link
+                          to="/dashboard/settings"
+                          className="flex items-center space-x-3 px-4 py-3 hover:bg-gray-50 transition-colors min-h-[44px]"
+                          onClick={() => setIsUserMenuOpen(false)}
+                        >
+                          <Settings className="h-4 w-4 text-gray-500" />
+                          <span className="text-sm font-medium">Configurações</span>
+                        </Link>
+                        
+                        <button
+                          onClick={handleLogout}
+                          className="flex items-center space-x-3 px-4 py-3 hover:bg-gray-50 transition-colors w-full text-left min-h-[44px]"
+                        >
+                          <LogOut className="h-4 w-4 text-gray-500" />
+                          <span className="text-sm font-medium">Sair</span>
+                        </button>
                       </div>
-                      
-                      <Link
-                        to="/dashboard"
-                        className="flex items-center space-x-3 px-4 py-3 hover:bg-gray-50 transition-colors"
-                        onClick={() => setIsUserMenuOpen(false)}
-                      >
-                        <User className="h-4 w-4 text-gray-500" />
-                        <span className="text-sm font-medium">Meu Painel</span>
-                      </Link>
-                      
-                      <Link
-                        to="/dashboard/settings"
-                        className="flex items-center space-x-3 px-4 py-3 hover:bg-gray-50 transition-colors"
-                        onClick={() => setIsUserMenuOpen(false)}
-                      >
-                        <Settings className="h-4 w-4 text-gray-500" />
-                        <span className="text-sm font-medium">Configurações</span>
-                      </Link>
-                      
-                      <button
-                        onClick={handleLogout}
-                        className="flex items-center space-x-3 px-4 py-3 hover:bg-gray-50 transition-colors w-full text-left"
-                      >
-                        <LogOut className="h-4 w-4 text-gray-500" />
-                        <span className="text-sm font-medium">Sair</span>
-                      </button>
-                    </div>
+                    </>
                   )}
                 </div>
               </>
             ) : (
-              // Usuário Não Logado
-              <div className="flex items-center space-x-2 sm:space-x-3">
+              // Usuário Não Logado — botão Entrar visível em mobile como ícone
+              <div className="flex items-center space-x-1.5 sm:space-x-3">
                 <Link to="/login">
+                  <Button variant="ghost" size="icon" className="sm:hidden h-10 w-10" aria-label="Entrar">
+                    <User className="h-5 w-5 text-slate-600" />
+                  </Button>
                   <Button variant="outline" className="hidden sm:flex">
                     Entrar
                   </Button>
@@ -226,7 +282,7 @@ const AppHeader: React.FC<AppHeaderProps> = ({ onToggleSidebar, sidebarOpen }) =
             <Button
               variant="ghost"
               size="icon"
-              className="lg:hidden"
+              className="lg:hidden h-10 w-10"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               aria-label={isMenuOpen ? 'Fechar menu' : 'Abrir menu'}
             >
@@ -236,93 +292,100 @@ const AppHeader: React.FC<AppHeaderProps> = ({ onToggleSidebar, sidebarOpen }) =
         </div>
       </div>
 
-      {/* Mobile Navigation */}
+      {/* Mobile Navigation com overlay */}
       {isMenuOpen && (
-        <div className="lg:hidden border-t border-slate-200 bg-white shadow-lg">
-          <div className={`max-h-[calc(100vh-4rem)] overflow-y-auto px-3 py-4 sm:px-4 ${isDashboardRoute && user ? (sidebarOpen ? 'lg:pl-72' : 'lg:pl-20') : ''}`}>
-            <nav className="space-y-2">
-              <Link
-                to="/"
-                className={`flex items-center space-x-3 px-4 py-3 rounded-xl font-semibold transition-all ${
-                  isActive('/') 
-                    ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white' 
-                    : 'text-slate-700 hover:bg-slate-100'
-                }`}
-                onClick={() => setIsMenuOpen(false)}
-              >
-                <span>Início</span>
-              </Link>
-              
-              <Link
-                to="/buscar"
-                className={`flex items-center space-x-3 px-4 py-3 rounded-xl font-semibold transition-all ${
-                  isActive('/buscar')
-                    ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white'
-                    : 'text-slate-700 hover:bg-slate-100'
-                }`}
-                onClick={() => setIsMenuOpen(false)}
-              >
-                <Search className="h-5 w-5" />
-                <span>Buscar</span>
-              </Link>
+        <>
+          {/* Overlay escuro */}
+          <div 
+            className="lg:hidden fixed inset-0 top-16 bg-black/50 z-40"
+            onClick={() => setIsMenuOpen(false)}
+          />
+          {/* Menu */}
+          <div className="lg:hidden fixed inset-x-0 top-16 border-t border-slate-200 bg-white shadow-lg z-50">
+            <div className="max-h-[calc(100dvh-4rem)] overflow-y-auto px-3 py-4 sm:px-4">
+              <nav className="space-y-1">
+                <Link
+                  to="/"
+                  className={`flex items-center space-x-3 px-4 py-3.5 rounded-xl font-semibold transition-all min-h-[48px] ${
+                    isActive('/') 
+                      ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white' 
+                      : 'text-slate-700 hover:bg-slate-100'
+                  }`}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <span>Início</span>
+                </Link>
+                
+                <Link
+                  to="/buscar"
+                  className={`flex items-center space-x-3 px-4 py-3.5 rounded-xl font-semibold transition-all min-h-[48px] ${
+                    isActive('/buscar')
+                      ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white'
+                      : 'text-slate-700 hover:bg-slate-100'
+                  }`}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <Search className="h-5 w-5" />
+                  <span>Buscar</span>
+                </Link>
 
+                <Link
+                  to="/noticias"
+                  className={`flex items-center space-x-3 px-4 py-3.5 rounded-xl font-semibold transition-all min-h-[48px] ${
+                    isActive('/noticias')
+                      ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white'
+                      : 'text-slate-700 hover:bg-slate-100'
+                  }`}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <TrendingUp className="h-5 w-5" />
+                  <span>Notícias</span>
+                </Link>
 
-              <Link
-                to="/noticias"
-                className={`flex items-center space-x-3 px-4 py-3 rounded-xl font-semibold transition-all ${
-                  isActive('/noticias')
-                    ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white'
-                    : 'text-slate-700 hover:bg-slate-100'
-                }`}
-                onClick={() => setIsMenuOpen(false)}
-              >
-                <TrendingUp className="h-5 w-5" />
-                <span>Notícias</span>
-              </Link>
+                <Link
+                  to="/eventos"
+                  className={`flex items-center space-x-3 px-4 py-3.5 rounded-xl font-semibold transition-all min-h-[48px] ${
+                    isActive('/eventos')
+                      ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white'
+                      : 'text-slate-700 hover:bg-slate-100'
+                  }`}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <Calendar className="h-5 w-5" />
+                  <span>Eventos</span>
+                </Link>
 
-              <Link
-                to="/eventos"
-                className={`flex items-center space-x-3 px-4 py-3 rounded-xl font-semibold transition-all ${
-                  isActive('/eventos')
-                    ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white'
-                    : 'text-slate-700 hover:bg-slate-100'
-                }`}
-                onClick={() => setIsMenuOpen(false)}
-              >
-                <Calendar className="h-5 w-5" />
-                <span>Eventos</span>
-              </Link>
+                <Link
+                  to="/ajuda"
+                  className={`flex items-center space-x-3 px-4 py-3.5 rounded-xl font-semibold transition-all min-h-[48px] ${
+                    isActive('/ajuda')
+                      ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white'
+                      : 'text-slate-700 hover:bg-slate-100'
+                  }`}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <HelpCircle className="h-5 w-5" />
+                  <span>Ajuda</span>
+                </Link>
 
-              <Link
-                to="/ajuda"
-                className={`flex items-center space-x-3 px-4 py-3 rounded-xl font-semibold transition-all ${
-                  isActive('/ajuda')
-                    ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white'
-                    : 'text-slate-700 hover:bg-slate-100'
-                }`}
-                onClick={() => setIsMenuOpen(false)}
-              >
-                <HelpCircle className="h-5 w-5" />
-                <span>Ajuda</span>
-              </Link>
-
-              {!user && (
-                <div className="pt-4 border-t border-slate-200">
-                  <Link to="/login" onClick={() => setIsMenuOpen(false)}>
-                    <Button variant="outline" className="w-full mb-2">
-                      Entrar
-                    </Button>
-                  </Link>
-                  <Link to="/register" onClick={() => setIsMenuOpen(false)}>
-                    <Button className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800">
-                      Cadastrar
-                    </Button>
-                  </Link>
-                </div>
-              )}
-            </nav>
+                {!user && (
+                  <div className="pt-4 border-t border-slate-200 space-y-2">
+                    <Link to="/login" onClick={() => setIsMenuOpen(false)}>
+                      <Button variant="outline" className="w-full h-12">
+                        Entrar
+                      </Button>
+                    </Link>
+                    <Link to="/register" onClick={() => setIsMenuOpen(false)}>
+                      <Button className="w-full h-12 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800">
+                        Cadastrar
+                      </Button>
+                    </Link>
+                  </div>
+                )}
+              </nav>
+            </div>
           </div>
-        </div>
+        </>
       )}
     </header>
   );

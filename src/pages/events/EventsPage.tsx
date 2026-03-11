@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Calendar, Filter, Search, Plus } from 'lucide-react';
+import { Calendar, Filter, Search, Plus, ChevronDown, ChevronUp } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -139,42 +139,55 @@ const EventsPage = () => {
   // Estados únicos dos eventos
   const states = [...new Set(events.map(e => e.state).filter(Boolean))];
 
+  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-      <div className="container mx-auto px-4 py-12">
-        {/* Header */}
-        <div className="text-center mb-12">
-          <div className="flex items-center justify-between max-w-6xl mx-auto mb-6">
-            <div className="flex-1"></div>
+      <div className="container mx-auto px-4 py-6 sm:py-12">
+        {/* Header — responsivo */}
+        <div className="text-center mb-8 sm:mb-12">
+          <div className="flex flex-col sm:flex-row items-center justify-between max-w-6xl mx-auto mb-4 sm:mb-6 gap-4">
+            <div className="hidden sm:block flex-1"></div>
             <div className="flex-1 flex justify-center">
-              <h1 className="text-4xl font-bold text-gray-900">Eventos</h1>
+              <h1 className="text-2xl sm:text-4xl font-bold text-gray-900">Eventos</h1>
             </div>
-            <div className="flex-1 flex justify-end">
+            <div className="flex-1 flex justify-center sm:justify-end">
               <Button 
                 onClick={handleCreateEvent}
-                className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg"
-                size="lg"
+                className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg h-11"
               >
                 <Plus className="h-5 w-5 mr-2" />
                 Criar Evento
               </Button>
             </div>
           </div>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+          <p className="text-sm sm:text-lg text-gray-600 max-w-2xl mx-auto">
             Descubra competições, leilões, cursos e eventos do mundo equestre
           </p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* Filters */}
+          {/* Filters — colapsável em mobile */}
           <div className="lg:col-span-1">
-            <Card className="p-6">
-              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                <Filter className="h-5 w-5 text-blue-600" />
-                Filtros
-              </h3>
+            <Card className="overflow-hidden">
+              <button
+                onClick={() => setIsFiltersOpen(!isFiltersOpen)}
+                className="w-full p-4 sm:p-6 flex items-center justify-between lg:cursor-default"
+              >
+                <h3 className="text-lg font-semibold flex items-center gap-2">
+                  <Filter className="h-5 w-5 text-blue-600" />
+                  Filtros
+                </h3>
+                <div className="lg:hidden">
+                  {isFiltersOpen ? (
+                    <ChevronUp className="h-5 w-5 text-slate-600" />
+                  ) : (
+                    <ChevronDown className="h-5 w-5 text-slate-600" />
+                  )}
+                </div>
+              </button>
               
-              <div className="space-y-4">
+              <div className={`space-y-4 px-4 pb-4 sm:px-6 sm:pb-6 ${isFiltersOpen ? 'block' : 'hidden'} lg:block`}>
                 <div>
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -182,14 +195,14 @@ const EventsPage = () => {
                       placeholder="Buscar eventos..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10"
+                      className="pl-10 h-11"
                     />
                   </div>
                 </div>
 
                 <div>
                   <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                    <SelectTrigger>
+                    <SelectTrigger className="h-11">
                       <SelectValue placeholder="Tipo de Evento" />
                     </SelectTrigger>
                     <SelectContent>
@@ -205,7 +218,7 @@ const EventsPage = () => {
 
                 <div>
                   <Select value={stateFilter} onValueChange={setStateFilter}>
-                    <SelectTrigger>
+                    <SelectTrigger className="h-11">
                       <SelectValue placeholder="Estado" />
                     </SelectTrigger>
                     <SelectContent>
