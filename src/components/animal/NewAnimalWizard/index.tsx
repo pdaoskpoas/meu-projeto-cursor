@@ -1,6 +1,6 @@
 // src/components/animal/NewAnimalWizard/index.tsx
 
-import React, { lazy, Suspense, useState, useEffect } from 'react';
+import React, { lazy, Suspense, useCallback, useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -52,15 +52,16 @@ const WizardContent: React.FC<{
 }> = ({ onClose, isOpen, onSuccess, actingUserId, actingProfile, isAdminMode, adminUserId }) => {
   const { state, dispatch } = useWizard();
   const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const handleAutoSaved = useCallback(() => {
+    dispatch({ type: 'MARK_SAVED' });
+  }, [dispatch]);
 
   // Auto-save com debounce de 500ms
   // ✅ DESABILITAR durante submissão para evitar loop infinito
   useAutoSave(
     state.formData, 
-    () => {
-      dispatch({ type: 'MARK_SAVED' });
-    },
-    state.isSubmitting // Desabilita auto-save quando está submetendo
+    handleAutoSaved,
+    state.isSubmitting || !isOpen // Desabilita auto-save quando está submetendo ou fechado
   );
 
   // ✅ Reset completo quando modal fecha
@@ -205,6 +206,10 @@ export const NewAnimalWizard: React.FC<NewAnimalWizardProps> = ({
 }) => {
   const { user } = useAuth();
   const effectiveUserId = actingUserId || user?.id;
+
+  if (!isOpen) {
+    return null;
+  }
 
   // ✅ PRE-FETCH: Carregar plano em background quando modal abrir
   useEffect(() => {
