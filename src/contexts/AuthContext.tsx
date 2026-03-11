@@ -3,6 +3,8 @@ import React, { createContext, useCallback, useContext, useState, useEffect } fr
 import { authService } from '@/services/authService';
 import type { Profile } from '@/types/supabase';
 import { formatNameUppercase } from '@/utils/nameFormat';
+import { diagnostics } from '@/lib/diagnostics';
+import { withTimeout } from '@/services/resilientRequestService';
 
 interface User {
   id: string;
@@ -100,34 +102,55 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     const init = async () => {
+      diagnostics.info('auth-context', 'Auth bootstrap started');
       setIsLoading(true);
       try {
-        // Recupera sessão atual
-        try {
-          const current = await authService.getCurrentUser();
-          if (cancelled) return;
-          if (current?.profile) {
-            setUser(mapProfileToUser(current.profile));
-          } else {
-            setUser(null);
-          }
-        } catch (error) {
-          console.warn('[AuthContext] Falha temporária ao reidratar usuário. Mantendo estado atual.', error);
-        }
-
-        if (cancelled) return;
-
-        // Listener de mudanças de sessão
+        // 1. Registra listener PRIMEIRO — recebe INITIAL_SESSION imediatamente
+        //    e fica ativo como fonte de verdade para o estado de autenticação.
         unsub = await authService.onAuthStateChange(async (authUser) => {
+          if (cancelled) return;
+          diagnostics.info('auth-context', 'Auth listener callback fired', {
+            hasUser: Boolean(authUser?.id)
+          });
           if (authUser?.profile) {
             setUser(mapProfileToUser(authUser.profile));
           } else {
             setUser(null);
           }
         });
+
+        if (cancelled) return;
+
+        // 2. Fast-path: tenta reidratar user com timeout para render imediato.
+        //    Se falhar ou expirar, o listener acima cuida da recuperação.
+        try {
+          const current = await withTimeout(
+            authService.getCurrentUser(),
+            15_000,
+            'Auth bootstrap demorou demais.'
+          );
+          if (cancelled) return;
+
+          if (current?.profile) {
+            diagnostics.debug('auth-context', 'Initial user rehydrated', { userId: current.id });
+            setUser(mapProfileToUser(current.profile));
+          } else {
+            diagnostics.debug('auth-context', 'No user in initial rehydration');
+            setUser(null);
+          }
+        } catch (error) {
+          diagnostics.warn(
+            'auth-context',
+            'Initial rehydration failed/timed out — listener handles recovery',
+            error
+          );
+          // NÃO setar user = null aqui: o listener já está ativo e fornecerá
+          // o estado definitivo de autenticação quando a rede recuperar.
+        }
       } finally {
         if (!cancelled) {
           setIsLoading(false);
+          diagnostics.info('auth-context', 'Auth bootstrap finished');
         }
       }
     };
@@ -207,7 +230,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const refreshUser = useCallback(async (): Promise<User | null> => {
     try {
       setIsLoading(true);
-      const refreshed = await authService.getCurrentUser();
+      const refreshed = await withTimeout(
+        authService.getCurrentUser(),
+        15_000,
+        'Refresh de usuário demorou demais.'
+      );
       if (refreshed?.profile) {
         const mappedUser = mapProfileToUser(refreshed.profile);
         setUser(mappedUser);
@@ -216,6 +243,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return null;
     } catch (error) {
       console.warn('[AuthContext] Falha temporária ao atualizar usuário. Mantendo estado atual.', error);
+      // Preserva user atual em vez de forçar null — evita logout fantasma por timeout.
       return user;
     } finally {
       setIsLoading(false);

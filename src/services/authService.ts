@@ -2,6 +2,7 @@ import { handleSupabaseError, logSupabaseOperation } from '@/lib/supabase-helper
 import type { Profile, ProfileInsert } from '@/types/supabase'
 import { normalizeNameForStorage } from '@/utils/nameFormat'
 import { supabase } from '@/lib/supabase'
+import { diagnostics } from '@/lib/diagnostics'
 
 const getSupabaseClient = async () => supabase
 
@@ -198,10 +199,12 @@ class AuthService {
   // Obter usuário atual
   async getCurrentUser(): Promise<AuthUser | null> {
     try {
+      diagnostics.debug('auth-service', 'getCurrentUser started');
       const supabase = await getSupabaseClient()
       const { data: { user } } = await supabase.auth.getUser()
       
       if (!user) {
+        diagnostics.debug('auth-service', 'getCurrentUser resolved without user');
         return null
       }
 
@@ -212,6 +215,7 @@ class AuthService {
         throw new ProfileFetchError('Perfil indisponível temporariamente')
       }
 
+      diagnostics.debug('auth-service', 'getCurrentUser resolved with profile', { userId: user.id });
       return {
         id: user.id,
         email: user.email!,
@@ -342,10 +346,24 @@ class AuthService {
     const supabase = await getSupabaseClient()
     return supabase.auth.onAuthStateChange(async (event, session) => {
       logSupabaseOperation('Auth state change', { event })
+      diagnostics.info('auth-service', 'onAuthStateChange event', {
+        event,
+        hasSession: Boolean(session),
+        expiresAt: session?.expires_at ?? null
+      });
       
       if (session?.user) {
         try {
-          const profile = await this.getProfile(session.user.id)
+          // Timeout de 10s no getProfile para nunca deixar o callback pendente.
+          const profile = await Promise.race([
+            this.getProfile(session.user.id),
+            new Promise<never>((_, reject) =>
+              window.setTimeout(
+                () => reject(new Error('getProfile timeout no auth listener (10s)')),
+                10_000
+              )
+            )
+          ])
           if (profile) {
             callback({
               id: session.user.id,
@@ -357,7 +375,8 @@ class AuthService {
 
           console.warn('[AuthService] Sessão ativa sem perfil carregado. Mantendo usuário atual até nova tentativa.')
         } catch (error) {
-          console.warn('[AuthService] Falha temporária ao carregar perfil após evento de auth. Mantendo usuário atual.', error)
+          console.warn('[AuthService] Falha/timeout ao carregar perfil após evento de auth. Mantendo usuário atual.', error)
+          // NÃO chama callback(null) aqui — preserva o estado do usuário no AuthContext.
         }
       } else {
         callback(null)

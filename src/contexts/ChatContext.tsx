@@ -5,6 +5,7 @@ import { useAuth } from './AuthContext';
 import { messageService, MessageSendStatus } from '@/services/messageService';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
+import { runResilientRequest, isStaleRequestError } from '@/services/resilientRequestService';
 
 interface ChatContextType {
   conversations: ChatConversation[];
@@ -59,7 +60,14 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     try {
       setLoading(true);
-      const convs = await messageService.getConversations(user.id);
+      const convs = await runResilientRequest(
+        () => messageService.getConversations(user.id),
+        {
+          timeoutMs: 20_000,
+          errorMessage: 'Falha ao carregar conversas.',
+          requestKey: `chat-conversations:${user.id}`
+        }
+      );
       
       // Converter formato do service para formato do chat
       const formattedConvs: ChatConversation[] = convs.map(c => ({
@@ -93,7 +101,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const total = filtered.reduce((sum, c) => sum + (c.unreadCount || 0), 0);
       setUnreadCount(total);
     } catch (error) {
-      if (requestId !== conversationsRequestIdRef.current) return;
+      if (isStaleRequestError(error) || requestId !== conversationsRequestIdRef.current) return;
       console.error('Erro ao carregar conversas:', error);
       toast.error('Erro ao carregar conversas');
     } finally {
