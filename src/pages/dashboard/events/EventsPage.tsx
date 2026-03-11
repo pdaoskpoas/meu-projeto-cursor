@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Calendar, Plus, Search, Filter, Eye, MousePointerClick, Edit, Trash2, Zap, RefreshCw, Clock, MapPin, Sparkles } from 'lucide-react';
+import { Calendar, Plus, Search, Filter, Eye, MousePointerClick, Edit, Trash2, Zap, RefreshCw, Clock, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -96,17 +96,17 @@ const EventsPage = () => {
   const handleCreateClick = async () => {
     if (!user) return;
     
-    // Verificar permissões ANTES de abrir o modal
     try {
       const limitCheck = await eventLimitsService.checkEventLimit(user.id);
       
       if (limitCheck.can_create) {
-        // Pode criar - abre o modal
         setShowCreateModal(true);
       } else {
-        // Não pode criar - CreateEventModal já vai mostrar o EventLimitModal
-        // Mas abrimos o modal de qualquer forma para ele lidar com o bloqueio
-        setShowCreateModal(true);
+        toast({
+          title: 'Publicação indisponível',
+          description: limitCheck.message,
+          variant: 'destructive',
+        });
       }
     } catch (error) {
       console.error('Erro ao verificar limites:', error);
@@ -279,7 +279,7 @@ const EventsPage = () => {
                 <span className="text-gray-600">Turbinar Disponíveis</span>
               </div>
               <p className="text-gray-600 text-sm">
-                Tenha seu evento ou animal em destaque por 24h! Os boosts são compartilhados entre eventos e animais.
+                Tenha seu evento ou animal em destaque por 24h! Os créditos são compartilhados entre eventos e animais.
               </p>
             </div>
             <Button
@@ -371,7 +371,7 @@ const EventsPage = () => {
                 }
               </p>
               <Button
-                onClick={() => setShowCreateModal(true)}
+                onClick={handleCreateClick}
                 className="bg-blue-600 hover:bg-blue-700"
               >
                 <Plus className="h-4 w-4 mr-2" />
@@ -454,33 +454,6 @@ const EventsPage = () => {
                     </div>
                   )}
 
-                  {/* Destaque Automático nas Primeiras 24h */}
-                  {event.published_at && (() => {
-                    const publishedDate = new Date(event.published_at);
-                    const twentyFourHoursLater = new Date(publishedDate.getTime() + 24 * 60 * 60 * 1000);
-                    const now = new Date();
-                    const isInFirst24Hours = now < twentyFourHoursLater && !event.is_boosted;
-                    
-                    if (isInFirst24Hours) {
-                      return (
-                        <div className="mb-4 bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-md p-3">
-                          <div className="flex items-center gap-2 mb-1">
-                            <Sparkles className="h-4 w-4 text-yellow-600" />
-                            <span className="text-xs font-semibold text-yellow-700 uppercase tracking-wide">
-                              Em Destaque na Home
-                            </span>
-                          </div>
-                          <BoostCountdown
-                            endTime={twentyFourHoursLater.toISOString()}
-                            onExpire={() => loadEvents()}
-                            customText="Tempo restante no destaque automático"
-                          />
-                        </div>
-                      );
-                    }
-                    return null;
-                  })()}
-
                   {/* Boost Countdown */}
                   {event.is_boosted && event.boost_expires_at && new Date(event.boost_expires_at) > new Date() && (
                     <div className="mb-4">
@@ -522,7 +495,7 @@ const EventsPage = () => {
                         } text-white`}
                         title={
                           boosts.total === 0 
-                            ? 'Comprar boosts' 
+                            ? 'Comprar créditos' 
                             : event.is_boosted 
                               ? 'Adicionar mais 24h de destaque' 
                               : 'Turbinar evento por 24h'

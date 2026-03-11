@@ -6,23 +6,9 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { ArrowLeft, ArrowRight, Info, Trophy, Plus, X } from 'lucide-react';
 import { useWizard } from '../WizardContext';
 import type { ExtrasData, AnimalAward } from '@/types/animal';
-
-// Estados brasileiros
-const BRAZILIAN_STATES = [
-  'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA',
-  'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN',
-  'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'
-];
 
 export const StepExtras: React.FC = () => {
   const { state, dispatch } = useWizard();
@@ -30,15 +16,7 @@ export const StepExtras: React.FC = () => {
 
   const [description, setDescription] = useState(extras.description || '');
   const [awards, setAwards] = useState<AnimalAward[]>(extras.awards || []);
-  
-  // Estado para novo prêmio sendo adicionado
-  const [newAward, setNewAward] = useState<Partial<AnimalAward>>({
-    event_name: '',
-    event_date: '',
-    city: '',
-    state: '',
-    award: ''
-  });
+  const [newTitle, setNewTitle] = useState('');
 
   // Validar: step sempre válido (todos os campos são opcionais)
   useEffect(() => {
@@ -71,29 +49,22 @@ export const StepExtras: React.FC = () => {
   };
 
   const addAward = () => {
-    // Validar campos obrigatórios
-    if (!newAward.event_name?.trim() || !newAward.award?.trim()) {
+    const title = newTitle.trim();
+    if (!title) {
       return;
     }
 
     const award: AnimalAward = {
-      event_name: newAward.event_name.trim(),
-      event_date: newAward.event_date?.trim() || '',
-      city: newAward.city?.trim() || '',
-      state: newAward.state || '',
-      award: newAward.award.trim()
-    };
-
-    setAwards(prev => [...prev, award]);
-    
-    // Limpar formulário
-    setNewAward({
-      event_name: '',
+      // Mantemos as duas colunas iguais para compatibilidade com o schema atual
+      event_name: title,
       event_date: '',
       city: '',
       state: '',
-      award: ''
-    });
+      award: title
+    };
+
+    setAwards(prev => [...prev, award]);
+    setNewTitle('');
   };
 
   const removeAward = (index: number) => {
@@ -156,7 +127,7 @@ export const StepExtras: React.FC = () => {
                 Premiações do Animal
               </h3>
               <p className="text-sm text-amber-800 mt-1">
-                Adicione os prêmios e títulos conquistados pelo animal em eventos e competições.
+                Adicione cada título em uma linha. Use "Adicionar novo título" para incluir outro.
               </p>
             </div>
           </div>
@@ -175,117 +146,42 @@ export const StepExtras: React.FC = () => {
                     <X className="h-4 w-4 text-red-600" />
                   </Button>
                   <div className="pr-8">
-                    <p className="font-semibold text-sm text-gray-900">{award.event_name}</p>
-                    <p className="text-xs text-gray-600 mt-1">
-                      <strong>Premiação:</strong> {award.award}
+                    <p className="font-semibold text-sm text-gray-900">
+                      {award.event_name || award.award}
                     </p>
-                    {award.event_date && (
-                      <p className="text-xs text-gray-600">
-                        <strong>Período:</strong> {award.event_date}
-                      </p>
-                    )}
-                    {award.city && award.state && (
-                      <p className="text-xs text-gray-600">
-                        <strong>Local:</strong> {award.city}/{award.state}
-                      </p>
-                    )}
                   </div>
                 </Card>
               ))}
             </div>
           )}
 
-          {/* Formulário para adicionar novo prêmio */}
+          {/* Formulário para adicionar novo título */}
           <div className="space-y-3 pt-3 border-t border-amber-300">
             <Label className="text-amber-900 font-semibold">
-              Adicionar Nova Premiação
+              Adicionar Novo Título
             </Label>
 
-            {/* Nome do Evento */}
             <div className="space-y-2">
-              <Label htmlFor="award_event_name">
-                Nome do Evento <span className="text-red-600">*</span>
+              <Label htmlFor="award_title">
+                Título <span className="text-red-600">*</span>
               </Label>
               <Input
-                id="award_event_name"
-                placeholder="Ex: 3ª COPA DE MARCHA HARAS TOURINHO 10/22"
-                value={newAward.event_name || ''}
-                onChange={(e) => setNewAward({...newAward, event_name: e.target.value})}
+                id="award_title"
+                placeholder="Ex: Campeã das Campeãs Brasileira de Marcha Picada em 2025"
+                value={newTitle}
+                onChange={(e) => setNewTitle(e.target.value)}
               />
             </div>
 
-            {/* Período */}
-            <div className="space-y-2">
-              <Label htmlFor="award_event_date">
-                Período <span className="text-gray-400">(Opcional)</span>
-              </Label>
-              <Input
-                id="award_event_date"
-                placeholder="Ex: 10/2022 ou Outubro de 2022"
-                value={newAward.event_date || ''}
-                onChange={(e) => setNewAward({...newAward, event_date: e.target.value})}
-              />
-            </div>
-
-            {/* Cidade e UF */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="award_city">
-                  Cidade <span className="text-gray-400">(Opcional)</span>
-                </Label>
-                <Input
-                  id="award_city"
-                  placeholder="Ex: IRARÁ"
-                  value={newAward.city || ''}
-                  onChange={(e) => setNewAward({...newAward, city: e.target.value.toUpperCase()})}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="award_state">
-                  UF <span className="text-gray-400">(Opcional)</span>
-                </Label>
-                <Select
-                  value={newAward.state || ''}
-                  onValueChange={(value) => setNewAward({...newAward, state: value})}
-                >
-                  <SelectTrigger id="award_state">
-                    <SelectValue placeholder="UF" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {BRAZILIAN_STATES.map((state) => (
-                      <SelectItem key={state} value={state}>
-                        {state}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {/* Premiação Recebida */}
-            <div className="space-y-2">
-              <Label htmlFor="award_award">
-                Premiação Recebida <span className="text-red-600">*</span>
-              </Label>
-              <Input
-                id="award_award"
-                placeholder="Ex: 5º PRÊMIO ÉGUA SÊNIOR MARCHA"
-                value={newAward.award || ''}
-                onChange={(e) => setNewAward({...newAward, award: e.target.value})}
-              />
-            </div>
-
-            {/* Botão Adicionar */}
             <Button
               type="button"
               variant="outline"
               className="w-full border-amber-400 text-amber-900 hover:bg-amber-100"
               onClick={addAward}
-              disabled={!newAward.event_name?.trim() || !newAward.award?.trim()}
+              disabled={!newTitle.trim()}
             >
               <Plus className="mr-2 h-4 w-4" />
-              Adicionar Premiação
+              Adicionar Novo Título
             </Button>
           </div>
         </div>

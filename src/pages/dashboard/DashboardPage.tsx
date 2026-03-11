@@ -76,13 +76,13 @@ const DashboardPage = () => {
         toast({ title: 'Nenhum animal encontrado', description: 'Cadastre um animal primeiro.', variant: 'destructive' });
       } else {
         await animalService.boostAnimal(candidate.id as string, user.id, 24);
-        toast({ title: 'Impulsionado com sucesso', description: `Animal ${candidate.name} impulsionado por 24h.` });
+        toast({ title: 'Turbinado com sucesso', description: `Animal ${candidate.name} turbinado por 24h.` });
         // Recarregar stats após boost
         setTimeout(() => refreshStats(), 1000);
       }
     } catch (e: unknown) {
-      const message = e instanceof Error ? e.message : 'Verifique seu saldo de boosts.';
-      toast({ title: 'Falha ao impulsionar', description: message, variant: 'destructive' });
+      const message = e instanceof Error ? e.message : 'Verifique seu saldo de créditos.';
+      toast({ title: 'Falha ao turbinar', description: message, variant: 'destructive' });
     } finally {
       setIsBoosting(false);
     }
@@ -295,13 +295,13 @@ const DashboardPage = () => {
                   </div>
                   <div>
                     <h3 className="text-xl font-bold text-gray-900 group-hover:text-purple-600 transition-colors mb-2">
-                      Boosts Disponíveis
+                      Turbinar Disponíveis
                     </h3>
                     <p className="text-4xl font-extrabold text-purple-600 mb-1">
                       {statsLoading ? '...' : availableBoosts}
                     </p>
                     <p className="text-sm text-gray-600">
-                      {availableBoosts === 1 ? 'boost disponível' : 'boosts disponíveis'}
+                      {availableBoosts === 1 ? 'crédito disponível' : 'créditos disponíveis'}
                     </p>
                   </div>
                 </div>
@@ -384,8 +384,8 @@ const DashboardPage = () => {
                     <Zap className="h-6 w-6 text-white animate-pulse" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold text-gray-900">Boosts e Créditos</h3>
-                    <p className="text-sm text-gray-600">Impulsione seus anúncios e ganhe mais visibilidade</p>
+                    <h3 className="text-xl font-bold text-gray-900">Turbinar e Créditos</h3>
+                    <p className="text-sm text-gray-600">Turbine seus anúncios e ganhe mais visibilidade</p>
                   </div>
                 </div>
                 

@@ -44,6 +44,59 @@ interface QuotaRpcResult {
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutos
 let planCache: PlanCache | null = null;
 
+function getCachedPlanForUser(userId: string): PlanQuota | null {
+  if (planCache?.userId === userId) {
+    return planCache.data;
+  }
+
+  try {
+    const cached = sessionStorage.getItem('planQuotaCache');
+    if (!cached) return null;
+
+    const parsed: PlanCache = JSON.parse(cached);
+    return parsed.userId === userId ? parsed.data : null;
+  } catch {
+    return null;
+  }
+}
+
+function mapPlanErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    const raw = error.message || '';
+    const lower = raw.toLowerCase();
+
+    if (lower.includes('timeout')) {
+      return 'Tempo limite ao verificar o plano. Tente novamente em instantes.';
+    }
+
+    if (lower.includes('jwt') || lower.includes('token') || lower.includes('not authorized')) {
+      return 'Sua sessão expirou. Faça login novamente para continuar.';
+    }
+
+    if (lower.includes("reading 'rest'") || lower.includes('failed to fetch') || lower.includes('network')) {
+      return 'Não foi possível conectar ao servidor para verificar o plano.';
+    }
+  }
+
+  return 'Não foi possível verificar seu plano agora. Tente novamente.';
+}
+
+function isTransientPlanError(error: unknown): boolean {
+  if (!(error instanceof Error)) return false;
+  const message = error.message.toLowerCase();
+  return (
+    message.includes('timeout') ||
+    message.includes('failed to fetch') ||
+    message.includes('network') ||
+    message.includes("reading 'rest'") ||
+    message.includes('fetch')
+  );
+}
+
+function sleep(ms: number) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 /**
  * Limpar cache (usado em logout, mudança de plano, etc)
  */
@@ -87,20 +140,44 @@ export async function getUserPlanQuota(
   };
 
   const fetchQuota = async () => {
-    const rpc = supabase.rpc as unknown as (
+    const rpcCall = supabase.rpc.bind(supabase) as unknown as (
       fn: string,
       params: Record<string, unknown>
     ) => Promise<QuotaRpcResult>;
 
-    const rpcPromise = rpc('check_user_publish_quota', {
+    const rpcPromise = rpcCall('check_user_publish_quota', {
       p_user_id: userId
     });
     
     const timeoutPromise = new Promise<never>((_, reject) => 
-      setTimeout(() => reject(new Error('Timeout ao verificar plano (10s)')), 10000)
+      setTimeout(() => reject(new Error('Timeout ao verificar plano (15s)')), 15000)
     );
     
     return Promise.race([rpcPromise, timeoutPromise]);
+  };
+
+  const fetchQuotaWithRetry = async (maxRetries = 1) => {
+    let attempt = 0;
+    while (true) {
+      try {
+        const result = await fetchQuota();
+        if (result.error && isTransientPlanError(result.error) && attempt < maxRetries) {
+          attempt += 1;
+          log(`[PlanService] Erro transitório ao verificar plano. Retry ${attempt}/${maxRetries}...`);
+          await sleep(500 * attempt);
+          continue;
+        }
+        return result;
+      } catch (error) {
+        if (isTransientPlanError(error) && attempt < maxRetries) {
+          attempt += 1;
+          log(`[PlanService] Exceção transitória ao verificar plano. Retry ${attempt}/${maxRetries}...`);
+          await sleep(500 * attempt);
+          continue;
+        }
+        throw error;
+      }
+    }
   };
 
   // 1. Verificar cache em memória
@@ -137,14 +214,14 @@ export async function getUserPlanQuota(
   try {
     await ensureActiveSession({ timeoutMs: 5000 });
 
-    let result = await fetchQuota();
+    let result = await fetchQuotaWithRetry(1);
     let { data, error } = result;
 
     if (error && isAuthError(error)) {
       log('[PlanService] Sessão expirada, tentando renovar...');
       await refreshActiveSession(5000);
       
-      result = await fetchQuota();
+      result = await fetchQuotaWithRetry(1);
       ({ data, error } = result);
     }
 
@@ -184,14 +261,17 @@ export async function getUserPlanQuota(
 
   } catch (error: unknown) {
     captureError(error, { context: 'getUserPlanQuota', userId });
-    const message = error instanceof Error ? error.message : 'Erro ao verificar plano';
+
+    const fallbackQuota = getCachedPlanForUser(userId);
+    if (fallbackQuota) {
+      log('[PlanService] Falha na verificação do plano. Usando cache como fallback.');
+      return fallbackQuota;
+    }
+
     if (isAuthError(error)) {
       throw new Error('Sua sessão expirou. Faça login novamente para continuar.');
     }
-    if (message.includes('Timeout')) {
-      throw new Error('Tempo limite ao verificar o plano. Tente novamente em instantes.');
-    }
-    throw new Error(`Não foi possível verificar seu plano agora. ${message}`);
+    throw new Error(mapPlanErrorMessage(error));
   }
 }
 

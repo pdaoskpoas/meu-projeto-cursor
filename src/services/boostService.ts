@@ -42,8 +42,8 @@ class BoostService {
         purchased_boost_credits: profile.purchased_boost_credits || 0,
         can_boost,
         message: can_boost 
-          ? `Você tem ${total_boosts} boost(s) disponível(is)`
-          : 'Você não tem boosts disponíveis. Compre mais ou aguarde a renovação mensal do seu plano.',
+          ? `Você tem ${total_boosts} crédito(s) disponível(is)`
+          : 'Você não tem créditos disponíveis. Compre mais ou aguarde a renovação mensal do seu plano.',
       };
     } catch (error: unknown) {
       console.error('Erro ao obter informações de boost:', error);
@@ -52,7 +52,7 @@ class BoostService {
         plan_boost_credits: 0,
         purchased_boost_credits: 0,
         can_boost: false,
-        message: 'Erro ao verificar boosts disponíveis.',
+        message: 'Erro ao verificar créditos disponíveis.',
       };
     }
   }

@@ -499,11 +499,19 @@ class AnimalService {
     animalData: AnimalInsert,
     titlesData: Array<Record<string, unknown>>
   ): Promise<{ animal: Animal; titlesSaved: boolean }> {
+    const TX_TIMEOUT_MS = 20000;
     try {
-      const { data, error } = await supabase.rpc('create_animal_tx', {
+      const rpcPromise = supabase.rpc('create_animal_tx', {
         animal_payload: animalData,
         titles_payload: titlesData
       });
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => {
+          reject(new Error('TX_TIMEOUT_ERROR'));
+        }, TX_TIMEOUT_MS);
+      });
+      const resultWithTimeout = await Promise.race([rpcPromise, timeoutPromise]);
+      const { data, error } = resultWithTimeout as { data: unknown; error: Error | null };
 
       if (error) {
         throw handleSupabaseError(error);
@@ -519,6 +527,9 @@ class AnimalService {
         titlesSaved: titlesData.length > 0
       };
     } catch (error) {
+      if (error instanceof Error && error.message === 'TX_TIMEOUT_ERROR') {
+        throw new Error('Tempo limite ao criar anúncio no servidor. Tente novamente.');
+      }
       logSupabaseOperation('Create animal tx error', null, error);
       throw error;
     }
@@ -526,6 +537,7 @@ class AnimalService {
 
   // Atualizar animal
   async updateAnimal(id: string, updates: Partial<AnimalInsert>): Promise<Animal> {
+    const UPDATE_TIMEOUT_MS = 15000;
     try {
       logSupabaseOperation('Update animal', { id })
 
@@ -534,12 +546,19 @@ class AnimalService {
         normalizedUpdates.name = normalizeNameForStorage(updates.name) ?? updates.name;
       }
 
-      const { data, error } = await supabase
+      const updatePromise = supabase
         .from('animals')
         .update(normalizedUpdates)
         .eq('id', id)
         .select()
-        .single()
+        .single();
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => {
+          reject(new Error('UPDATE_TIMEOUT_ERROR'));
+        }, UPDATE_TIMEOUT_MS);
+      });
+      const resultWithTimeout = await Promise.race([updatePromise, timeoutPromise]);
+      const { data, error } = resultWithTimeout as { data: Animal | null; error: Error | null };
 
       if (error) {
         throw handleSupabaseError(error)
@@ -549,6 +568,9 @@ class AnimalService {
       return data as Animal
 
     } catch (error) {
+      if (error instanceof Error && error.message === 'UPDATE_TIMEOUT_ERROR') {
+        throw new Error('Tempo limite ao atualizar o anúncio. Tente novamente.');
+      }
       logSupabaseOperation('Update animal error', null, error)
       throw error
     }
@@ -696,7 +718,7 @@ class AnimalService {
       const planCredits = profile.plan_boost_credits ?? 0
       const purchasedCredits = profile.purchased_boost_credits ?? 0
       if (planCredits <= 0 && purchasedCredits <= 0) {
-        throw new Error('Sem créditos de impulsionar disponíveis')
+        throw new Error('Sem créditos de turbinar disponíveis')
       }
       const usePlanBoost = planCredits > 0
 

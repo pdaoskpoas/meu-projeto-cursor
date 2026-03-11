@@ -104,17 +104,13 @@ const AuctionCarousel = () => {
     try {
       setIsLoading(true);
       
-      // Buscar eventos que estão:
-      // 1. Turbinados (is_boosted = true e boost_expires_at > now) OU
-      // 2. Publicados há menos de 24h
-      const twentyFourHoursAgo = new Date();
-      twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
-      
+      // Buscar apenas eventos turbinados ativos na home
       const { data, error } = await supabase
         .from('events')
         .select('id, title, event_type, start_date, city, state, cover_image_url, organizer_property, is_boosted, boost_expires_at, published_at')
         .eq('ad_status', 'active')
-        .or(`and(is_boosted.eq.true,boost_expires_at.gt.${new Date().toISOString()}),published_at.gt.${twentyFourHoursAgo.toISOString()}`)
+        .eq('is_boosted', true)
+        .gt('boost_expires_at', new Date().toISOString())
         .order('published_at', { ascending: false })
         .limit(10);
 

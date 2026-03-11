@@ -19,7 +19,7 @@ export const eventService = {
 
       // Verificar se tem créditos disponíveis
       if (planCredits <= 0 && purchasedCredits <= 0) {
-        throw new Error('Sem créditos de impulsionar disponíveis');
+        throw new Error('Sem créditos de turbinar disponíveis');
       }
 
       const usePlanBoost = planCredits > 0;

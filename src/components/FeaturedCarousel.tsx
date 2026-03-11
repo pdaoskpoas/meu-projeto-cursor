@@ -42,7 +42,7 @@ const FeaturedCarousel = () => {
       setFeaturedAnimals((boosted || []).map(mapAnimalRecordToCard));
     } catch (err) {
       console.error('Error fetching featured animals:', err);
-      setError('Não conseguimos carregar os impulsionados agora. Tente novamente em instantes.');
+      setError('Não conseguimos carregar os turbinados agora. Tente novamente em instantes.');
       setFeaturedAnimals([]);
     } finally {
       setIsLoading(false);
@@ -121,9 +121,9 @@ const FeaturedCarousel = () => {
             </p>
           )}
           {isLoading && validHorses.length === 0 ? (
-            <p className="text-sm text-slate-500">Carregando impulsionados...</p>
+            <p className="text-sm text-slate-500">Carregando turbinados...</p>
           ) : validHorses.length === 0 ? (
-            <p className="text-sm text-slate-500">Nenhum animal impulsionado no momento.</p>
+            <p className="text-sm text-slate-500">Nenhum animal turbinado no momento.</p>
           ) : (
             <Carousel
             opts={{

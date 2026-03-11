@@ -67,7 +67,7 @@ export const useUserBoosts = () => {
           .single(),
         {
           timeoutMs: 45000,
-          errorMessage: 'O carregamento dos boosts demorou demais.',
+          errorMessage: 'O carregamento dos créditos demorou demais.',
           requestKey: `user-boosts:${user.id}`
         }
       );
@@ -95,8 +95,8 @@ export const useUserBoosts = () => {
       setHasLoadedOnce(true);
     } catch (error) {
       if (isStaleRequestError(error) || requestId !== requestIdRef.current) return;
-      console.error('Erro ao buscar boosts:', error);
-      const message = error instanceof Error ? error.message : 'Erro ao carregar boosts';
+      console.error('Erro ao buscar créditos:', error);
+      const message = error instanceof Error ? error.message : 'Erro ao carregar créditos';
       const isTimeout = message.toLowerCase().includes('demorou demais') || message.toLowerCase().includes('timeout');
 
       if (!hasLoadedOnce) {

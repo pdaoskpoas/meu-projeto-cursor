@@ -50,7 +50,7 @@ const BoostCounter: React.FC<BoostCounterProps> = ({
                 </TooltipTrigger>
                 <TooltipContent>
                   <p className="text-sm">
-                    Use para impulsionar seus animais ou eventos por 24 horas
+                    Use para turbinar seus animais ou eventos por 24 horas
                   </p>
                 </TooltipContent>
               </Tooltip>

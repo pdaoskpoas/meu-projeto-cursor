@@ -21,6 +21,7 @@ import BoostCountdown from '@/components/BoostCountdown';
 import { useUserBoosts } from '@/hooks/useUserBoosts';
 import { NewAnimalWizard } from '@/components/animal/NewAnimalWizard';
 import { runResilientRequest } from '@/services/resilientRequestService';
+import { getDetailedAge } from '@/utils/animalAge';
 import mangalargaImg from '@/assets/mangalarga.jpg';
 import thoroughbredImg from '@/assets/thoroughbred.jpg';
 import quarterHorseImg from '@/assets/quarter-horse.jpg';
@@ -123,31 +124,6 @@ const AnimalsPage = () => {
       case 'quarter-horse': return quarterHorseImg;
       default: return mangalargaImg;
     }
-  };
-
-  const getAge = (birthDate: string) => {
-    const birth = new Date(birthDate);
-    const today = new Date();
-    let age = today.getFullYear() - birth.getFullYear();
-    const monthDiff = today.getMonth() - birth.getMonth();
-    
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
-      age--;
-    }
-    
-    // Para animais com menos de 1 ano, mostrar em meses
-    if (age === 0) {
-      let months = monthDiff;
-      if (today.getDate() < birth.getDate()) {
-        months--;
-      }
-      if (months < 0) {
-        months += 12;
-      }
-      return `${months} ${months === 1 ? 'mês' : 'meses'}`;
-    }
-    
-    return age;
   };
 
   const handleReactivateAnimal = async (animalId: string) => {
@@ -309,7 +285,7 @@ const AnimalsPage = () => {
       }
     } catch (error: unknown) {
       toast({ 
-        title: 'Erro ao impulsionar', 
+        title: 'Erro ao turbinar', 
         description: error?.message || 'Tente novamente',
         variant: 'destructive' 
       });
@@ -486,7 +462,7 @@ const AnimalsPage = () => {
                     <div className="absolute top-2 right-2">
                       <Badge className="bg-yellow-500">
                         <Zap className="h-3 w-3 mr-1" />
-                        Impulsionado
+                        Turbinado
                       </Badge>
                     </div>
                   )}
@@ -507,7 +483,7 @@ const AnimalsPage = () => {
                     <div>
                       <h3 className="font-semibold text-lg">{animal.name}</h3>
                       <p className="text-sm text-slate-600">
-                        {animal.breed} • {animal.gender} • {getAge(animal.birth_date)}
+                        {animal.breed} • {animal.gender} • {getDetailedAge(animal.birth_date)}
                       </p>
                     </div>
                   </div>
@@ -616,7 +592,7 @@ const AnimalsPage = () => {
                           }}
                           title={
                             boosts.total === 0 
-                              ? 'Comprar boosts' 
+                              ? 'Comprar créditos' 
                               : animal.is_boosted 
                                 ? 'Adicionar mais 24h de destaque' 
                                 : 'Turbinar anúncio por 24h'

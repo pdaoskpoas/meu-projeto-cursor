@@ -244,7 +244,7 @@ class PaymentService {
         userId: params.userId,
         value: value,
         dueDate: dueDate.toISOString().split('T')[0],
-        description: `Compra de ${params.quantity} Boost(s)`,
+        description: `Compra de ${params.quantity} crédito(s)`,
         billingType: params.billingType,
         externalReference: `boost-${params.quantity}-${params.userId}`
       });
@@ -264,7 +264,7 @@ class PaymentService {
         pixQrCode: response.encodedImage,
         pixCopyPaste: response.payload,
         bankSlipUrl: response.bankSlipUrl,
-        message: `Pagamento criado para ${params.quantity} boost(s)!`
+        message: `Pagamento criado para ${params.quantity} crédito(s)!`
       };
     } catch (error) {
       console.error('❌ Erro ao processar compra de boosts:', error);

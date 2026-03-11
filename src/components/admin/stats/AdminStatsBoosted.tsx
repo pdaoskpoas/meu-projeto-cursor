@@ -88,7 +88,7 @@ const AdminStatsBoosted: React.FC = () => {
           setUserMap(mapping);
         }
       } catch (err: unknown) {
-        setError(err instanceof Error ? err.message : 'Erro ao carregar impulsionamentos.');
+        setError(err instanceof Error ? err.message : 'Erro ao carregar turbinados.');
       } finally {
         setLoading(false);
       }
@@ -102,7 +102,7 @@ const AdminStatsBoosted: React.FC = () => {
   if (error) {
     return (
       <Card className="p-6 bg-red-50 border-red-200">
-        <h3 className="text-lg font-semibold text-red-900 mb-2">Erro ao carregar impulsionados</h3>
+        <h3 className="text-lg font-semibold text-red-900 mb-2">Erro ao carregar turbinados</h3>
         <p className="text-red-700">{error}</p>
       </Card>
     );
@@ -112,7 +112,7 @@ const AdminStatsBoosted: React.FC = () => {
     return (
       <div className="flex items-center justify-center py-12">
         <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-        <span className="ml-3 text-gray-600">Carregando impulsionamentos...</span>
+        <span className="ml-3 text-gray-600">Carregando turbinados...</span>
       </div>
     );
   }
@@ -122,7 +122,7 @@ const AdminStatsBoosted: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-muted-foreground">Anúncios impulsionados ativos</CardTitle>
+            <CardTitle className="text-sm text-muted-foreground">Anúncios turbinados ativos</CardTitle>
           </CardHeader>
           <CardContent className="text-2xl font-semibold">{activeBoostedCount}</CardContent>
         </Card>
@@ -136,7 +136,7 @@ const AdminStatsBoosted: React.FC = () => {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Histórico recente de impulsionamentos</CardTitle>
+          <CardTitle className="text-base">Histórico recente de turbinados</CardTitle>
         </CardHeader>
         <CardContent>
           {recentBoosts.length === 0 ? (

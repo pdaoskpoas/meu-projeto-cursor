@@ -21,18 +21,7 @@ import PedigreeChart from '@/components/PedigreeChart';
 import mangalargaImg from '@/assets/mangalarga.jpg';
 import thoroughbredImg from '@/assets/thoroughbred.jpg';
 import quarterHorseImg from '@/assets/quarter-horse.jpg';
-
-const getAge = (birthDate: string) => {
-  const birth = new Date(birthDate);
-  if (Number.isNaN(birth.getTime())) return 'N/A';
-  const now = new Date();
-  let age = now.getFullYear() - birth.getFullYear();
-  const monthDiff = now.getMonth() - birth.getMonth();
-  if (monthDiff < 0 || (monthDiff === 0 && now.getDate() < birth.getDate())) {
-    age -= 1;
-  }
-  return `${Math.max(age, 0)} anos`;
-};
+import { getAge } from '@/utils/animalAge';
 
 const AnimalPage = () => {
   const { id } = useParams();

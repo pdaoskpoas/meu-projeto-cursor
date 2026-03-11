@@ -288,7 +288,7 @@ export function AdminPlans() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="available_boosts">Boosts Grátis</Label>
+                  <Label htmlFor="available_boosts">Créditos Grátis</Label>
                   <Input
                     id="available_boosts"
                     type="number"

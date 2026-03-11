@@ -11,6 +11,7 @@ import mangalargaImg from '@/assets/mangalarga.jpg';
 import thoroughbredImg from '@/assets/thoroughbred.jpg';
 import quarterHorseImg from '@/assets/quarter-horse.jpg';
 import { formatNameUppercase } from '@/utils/nameFormat';
+import { getAge } from '@/utils/animalAge';
 
 interface Animal {
   id: string;
@@ -40,18 +41,6 @@ interface AnimalRankingCardProps {
   index: number;
   isBoosted: boolean;
 }
-
-const getAge = (birthDate: string) => {
-  const birth = new Date(birthDate);
-  if (Number.isNaN(birth.getTime())) return 'N/A';
-  const now = new Date();
-  let age = now.getFullYear() - birth.getFullYear();
-  const monthDiff = now.getMonth() - birth.getMonth();
-  if (monthDiff < 0 || (monthDiff === 0 && now.getDate() < birth.getDate())) {
-    age -= 1;
-  }
-  return `${Math.max(age, 0)} anos`;
-};
 
 const AnimalRankingCard: React.FC<AnimalRankingCardProps> = ({ animal, index, isBoosted }) => {
   const navigate = useNavigate();
@@ -160,7 +149,7 @@ const AnimalRankingCard: React.FC<AnimalRankingCardProps> = ({ animal, index, is
           <div className="absolute top-3 right-3 z-10">
             <Badge className="bg-yellow-500 text-white flex items-center gap-1 px-2 py-1">
               <Zap className="h-3 w-3" />
-              <span className="hidden sm:inline">Impulsionado</span>
+              <span className="hidden sm:inline">Turbinado</span>
             </Badge>
           </div>
         )}

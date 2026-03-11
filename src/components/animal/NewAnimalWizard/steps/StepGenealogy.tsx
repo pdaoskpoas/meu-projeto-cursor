@@ -17,6 +17,9 @@ export const StepGenealogy: React.FC = () => {
   const [localData, setLocalData] = useState(genealogy);
   const [expandGrandparents, setExpandGrandparents] = useState(false);
   const [expandGreatGrandparents, setExpandGreatGrandparents] = useState(false);
+  const isFatherValid = !!localData.father_name?.trim();
+  const isMotherValid = !!localData.mother_name?.trim();
+  const isStepValid = isFatherValid && isMotherValid;
 
   // Debounced update para o reducer
   const debouncedUpdate = useDebouncedUpdate(
@@ -41,13 +44,13 @@ export const StepGenealogy: React.FC = () => {
     debouncedUpdate(field, finalValue);
   };
 
-  // Validar: step opcional, sempre válido
+  // Validar: pai e mãe obrigatórios
   useEffect(() => {
     dispatch({
       type: 'SET_VALIDATION',
-      payload: { step: 4, isValid: true }
+      payload: { step: 4, isValid: isStepValid }
     });
-  }, [dispatch]);
+  }, [dispatch, isStepValid]);
 
   const handleNext = () => {
     dispatch({ type: 'NEXT_STEP' });
@@ -66,7 +69,7 @@ export const StepGenealogy: React.FC = () => {
             Genealogia
           </h2>
           <p className="text-sm text-gray-600 mt-1">
-            Informações sobre a linhagem do animal (opcional)
+            Informe os nomes do pai e da mãe. Os demais campos continuam opcionais.
           </p>
         </div>
 
@@ -94,26 +97,34 @@ export const StepGenealogy: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="father_name">
-                Nome do Pai <span className="text-gray-400">(Opcional)</span>
+                Nome do Pai <span className="text-red-600">*</span>
               </Label>
               <Input
                 id="father_name"
                 placeholder="Ex: Trovão da Serra"
                 value={localData.father_name || ''}
                 onChange={(e) => updateField('father_name', e.target.value)}
+                aria-invalid={!isFatherValid}
               />
+              {!isFatherValid && (
+                <p className="text-xs text-red-600">O nome do pai é obrigatório.</p>
+              )}
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="mother_name">
-                Nome da Mãe <span className="text-gray-400">(Opcional)</span>
+                Nome da Mãe <span className="text-red-600">*</span>
               </Label>
               <Input
                 id="mother_name"
                 placeholder="Ex: Estrela da Manhã"
                 value={localData.mother_name || ''}
                 onChange={(e) => updateField('mother_name', e.target.value)}
+                aria-invalid={!isMotherValid}
               />
+              {!isMotherValid && (
+                <p className="text-xs text-red-600">O nome da mãe é obrigatório.</p>
+              )}
             </div>
           </div>
         </div>
@@ -362,7 +373,7 @@ export const StepGenealogy: React.FC = () => {
             <ArrowLeft className="mr-2 h-4 w-4" />
             Voltar
           </Button>
-          <Button onClick={handleNext}>
+          <Button onClick={handleNext} disabled={!isStepValid}>
             Próximo
             <ArrowRight className="ml-2 h-4 w-4" />
           </Button>

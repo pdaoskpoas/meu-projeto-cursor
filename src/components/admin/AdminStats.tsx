@@ -24,7 +24,7 @@ const AdminStats: React.FC = () => {
     { id: 'visits', label: 'Visitas', icon: Activity },
     { id: 'ads', label: 'Anúncios', icon: FileText },
     { id: 'news', label: 'Notícias', icon: Globe },
-    { id: 'boosted', label: 'Impulsionados', icon: Zap },
+    { id: 'boosted', label: 'Turbinados', icon: Zap },
   ];
 
   const renderContent = () => {

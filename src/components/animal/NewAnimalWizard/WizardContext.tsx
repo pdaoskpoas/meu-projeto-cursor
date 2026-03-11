@@ -57,7 +57,7 @@ const initialFormData: AnimalFormData = {
   },
   publishConfig: {
     allow_messages: true,
-    auto_renew: false
+    auto_renew: true
   },
   partnerships: []
 };

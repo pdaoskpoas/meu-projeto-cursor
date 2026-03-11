@@ -24,32 +24,20 @@ export interface EventLimitCheck {
 
 class EventLimitsService {
   /**
-   * Verifica se o usuário pode criar um novo evento
+   * Verifica se o usuário pode criar um novo evento usando regra local:
+   * - Plano Iniciante: 2 eventos/mês
+   * - Plano Pro: 5 eventos/mês
+   * - Plano Elite: 10 eventos/mês
+   * - Plano Free: bloqueado
    */
   async checkEventLimit(userId: string): Promise<EventLimitCheck> {
-    try {
-      const { data, error } = await supabase
-        .rpc('can_create_event', { user_id: userId });
-
-      if (error) {
-        console.error('Erro ao verificar limite de eventos:', error);
-        // Fallback se a função não existir ainda
-        return this.checkEventLimitFallback(userId);
-      }
-
-      return data as EventLimitCheck;
-    } catch (error) {
-      console.error('Erro inesperado ao verificar limite:', error);
-      return this.checkEventLimitFallback(userId);
-    }
+    return this.checkEventLimitFallback(userId);
   }
 
   /**
-   * Fallback: verifica limite manualmente se a função RPC não existir
-   * IMPORTANTE: Considera limite de 1 evento ativo + cotas mensais
+   * Verifica limite mensal diretamente no banco (sem depender de RPC).
    */
   private async checkEventLimitFallback(userId: string): Promise<EventLimitCheck> {
-    // Buscar perfil do usuário
     const { data: profile } = await supabase
       .from('profiles')
       .select('plan, plan_expires_at, event_publications_used_this_month, event_publications_reset_at')
@@ -62,76 +50,50 @@ class EventLimitsService {
         reason: 'user_not_found',
         message: 'Usuário não encontrado',
         current_count: 0,
-        event_limit: 1,
+        event_limit: 0,
       };
     }
 
-    // Verificar se o plano está ativo
-    const plan_active = !profile.plan_expires_at || new Date(profile.plan_expires_at) > new Date();
-
-    // Contar eventos ativos
-    const { count } = await supabase
-      .from('events')
-      .select('*', { count: 'exact', head: true })
-      .eq('organizer_id', userId)
-      .eq('ad_status', 'active')
-      .gt('expires_at', new Date().toISOString());
-
-    const current_count = count || 0;
-
-    // REGRA 1: Limite de 1 evento ativo (sempre)
-    if (current_count >= 1) {
-      return {
-        can_create: false,
-        reason: 'active_limit_reached',
-        message: 'Você já tem 1 evento ativo. Para publicar outro, delete o atual ou pague R$ 49,99 pela publicação individual.',
-        current_count,
-        event_limit: 1,
-        can_upgrade: ['free', 'basic', 'pro', 'pro_annual'].includes(profile.plan || 'free'),
-        can_pay_individual: true,
-        individual_price: 49.99,
-      };
-    }
-
-    // Obter cota mensal do plano
+    const now = new Date();
+    const planIsActive = !!profile.plan && profile.plan !== 'free' && (!profile.plan_expires_at || new Date(profile.plan_expires_at) > now);
     const publications_quota = this.getMonthlyQuota(profile.plan);
     const publications_used = profile.event_publications_used_this_month || 0;
     const publications_available = Math.max(0, publications_quota - publications_used);
 
-    // REGRA 2: Usuário free ou sem plano ativo
-    if (!plan_active || profile.plan === 'free') {
+    // Plano free (ou plano expirado) precisa assinar.
+    if (!planIsActive) {
       return {
         can_create: false,
         reason: 'no_active_plan',
-        message: 'Você precisa de um plano ativo ou pagar R$ 49,99 para publicar este evento.',
-        current_count,
-        event_limit: 1,
-        publications_used: 0,
+        message: 'Seu plano Free não inclui publicação de eventos. Assine um plano Iniciante, Pro ou Elite para divulgar eventos.',
+        current_count: publications_used,
+        event_limit: publications_quota,
+        publications_used,
         publications_quota: 0,
-        requires_individual_payment: true,
-        can_pay_individual: true,
-        individual_price: 49.99,
+        publications_available: 0,
+        requires_individual_payment: false,
+        can_pay_individual: false,
         can_upgrade: true,
       };
     }
 
-    // REGRA 3: Planos sem cota mensal (Basic, VIP)
-    if (['basic', 'basic_annual', 'vip'].includes(profile.plan || '')) {
+    // Qualquer plano fora das faixas de evento fica bloqueado para publicação.
+    if (publications_quota <= 0) {
       return {
         can_create: false,
         reason: 'no_monthly_quota',
-        message: 'Seu plano não inclui publicações de eventos. Faça upgrade para Pro/Elite ou pague R$ 49,99 pela publicação individual.',
-        current_count,
-        event_limit: 1,
-        publications_used: 0,
-        publications_quota: 0,
+        message: 'Seu plano atual não inclui publicação de eventos. Faça upgrade para Iniciante, Pro ou Elite.',
+        current_count: publications_used,
+        event_limit: publications_quota,
+        publications_used,
+        publications_quota,
+        publications_available,
         can_upgrade: true,
-        can_pay_individual: true,
-        individual_price: 49.99,
+        can_pay_individual: false,
       };
     }
 
-    // REGRA 4: Cota mensal esgotada
+    // Cota mensal esgotada.
     if (publications_used >= publications_quota) {
       const resetDate = profile.event_publications_reset_at 
         ? new Date(profile.event_publications_reset_at).toLocaleDateString('pt-BR')
@@ -140,25 +102,25 @@ class EventLimitsService {
       return {
         can_create: false,
         reason: 'monthly_quota_exhausted',
-        message: `Você já usou ${publications_used} de ${publications_quota} publicação(ões) do mês. Próximo reset: ${resetDate}. Para publicar agora, faça upgrade ou pague R$ 49,99.`,
-        current_count,
-        event_limit: 1,
+        message: `Você já usou ${publications_used} de ${publications_quota} eventos do mês. Próximo reset: ${resetDate}.`,
+        current_count: publications_used,
+        event_limit: publications_quota,
         publications_used,
         publications_quota,
+        publications_available: 0,
         reset_at: profile.event_publications_reset_at,
-        can_upgrade: ['pro', 'pro_annual'].includes(profile.plan || ''),
-        can_pay_individual: true,
-        individual_price: 49.99,
+        can_upgrade: true,
+        can_pay_individual: false,
       };
     }
 
-    // PODE PUBLICAR
+    // Pode publicar.
     return {
       can_create: true,
       reason: 'within_quota',
-      message: `Você pode publicar este evento. Restam ${publications_available} publicação(ões) este mês.`,
-      current_count,
-      event_limit: 1,
+      message: `Você pode publicar este evento. Restam ${publications_available} publicação(ões) neste mês.`,
+      current_count: publications_used,
+      event_limit: publications_quota,
       publications_used,
       publications_quota,
       publications_available,
@@ -174,22 +136,16 @@ class EventLimitsService {
     
     const normalized = normalizePlanId(plan);
     switch (normalized) {
+      case 'basic':
+        return 2; // Iniciante: 2 eventos/mês
       case 'pro':
-        return 1; // Pro: 1 publicação/mês
+        return 5; // Pro: 5 eventos/mês
       case 'ultra':
-        return 2; // Elite: 2 publicações/mês
+      case 'vip':
+        return 10; // Elite e VIP: 10 eventos/mês
       default:
         return 0; // Outros planos: sem cota
     }
-  }
-
-  /**
-   * Retorna o limite de eventos por tipo de plano
-   * NOTA: Todos os planos permitem apenas 1 evento ativo por vez
-   */
-  private getEventLimitByPlan(plan: string | null | undefined): number {
-    // Todos os planos têm limite de 1 evento ativo
-    return 1;
   }
   
   /**

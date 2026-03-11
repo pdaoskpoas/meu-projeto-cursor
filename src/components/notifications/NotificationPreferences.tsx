@@ -207,8 +207,8 @@ export const NotificationPreferences: React.FC = () => {
 
           <div className="flex items-center justify-between">
             <div>
-              <Label htmlFor="boost">Alertas de boost expirando</Label>
-              <p className="text-xs text-gray-500">Quando seu boost estiver próximo de expirar</p>
+              <Label htmlFor="boost">Alertas de turbinar expirando</Label>
+              <p className="text-xs text-gray-500">Quando seu turbinar estiver próximo de expirar</p>
             </div>
             <Switch
               id="boost"

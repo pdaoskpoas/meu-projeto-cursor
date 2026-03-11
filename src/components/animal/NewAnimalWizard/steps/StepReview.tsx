@@ -17,6 +17,7 @@ import {
   MapPin,
   Image as ImageIcon,
   Users,
+  UserRound,
   Settings,
   CreditCard,
   TrendingUp,
@@ -69,6 +70,7 @@ export const StepReview: React.FC<StepReviewProps> = ({
   const [showPaywallModal, setShowPaywallModal] = useState(false);
   const [showIndividualPaymentModal, setShowIndividualPaymentModal] = useState(false);
   const [individualPaymentInfo, setIndividualPaymentInfo] = useState<{ id: string; name: string } | null>(null);
+  const publishLockRef = React.useRef(false);
   
   // ✅ Referência para controlar se o componente está montado
   const isMountedRef = React.useRef(true);
@@ -216,42 +218,7 @@ export const StepReview: React.FC<StepReviewProps> = ({
 
     try {
       console.log('🚀 Iniciando publicação...');
-      
-      // ✅ CRÍTICO: Verificar saúde da conexão ANTES de iniciar
-      console.log('🔌 Verificando saúde da conexão com Supabase...');
-      try {
-        const healthCheckStart = Date.now();
-      const healthResponse = await fetch(
-          `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/`,
-          {
-            method: 'HEAD',
-            headers: {
-              'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY
-            }
-          }
-        );
-        const healthTime = Date.now() - healthCheckStart;
-        console.log(`✅ Conexão OK (${healthTime}ms)`);
-        
-        if (healthTime > 3000) {
-          console.warn('⚠️ Conexão LENTA detectada! Isso pode causar problemas.');
-          toast({
-            title: '⚠️ Conexão lenta detectada',
-            description: 'Sua conexão está lenta. A publicação pode demorar mais.',
-            variant: 'default'
-          });
-        }
-      } catch (healthError) {
-        console.error('❌ Conexão com Supabase falhou!', healthError);
-        toast({
-          title: '❌ Sem conexão',
-          description: 'Não foi possível conectar ao servidor. Verifique sua internet e recarregue a página (Ctrl+F5).',
-          variant: 'destructive'
-        });
-        safeDispatch({ type: 'SET_SUBMITTING', payload: false });
-        return;
-      }
-      
+
       console.log(`⏱️ [DEBUG] Iniciando timer de timeout global (${TOTAL_OPERATION_TIMEOUT_MS}ms)...`);
       
       // ✅ Timeout global alinhado com o máximo esperado da operação completa
@@ -787,36 +754,56 @@ export const StepReview: React.FC<StepReviewProps> = ({
   const handlePublishClick = async () => {
     if (!effectiveUserId) return;
 
-    const latestQuota = await refetchPlan({ forceFresh: true });
-    if (!latestQuota) {
-      toast({
-        title: 'Não foi possível validar seu plano',
-        description: 'Tente novamente para continuar com a publicação.',
-        variant: 'destructive'
-      });
+    if (publishLockRef.current) {
+      console.warn('[PublishLock] Publicação já em andamento, ignorando novo clique.');
       return;
     }
 
-    const latestScenario = getScenarioFromQuota(latestQuota);
-    
-    // Se o usuário tem vaga disponível, publicar direto
-    if (latestScenario === 'within_quota') {
-      await handlePublishWithPlan(latestQuota);
-      return;
-    }
+    publishLockRef.current = true;
 
-    // Se é FREE ou sem vagas
-    if (isAdminMode) {
-      toast({
-        title: 'Sem vagas disponíveis',
-        description: 'O plano deste haras não possui vagas disponíveis no momento.',
-        variant: 'destructive'
-      });
-      return;
-    }
+    try {
+      const latestQuota = await refetchPlan({ forceFresh: true });
+      const quotaToUse = latestQuota || quota;
 
-    // Usuário normal: mostrar modal de paywall
-    setShowPaywallModal(true);
+      if (!quotaToUse) {
+        toast({
+          title: 'Não foi possível validar seu plano',
+          description: 'Tente novamente para continuar com a publicação.',
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      if (!latestQuota && quota) {
+        toast({
+          title: 'Conexão instável',
+          description: 'Usando as informações de plano já carregadas para continuar a publicação.',
+        });
+      }
+
+      const latestScenario = getScenarioFromQuota(quotaToUse);
+      
+      // Se o usuário tem vaga disponível, publicar direto
+      if (latestScenario === 'within_quota') {
+        await handlePublishWithPlan(quotaToUse);
+        return;
+      }
+
+      // Se é FREE ou sem vagas
+      if (isAdminMode) {
+        toast({
+          title: 'Sem vagas disponíveis',
+          description: 'O plano deste haras não possui vagas disponíveis no momento.',
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      // Usuário normal: mostrar modal de paywall
+      setShowPaywallModal(true);
+    } finally {
+      publishLockRef.current = false;
+    }
   };
 
   const buildAnimalPayload = (
@@ -945,17 +932,11 @@ export const StepReview: React.FC<StepReviewProps> = ({
   return (
     <Card className="p-6">
       <div className="space-y-6">
-        {/* Cabeçalho Persuasivo */}
+        {/* Cabeçalho */}
         <div className="text-center pb-2 border-b border-gray-200">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-green-400 to-green-600 rounded-full mb-3 shadow-lg">
-            <Sparkles className="h-8 w-8 text-white" />
-          </div>
           <h2 className="text-3xl font-bold text-gray-900 mb-2">
-            🎯 Revise e publique seu anúncio
+            Revise e publique seu anúncio
           </h2>
-          <p className="text-base text-gray-700 max-w-2xl mx-auto">
-            Confira todos os dados antes de publicar. Você está prestes a alcançar <strong>milhares de compradores</strong> interessados!
-          </p>
         </div>
 
         {/* === CONFIGURAÇÕES DE PUBLICAÇÃO === */}
@@ -992,6 +973,14 @@ export const StepReview: React.FC<StepReviewProps> = ({
                 />
               </div>
 
+              {!formData.publishConfig.auto_renew && (
+                <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
+                  <p className="text-sm text-amber-900">
+                    <strong>Atenção:</strong> com a renovação automática desligada, seu anúncio terá duração de apenas 1 mês e será pausado automaticamente após esse período.
+                  </p>
+                </div>
+              )}
+
               {/* Renovação Automática */}
               <div className="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-200">
                 <div className="flex items-start gap-3 flex-1">
@@ -1024,7 +1013,7 @@ export const StepReview: React.FC<StepReviewProps> = ({
           <Card className="p-4">
             <div className="flex items-start justify-between mb-3">
               <div className="flex items-center gap-2">
-                <Sparkles className="h-5 w-5 text-blue-600" />
+                <UserRound className="h-5 w-5 text-blue-600" />
                 <h3 className="font-semibold">Informações Básicas</h3>
               </div>
               <Button
@@ -1217,7 +1206,7 @@ export const StepReview: React.FC<StepReviewProps> = ({
               </div>
             </div>
           </Card>
-        ) : planError ? (
+        ) : planError && !quota ? (
           <Card className="p-6 bg-red-50 border-red-200">
             <div className="flex items-start gap-4">
               <AlertCircle className="h-6 w-6 text-red-600 mt-1" />
@@ -1239,6 +1228,12 @@ export const StepReview: React.FC<StepReviewProps> = ({
                 </Button>
               </div>
             </div>
+          </Card>
+        ) : planError && quota ? (
+          <Card className="p-4 bg-amber-50 border-amber-200">
+            <p className="text-sm text-amber-800">
+              Não foi possível atualizar seu plano agora. Exibindo os dados mais recentes já carregados.
+            </p>
           </Card>
         ) : scenario === 'within_quota' && (
           // ✅ CENÁRIO 1: Plano válido COM vagas disponíveis (apenas informativo)
@@ -1309,7 +1304,7 @@ export const StepReview: React.FC<StepReviewProps> = ({
           <Button 
             onClick={handlePublishClick}
             disabled={isSubmitting || loadingPlan}
-            className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold px-10 py-6 text-lg shadow-lg hover:shadow-xl transition-all"
+            className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-10 py-6 text-lg shadow-lg hover:shadow-xl transition-all"
           >
             {isSubmitting ? (
               <>
@@ -1317,10 +1312,7 @@ export const StepReview: React.FC<StepReviewProps> = ({
                 Publicando...
               </>
             ) : (
-              <>
-                <Sparkles className="mr-2 h-5 w-5" />
-                Publicar Anúncio
-              </>
+              'Publicar Anúncio'
             )}
           </Button>
         </div>

@@ -41,7 +41,7 @@ const QuickStatsBar: React.FC<QuickStatsBarProps> = ({ stats, className = '' }) 
       change: { value: 8, type: 'increase' }
     },
     {
-      label: 'Impulsionamentos',
+      label: 'Turbinar',
       value: `${userStats.availableBoosts} disponíveis`,
       icon: Zap,
       change: userStats.availableBoosts > 0 

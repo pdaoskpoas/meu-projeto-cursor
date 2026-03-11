@@ -1,10 +1,9 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calendar, MapPin, Users, Info } from 'lucide-react';
 import { EventFormData } from '../CreateEventModal';
 import { Badge } from '@/components/ui/badge';
-import { EventPaymentModal } from '../EventPaymentModal';
 
 interface EventReviewStepProps {
   formData: EventFormData;
@@ -17,17 +16,6 @@ const EventReviewStep: React.FC<EventReviewStepProps> = ({
   onPublish, 
   isSubmitting = false 
 }) => {
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
-
-  const handlePublishClick = () => {
-    setShowPaymentModal(true);
-  };
-
-  const handleConfirmPayment = () => {
-    setShowPaymentModal(false);
-    onPublish();
-  };
-
   return (
     <div className="space-y-5">
       {/* Resumo do Evento - Minimalista */}
@@ -78,11 +66,11 @@ const EventReviewStep: React.FC<EventReviewStepProps> = ({
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-blue-600 font-bold">•</span>
-                <span>Aparece <strong>automaticamente na página inicial nas primeiras 24 horas</strong></span>
+                <span>Seu evento aparece na <strong>página de eventos</strong> após publicar</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-blue-600 font-bold">•</span>
-                <span>Após 24h, use "Turbinar" para manter o destaque na home</span>
+                <span>Para aparecer na home por 24h, use o botão <strong>Turbinar</strong></span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-blue-600 font-bold">•</span>
@@ -99,7 +87,7 @@ const EventReviewStep: React.FC<EventReviewStepProps> = ({
 
       {/* Botão de Publicar */}
       <Button 
-        onClick={handlePublishClick}
+        onClick={onPublish}
         disabled={isSubmitting}
         className="w-full h-12 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold text-base rounded-lg shadow-lg shadow-blue-600/30 hover:shadow-xl hover:shadow-blue-600/40"
       >
@@ -112,14 +100,6 @@ const EventReviewStep: React.FC<EventReviewStepProps> = ({
           'Publicar Agora'
         )}
       </Button>
-
-      {/* Modal de Pagamento */}
-      <EventPaymentModal
-        isOpen={showPaymentModal}
-        onClose={() => setShowPaymentModal(false)}
-        onConfirmPayment={handleConfirmPayment}
-        isProcessing={isSubmitting}
-      />
     </div>
   );
 };

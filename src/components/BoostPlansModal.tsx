@@ -21,7 +21,7 @@ const BoostPlansModal: React.FC<BoostPlansModalProps> = ({
   const plans = [
     {
       id: 'single' as const,
-      name: '1 Impulsionar',
+      name: '1 Turbinar',
       price: 'R$ 47,00',
       individualPrice: 'R$ 47,00',
       boosts: 1,
@@ -38,7 +38,7 @@ const BoostPlansModal: React.FC<BoostPlansModalProps> = ({
     },
     {
       id: 'popular' as const,
-      name: '5 Impulsionar',
+      name: '5 Turbinar',
       price: 'R$ 129,25',
       individualPrice: 'R$ 25,85',
       boosts: 5,
@@ -55,7 +55,7 @@ const BoostPlansModal: React.FC<BoostPlansModalProps> = ({
     },
     {
       id: 'prime' as const,
-      name: '10 Impulsionar',
+      name: '10 Turbinar',
       price: 'R$ 202,10',
       individualPrice: 'R$ 20,21',
       boosts: 10,
@@ -81,7 +81,7 @@ const BoostPlansModal: React.FC<BoostPlansModalProps> = ({
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold text-center text-slate-900 mb-2">
-            Planos de Impulsionamento
+            Planos para Turbinar
           </DialogTitle>
           <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-6 mb-6 border border-purple-200">
             <div className="flex items-center justify-center space-x-2 text-slate-700 mb-2">
@@ -178,7 +178,7 @@ const BoostPlansModal: React.FC<BoostPlansModalProps> = ({
                 Flexibilidade Total
               </div>
               <p className="text-sm text-slate-600 leading-relaxed">
-                Os impulsionamentos comprados podem ser utilizados tanto na página <strong>"Meus Equinos"</strong> quanto <strong>"Meus Eventos"</strong> para destacar animais ou eventos.
+                Os créditos comprados podem ser utilizados tanto na página <strong>"Meus Equinos"</strong> quanto <strong>"Meus Eventos"</strong> para destacar animais ou eventos.
               </p>
             </div>
           </div>

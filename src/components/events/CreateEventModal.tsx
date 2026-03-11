@@ -10,9 +10,9 @@ import EventReviewStep from '@/components/events/steps/EventReviewStep';
 import { Calendar, MapPin, FileText, CheckCircle } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
-import PayIndividualModal from '@/components/payment/PayIndividualModal';
 import { logUploadMetric } from '@/utils/perfMetrics';
 import { uploadResumableWithFallback } from '@/utils/resumableUpload';
+import { eventLimitsService } from '@/services/eventLimitsService';
 
 interface CreateEventModalProps {
   isOpen: boolean;
@@ -39,9 +39,6 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ isOpen, onClose, on
   const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
-  const [draftEventId, setDraftEventId] = useState<string | null>(null); // Rastrear rascunho criado
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [paymentEventInfo, setPaymentEventInfo] = useState<{ id: string; title: string } | null>(null);
   const uploadRetryEnabled = import.meta.env.VITE_EVENT_UPLOAD_RETRY === 'true';
   const draftLoadedRef = useRef(false);
 
@@ -156,25 +153,8 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ isOpen, onClose, on
   // Confirmar cancelamento
   const handleConfirmCancel = async () => {
     setShowCancelDialog(false);
-    
-    // Se houver um rascunho criado, deletá-lo
-    if (draftEventId) {
-      try {
-        console.log('🗑️ Deletando rascunho:', draftEventId);
-        await supabase
-          .from('events')
-          .delete()
-          .eq('id', draftEventId)
-          .eq('ad_status', 'draft'); // Apenas rascunhos podem ser deletados
-        
-        console.log('✅ Rascunho deletado com sucesso');
-      } catch (error) {
-        console.error('❌ Erro ao deletar rascunho:', error);
-      }
-    }
-    
+
     resetForm();
-    setDraftEventId(null);
     onClose();
   };
 
@@ -202,7 +182,6 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ isOpen, onClose, on
     draftLoadedRef.current = false;
   };
 
-  // Handler simplificado para publicação (pagamento obrigatório)
   const handlePublish = async () => {
     console.log('🚀 Iniciando publicação de evento...');
     setIsSubmitting(true);
@@ -212,9 +191,22 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ isOpen, onClose, on
         throw new Error('Usuário não autenticado');
       }
 
-      console.log('📝 Criando rascunho do evento...');
+      const limitCheck = await eventLimitsService.checkEventLimit(user.id);
+      if (!limitCheck.can_create) {
+        toast({
+          title: 'Não foi possível publicar',
+          description: limitCheck.message,
+          variant: 'destructive',
+        });
+        return;
+      }
       
-      // 1. Criar evento como rascunho
+      console.log('📝 Criando evento ativo...');
+      
+      const now = new Date();
+      const expiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
+
+      // 1. Criar evento como ativo (sem pagamento individual)
       const eventData = {
         title: formData.title,
         event_type: formData.event_type,
@@ -227,22 +219,23 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ isOpen, onClose, on
         max_participants: formData.max_participants ? parseInt(formData.max_participants) : null,
         registration_deadline: formData.registration_deadline || null,
         organizer_id: user.id,
-        ad_status: 'draft', // Rascunho até pagamento
+        ad_status: 'active',
+        is_individual_paid: false,
+        expires_at: expiresAt,
       };
 
-      const { data: draftEvent, error: draftError } = await supabase
+      const { data: createdEvent, error: createError } = await supabase
         .from('events')
         .insert(eventData)
         .select()
         .single();
 
-      if (draftError) {
-        console.error('❌ Erro ao criar rascunho:', draftError);
-        throw draftError;
+      if (createError) {
+        console.error('❌ Erro ao criar evento:', createError);
+        throw createError;
       }
 
-      console.log('✅ Rascunho criado:', draftEvent.id);
-      setDraftEventId(draftEvent.id);
+      console.log('✅ Evento criado:', createdEvent.id);
 
       // 2. Upload da imagem de capa, se houver
       if (formData.cover_image) {
@@ -253,7 +246,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ isOpen, onClose, on
           const baseDelayMs = 1000;
           
           const fileExt = formData.cover_image.name.split('.').pop();
-          const fileName = `${draftEvent.id}-${Date.now()}.${fileExt}`;
+          const fileName = `${createdEvent.id}-${Date.now()}.${fileExt}`;
           const filePath = `${user.id}/${fileName}`;
 
           // Upload no bucket de eventos
@@ -328,7 +321,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ isOpen, onClose, on
           await supabase
             .from('events')
             .update({ cover_image_url: urlData.publicUrl })
-            .eq('id', draftEvent.id);
+            .eq('id', createdEvent.id);
 
           console.log('✅ URL da imagem atualizada no evento');
         } catch (uploadError) {
@@ -339,8 +332,14 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ isOpen, onClose, on
         console.log('ℹ️ Nenhuma imagem de capa foi fornecida');
       }
 
-      setPaymentEventInfo({ id: draftEvent.id, title: draftEvent.title });
-      setShowPaymentModal(true);
+      toast({
+        title: 'Evento publicado!',
+        description: 'Seu evento já está na página de eventos. Para destacar na home por 24h, use o botão Turbinar.',
+      });
+
+      resetForm();
+      onSuccess();
+      onClose();
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Erro desconhecido';
       console.error('❌ Erro fatal ao publicar evento:', error);
@@ -452,24 +451,6 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ isOpen, onClose, on
           </div>
         </DialogContent>
       </Dialog>
-
-      {paymentEventInfo && (
-        <PayIndividualModal
-          isOpen={showPaymentModal}
-          onClose={() => setShowPaymentModal(false)}
-          userId={user?.id || ''}
-          type="event"
-          contentId={paymentEventInfo.id}
-          contentName={paymentEventInfo.title}
-          onSuccess={() => {
-            setShowPaymentModal(false);
-            setDraftEventId(null);
-            resetForm();
-            onSuccess();
-            onClose();
-          }}
-        />
-      )}
 
       {/* Dialog de confirmação de cancelamento */}
       <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>

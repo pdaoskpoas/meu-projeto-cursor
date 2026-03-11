@@ -158,7 +158,7 @@ const HelpPage = () => {
         },
         {
           question: 'Quais são os planos disponíveis?',
-          answer: 'Oferecemos plano gratuito com funcionalidades básicas e planos premium com recursos avançados como impulsionamento de anúncios, destaque nos resultados de busca, estatísticas detalhadas e suporte prioritário. Cada plano permite um número diferente de animais cadastrados. Consulte a página de planos para ver todas as opções e escolher a ideal para você.'
+          answer: 'Oferecemos plano gratuito com funcionalidades básicas e planos premium com recursos avançados como turbinar anúncios, destaque nos resultados de busca, estatísticas detalhadas e suporte prioritário. Cada plano permite um número diferente de animais cadastrados. Consulte a página de planos para ver todas as opções e escolher a ideal para você.'
         }
       ]
     },
@@ -177,8 +177,8 @@ const HelpPage = () => {
           answer: 'Na lista de "Meus Animais", clique no animal que deseja editar. Você pode atualizar qualquer informação, adicionar ou remover fotos, incluir vídeos e modificar o status (disponível, vendido, reservado). As alterações são salvas automaticamente e ficam visíveis imediatamente no perfil público do animal.'
         },
         {
-          question: 'O que é o sistema de impulsionamento?',
-          answer: 'O impulsionamento destaca seu animal nos resultados de busca e na página inicial, aumentando significativamente a visibilidade. Animais impulsionados aparecem no topo das listagens com um badge especial. Você pode impulsionar por 7, 15 ou 30 dias. Disponível para assinantes premium. Acompanhe as estatísticas de visualizações no painel de controle.'
+          question: 'O que é o sistema de turbinar?',
+          answer: 'Turbinar destaca seu animal nos resultados de busca e na página inicial, aumentando significativamente a visibilidade. Animais turbinados aparecem no topo das listagens com um badge especial. Você pode turbinar por 7, 15 ou 30 dias. Disponível para assinantes premium. Acompanhe as estatísticas de visualizações no painel de controle.'
         },
         {
           question: 'Quantas fotos posso adicionar?',
@@ -218,7 +218,7 @@ const HelpPage = () => {
       faqs: [
         {
           question: 'Quais são os tipos de planos disponíveis?',
-          answer: 'Oferecemos 3 tipos de plano: GRATUITO (até 3 animais, funcionalidades básicas), PREMIUM (até 15 animais, impulsionamento, estatísticas avançadas) e PROFISSIONAL (animais ilimitados, máxima visibilidade, suporte prioritário, API). Todos os planos incluem galeria de fotos, cadastro de haras e perfil público.'
+          answer: 'Oferecemos 3 tipos de plano: GRATUITO (até 3 animais, funcionalidades básicas), PREMIUM (até 15 animais, turbinar, estatísticas avançadas) e PROFISSIONAL (animais ilimitados, máxima visibilidade, suporte prioritário, API). Todos os planos incluem galeria de fotos, cadastro de haras e perfil público.'
         },
         {
           question: 'Como fazer upgrade do meu plano?',
