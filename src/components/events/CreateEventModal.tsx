@@ -8,7 +8,7 @@ import EventDateLocationStep from '@/components/events/steps/EventDateLocationSt
 import EventDetailsStep from '@/components/events/steps/EventDetailsStep';
 import EventReviewStep from '@/components/events/steps/EventReviewStep';
 import { Calendar, MapPin, FileText, CheckCircle } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import PayIndividualModal from '@/components/payment/PayIndividualModal';
 import { logUploadMetric } from '@/utils/perfMetrics';

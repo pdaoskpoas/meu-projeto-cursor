@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/carousel";
 import PhotoGallery from '@/components/PhotoGallery';
 import { getAge } from '@/utils/animalAge';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { AnimalCardData, getPlaceholderGallery, mapAnimalRecordToCard, normalizeSupabaseImages } from '@/utils/animalCard';
 
 // Componente para rastrear impressões via Supabase Analytics

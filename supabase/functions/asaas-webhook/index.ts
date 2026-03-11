@@ -1,6 +1,6 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { applyApprovedPaymentEffects } from '../_shared/asaasPaymentUtils.ts';
+import { applyApprovedPaymentEffects, mapPaymentStatus } from '../_shared/asaasPaymentUtils.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -16,6 +16,11 @@ const buildServiceClient = () => {
 const isApprovedEvent = (eventType?: string) => {
   const normalized = eventType?.toUpperCase() ?? '';
   return ['PAYMENT_CONFIRMED', 'PAYMENT_RECEIVED'].includes(normalized);
+};
+
+const isApprovedPaymentPayload = (eventType?: string, paymentStatus?: string) => {
+  if (isApprovedEvent(eventType)) return true;
+  return mapPaymentStatus(paymentStatus) === 'APPROVED';
 };
 
 
@@ -97,7 +102,7 @@ serve(async (req) => {
       console.log('[webhook] Pagamento encontrado:', {
         type: paymentRow.payment_type,
         localStatus: paymentRow.status,
-        isApproved: isApprovedEvent(eventType),
+        isApproved: isApprovedPaymentPayload(eventType, payment.status),
       });
 
       await serviceClient
@@ -109,7 +114,7 @@ serve(async (req) => {
         })
         .eq('asaas_payment_id', paymentId);
 
-      if (isApprovedEvent(eventType)) {
+      if (isApprovedPaymentPayload(eventType, payment.status)) {
         try {
           console.log('[webhook] Aplicando efeitos para evento aprovado...');
           await applyApprovedPaymentEffects(serviceClient, paymentRow, paymentId);

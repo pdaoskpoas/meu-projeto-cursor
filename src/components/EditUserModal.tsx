@@ -9,7 +9,7 @@ import { CalendarIcon, Crown, User } from 'lucide-react';
 import { AdminUser } from '@/hooks/admin/useAdminUsers';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { logAdminAction } from '@/services/adminAuditService';
 
 interface EditUserModalProps {

@@ -16,7 +16,7 @@ import BoostPlansModal from '@/components/BoostPlansModal';
 import PurchaseBoostsModal from '@/components/payment/PurchaseBoostsModal';
 import { eventLimitsService } from '@/services/eventLimitsService';
 import { boostService } from '@/services/boostService';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { useUserBoosts } from '@/hooks/useUserBoosts';
 
 interface UserEvent {

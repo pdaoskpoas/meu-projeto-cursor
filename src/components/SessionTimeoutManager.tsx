@@ -1,9 +1,8 @@
 import { useSessionTimeout } from '@/hooks/useSessionTimeout';
 
 /**
- * 🔒 Componente de gerenciamento de timeout de sessão
- * Ativa automaticamente quando usuário está logado
- * Logout após 30 minutos de inatividade
+ * Gerencia a saúde da sessão enquanto o usuário navega pelo sistema.
+ * Mantém a autenticação sincronizada durante sessões longas.
  */
 const SessionTimeoutManager = () => {
   useSessionTimeout();

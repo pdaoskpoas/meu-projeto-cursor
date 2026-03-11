@@ -12,7 +12,7 @@ import { useAdminArticles, type AdminArticle } from '@/hooks/admin/useAdminArtic
 import { ArrowLeft, Save, Eye, Upload, X, Loader2, AlertCircle, Calendar, Clock } from 'lucide-react';
 import { sanitizeRichText } from '@/utils/sanitize';
 import RichTextEditor from '@/components/RichTextEditor';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 
 interface ArticleFormProps {
   articleId?: string;

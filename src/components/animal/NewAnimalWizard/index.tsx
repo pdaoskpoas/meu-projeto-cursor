@@ -14,7 +14,7 @@ import { CancelDialog } from './shared/CancelDialog';
 import { useAutoSave } from './hooks/useAutoSave';
 import { useAuth } from '@/contexts/AuthContext';
 import { prefetchUserPlanQuota, clearPlanCache } from '@/services/planService';
-import { supabase } from '@/integrations/supabase/client';
+import { ensureActiveSession } from '@/services/sessionService';
 import { StepBasicInfo } from './steps/StepBasicInfo';
 import { StepLocation } from './steps/StepLocation';
 import { StepPhotosV2 as StepPhotos } from './steps/StepPhotosV2';
@@ -209,23 +209,42 @@ export const NewAnimalWizard: React.FC<NewAnimalWizardProps> = ({
   // ✅ PRE-FETCH: Carregar plano em background quando modal abrir
   useEffect(() => {
     if (isOpen && effectiveUserId) {
-      console.log('📂 [Wizard] Modal aberto - prefetch do plano...');
+      console.log('📂 [Wizard] Modal aberto - preparando sessão e plano...');
       clearPlanCache();
-      prefetchUserPlanQuota(effectiveUserId);
-      
-      // ✅ IMPORTANTE: Manter sessão ativa enquanto o modal está aberto
-      // Renovar token a cada 30 minutos preventivamente
-      const sessionInterval = setInterval(async () => {
-        console.log('🔄 Renovando sessão preventivamente (30 min)...');
-        const { error } = await supabase.auth.refreshSession();
-        if (error) {
-          console.error('Erro ao renovar sessão:', error);
-        } else {
-          console.log('✅ Sessão renovada com sucesso');
+
+      const warmUpWizardSession = async (forceRefresh = false) => {
+        try {
+          await ensureActiveSession({ forceRefresh, timeoutMs: 8000 });
+          await prefetchUserPlanQuota(effectiveUserId, { forceFresh: forceRefresh });
+        } catch (error) {
+          console.error('Erro ao manter sessão do wizard ativa:', error);
         }
-      }, 30 * 60 * 1000); // 30 minutos
-      
-      return () => clearInterval(sessionInterval);
+      };
+
+      void warmUpWizardSession();
+
+      const sessionInterval = window.setInterval(() => {
+        void warmUpWizardSession();
+      }, 5 * 60 * 1000);
+
+      const handleWindowFocus = () => {
+        void warmUpWizardSession();
+      };
+
+      const handleVisibilityChange = () => {
+        if (document.visibilityState === 'visible') {
+          void warmUpWizardSession();
+        }
+      };
+
+      window.addEventListener('focus', handleWindowFocus);
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+
+      return () => {
+        window.clearInterval(sessionInterval);
+        window.removeEventListener('focus', handleWindowFocus);
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+      };
     }
   }, [isOpen, effectiveUserId]);
 

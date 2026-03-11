@@ -2,6 +2,7 @@
 
 import { supabase } from '@/lib/supabase';
 import { log, captureError } from '@/utils/logger';
+import { ensureActiveSession, refreshActiveSession } from '@/services/sessionService';
 
 export interface PlanQuota {
   plan: string;
@@ -16,6 +17,10 @@ interface PlanCache {
   data: PlanQuota;
   timestamp: number;
   userId: string;
+}
+
+interface GetUserPlanQuotaOptions {
+  forceFresh?: boolean;
 }
 
 // Cache global (persiste entre renders)
@@ -46,7 +51,11 @@ export function clearPlanCache() {
  * ✅ Cache em memória + sessionStorage
  * ✅ Retry automático
  */
-export async function getUserPlanQuota(userId: string): Promise<PlanQuota> {
+export async function getUserPlanQuota(
+  userId: string,
+  options: GetUserPlanQuotaOptions = {}
+): Promise<PlanQuota> {
+  const { forceFresh = false } = options;
   const isAuthError = (error: unknown) => {
     const err = error as { status?: number; message?: string };
     const message = err?.message?.toLowerCase() || '';
@@ -73,7 +82,7 @@ export async function getUserPlanQuota(userId: string): Promise<PlanQuota> {
   };
 
   // 1. Verificar cache em memória
-  if (planCache && planCache.userId === userId) {
+  if (!forceFresh && planCache && planCache.userId === userId) {
     const age = Date.now() - planCache.timestamp;
     if (age < CACHE_DURATION) {
       log(`[PlanService] Cache hit (memória) - idade: ${Math.floor(age / 1000)}s`);
@@ -83,7 +92,7 @@ export async function getUserPlanQuota(userId: string): Promise<PlanQuota> {
 
   // 2. Verificar cache em sessionStorage
   try {
-    const cached = sessionStorage.getItem('planQuotaCache');
+    const cached = forceFresh ? null : sessionStorage.getItem('planQuotaCache');
     if (cached) {
       const parsed: PlanCache = JSON.parse(cached);
       if (
@@ -104,15 +113,14 @@ export async function getUserPlanQuota(userId: string): Promise<PlanQuota> {
   log('[PlanService] Cache miss - buscando do Supabase...');
 
   try {
+    await ensureActiveSession({ timeoutMs: 5000 });
+
     let result = await fetchQuota();
     let { data, error } = result as { data: { isValid: boolean; reason: string } | null; error: Error | null };
 
     if (error && isAuthError(error)) {
       log('[PlanService] Sessão expirada, tentando renovar...');
-      const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
-      if (refreshError || !refreshData?.session) {
-        throw new Error('Sua sessão expirou. Faça login novamente para continuar.');
-      }
+      await refreshActiveSession(5000);
       
       result = await fetchQuota();
       ({ data, error } = result as { data: { isValid: boolean; reason: string } | null; error: Error | null });
@@ -168,10 +176,13 @@ export async function getUserPlanQuota(userId: string): Promise<PlanQuota> {
  * Pre-carregar quota do plano (silenciosamente)
  * Usado ao abrir o wizard para ter dados prontos no Step 6
  */
-export async function prefetchUserPlanQuota(userId: string): Promise<void> {
+export async function prefetchUserPlanQuota(
+  userId: string,
+  options: GetUserPlanQuotaOptions = {}
+): Promise<void> {
   try {
     log('[PlanService] Pre-fetch iniciado');
-    await getUserPlanQuota(userId);
+    await getUserPlanQuota(userId, options);
   } catch (error) {
     // Silenciar erro no prefetch (não bloquear UX)
     log('[PlanService] Erro no prefetch (silenciado)');

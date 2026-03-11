@@ -13,7 +13,7 @@ interface UsePlanQuotaResult {
   quota: PlanQuota | null;
   loading: boolean;
   error: string | null;
-  refetch: () => Promise<PlanQuota | null>;
+  refetch: (options?: { forceFresh?: boolean }) => Promise<PlanQuota | null>;
 }
 
 /**
@@ -30,14 +30,16 @@ export function usePlanQuota({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchQuota = useCallback(async (): Promise<PlanQuota | null> => {
+  const fetchQuota = useCallback(async (
+    options?: { forceFresh?: boolean }
+  ): Promise<PlanQuota | null> => {
     if (!userId) return null;
 
     setLoading(true);
     setError(null);
 
     try {
-      const data = await getUserPlanQuota(userId);
+      const data = await getUserPlanQuota(userId, options);
       setQuota(data);
       return data;
     } catch (err: unknown) {

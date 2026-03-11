@@ -5,7 +5,7 @@
  * quando o horário de publicação é atingido.
  */
 
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 
 class NewsSchedulerService {
   private intervalId: NodeJS.Timeout | null = null;

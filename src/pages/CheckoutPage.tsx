@@ -351,14 +351,6 @@ const CheckoutPage = () => {
 
   const handlePixCheck = async () => {
     if (!pixPaymentRef?.paymentId && !pixPaymentRef?.subscriptionId) return;
-    if (pixTimeLeft <= 0) {
-      toast({
-        title: 'Pix expirado',
-        description: 'Gere um novo QR Code para continuar.',
-        variant: 'destructive',
-      });
-      return;
-    }
     setIsCheckingPix(true);
     try {
       console.log('[PIX-CHECK] Verificando pagamento...', pixPaymentRef);

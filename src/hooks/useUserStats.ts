@@ -1,12 +1,39 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { partnershipService } from '@/services/partnershipService';
+import { runResilientRequest } from '@/services/resilientRequestService';
+
+interface UserStatsState {
+  totalAnimals: number;
+  activeAnimals: number;
+  totalViews: number;
+  totalClicks: number;
+  monthlyViews: number;
+  monthlyClicks: number;
+  monthlyClickRate: number;
+  yearlyViews: number;
+  yearlyClicks: number;
+  yearlyClickRate: number;
+  availableBoosts: number;
+  activeBoosts: number;
+  clickRate: number;
+  loading: boolean;
+  error: string | null;
+}
+
+interface UserStatsCacheEntry {
+  data: UserStatsState;
+  timestamp: number;
+}
+
+const userStatsCache = new Map<string, UserStatsCacheEntry>();
+const USER_STATS_CACHE_TTL_MS = 30 * 1000;
 
 export const useUserStats = () => {
   const { user } = useAuth();
   
-  const [stats, setStats] = useState({
+  const [stats, setStats] = useState<UserStatsState>({
     totalAnimals: 0,
     activeAnimals: 0,
     totalViews: 0,
@@ -20,17 +47,26 @@ export const useUserStats = () => {
     availableBoosts: 0,
     activeBoosts: 0,
     clickRate: 0,
-    loading: true
+    loading: true,
+    error: null as string | null
   });
 
-  useEffect(() => {
+  const fetchStats = useCallback(async () => {
     if (!user?.id) {
-      setStats(prev => ({ ...prev, loading: false }));
+      setStats(prev => ({ ...prev, loading: false, error: null }));
       return;
     }
 
-    const fetchStats = async () => {
-      try {
+    try {
+      const cached = userStatsCache.get(user.id);
+      if (cached && Date.now() - cached.timestamp < USER_STATS_CACHE_TTL_MS) {
+        setStats({ ...cached.data, loading: false });
+        return;
+      }
+
+      setStats(prev => ({ ...prev, loading: true, error: null }));
+
+      await runResilientRequest(async () => {
         // Calcular datas de referência
         const now = new Date();
         const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -143,7 +179,7 @@ export const useUserStats = () => {
         const monthlyClickRate = monthlyViews > 0 ? (monthlyClicks / monthlyViews) * 100 : 0;
         const yearlyClickRate = yearlyViews > 0 ? (yearlyClicks / yearlyViews) * 100 : 0;
 
-        setStats({
+        const nextStats: UserStatsState = {
           totalAnimals: totalAnimals || 0,
           activeAnimals: activeAnimals || 0,
           totalViews,
@@ -157,16 +193,36 @@ export const useUserStats = () => {
           availableBoosts,
           activeBoosts: activeBoosts || 0,
           clickRate,
-          loading: false
-        });
-      } catch (error) {
-        console.error('Erro ao buscar estatísticas:', error);
-        setStats(prev => ({ ...prev, loading: false }));
-      }
-    };
+          loading: false,
+          error: null
+        };
 
-    fetchStats();
+        userStatsCache.set(user.id, {
+          data: nextStats,
+          timestamp: Date.now()
+        });
+
+        setStats(nextStats);
+      }, {
+        timeoutMs: 15000,
+        errorMessage: 'O carregamento das estatísticas demorou demais.'
+      });
+    } catch (error) {
+      console.error('Erro ao buscar estatísticas:', error);
+      setStats(prev => ({
+        ...prev,
+        loading: false,
+        error: error instanceof Error ? error.message : 'Erro ao carregar estatísticas'
+      }));
+    }
   }, [user?.id]);
 
-  return stats;
+  useEffect(() => {
+    fetchStats();
+  }, [fetchStats]);
+
+  return {
+    ...stats,
+    refresh: fetchStats
+  };
 };

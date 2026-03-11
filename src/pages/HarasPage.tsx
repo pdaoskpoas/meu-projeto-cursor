@@ -11,7 +11,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useChat } from '@/contexts/ChatContext';
 import { animalService } from '@/services/animalService';
 import { analyticsService } from '@/services/analyticsService';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { buscarCep, UF_TO_ESTADO } from '@/services/cepService';
 import { normalizePlanId } from '@/constants/plans';
 import { formatNameUppercase } from '@/utils/nameFormat';

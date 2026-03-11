@@ -35,10 +35,11 @@ import { TOTAL_OPERATION_TIMEOUT_MS } from '@/config/uploadConstants';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { log, captureError, logEvent } from '@/utils/logger';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { logAdminAction } from '@/services/adminAuditService';
 import { PaywallModal } from './PaywallModal';
 import PayIndividualModal from '@/components/payment/PayIndividualModal';
+import { ensureActiveSession } from '@/services/sessionService';
 
 interface StepReviewProps {
   onSuccess?: (animalId: string, shareCode: string) => void;
@@ -273,59 +274,19 @@ export const StepReview: React.FC<StepReviewProps> = ({
         globalTimeout = null;
       }, TOTAL_OPERATION_TIMEOUT_MS);
       
-      // ✅ Verificação + renovação de sessão com timeout de 3 segundos
-      console.log('🔐 Verificando sessão do Supabase (com timeout)...');
+      // ✅ Sessão sempre revalidada no mesmo client usado pelos serviços
+      console.log('🔐 Validando sessão ativa antes da publicação...');
       try {
-        const sessionCheckPromise = supabase.auth.getSession();
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Session check timeout')), 3000)
-        );
-        
-        const result = await Promise.race([
-          sessionCheckPromise,
-          timeoutPromise
-        ]);
-        const { data: sessionData, error: sessionError } = result as { data: { session: { user: { id: string } } } | null; error: Error | null };
-        
-        if (sessionError || !sessionData?.session) {
-          console.warn('⚠️ Sessão expirada, tentando renovar...');
-          const refreshResult = await Promise.race([
-            supabase.auth.refreshSession(),
-            new Promise((_, reject) => setTimeout(() => reject(new Error('Session refresh timeout')), 3000))
-          ]);
-          const { data: refreshed, error: refreshError } = refreshResult as { data: { session: { user: { id: string } } } | null; error: Error | null };
-          if (refreshError || !refreshed?.session) {
-            toast({
-              title: 'Sessão expirada',
-              description: 'Faça login novamente para publicar seu anúncio.',
-              variant: 'destructive'
-            });
-            return;
-          }
-          console.log('✅ Sessão renovada com sucesso.');
-        } else {
-          console.log('✅ Sessão válida.');
-        }
-      } catch (sessionCheckError) {
-        console.warn('⚠️ Timeout na verificação de sessão. Tentando renovar...', sessionCheckError);
-        try {
-          const { data: refreshed, error: refreshError } = await supabase.auth.refreshSession();
-          if (refreshError || !refreshed?.session) {
-            toast({
-              title: 'Sessão expirada',
-              description: 'Faça login novamente para publicar seu anúncio.',
-              variant: 'destructive'
-            });
-            return;
-          }
-        } catch (refreshFallbackError) {
-          toast({
-            title: 'Sessão expirada',
-            description: 'Faça login novamente para publicar seu anúncio.',
-            variant: 'destructive'
-          });
-          return;
-        }
+        await ensureActiveSession({ forceRefresh: true, timeoutMs: 6000 });
+        console.log('✅ Sessão válida para publicar.');
+      } catch (sessionError) {
+        console.warn('⚠️ Falha ao validar sessão antes da publicação:', sessionError);
+        toast({
+          title: 'Sessão expirada',
+          description: 'Faça login novamente para publicar seu anúncio.',
+          variant: 'destructive'
+        });
+        return;
       }
 
       console.log('📊 Quota:', effectiveQuota);
@@ -826,7 +787,7 @@ export const StepReview: React.FC<StepReviewProps> = ({
   const handlePublishClick = async () => {
     if (!effectiveUserId) return;
 
-    const latestQuota = await refetchPlan();
+    const latestQuota = await refetchPlan({ forceFresh: true });
     if (!latestQuota) {
       toast({
         title: 'Não foi possível validar seu plano',
@@ -902,6 +863,8 @@ export const StepReview: React.FC<StepReviewProps> = ({
     safeDispatch({ type: 'SET_SUBMITTING', payload: true });
 
     try {
+      await ensureActiveSession({ forceRefresh: true, timeoutMs: 6000 });
+
       const shareCode = `${Math.random().toString(36).substring(2, 8).toUpperCase()}-${new Date().getFullYear().toString().slice(-2)}`;
       const { data: profileResult } = await supabase
         .from('profiles')
@@ -1269,7 +1232,7 @@ export const StepReview: React.FC<StepReviewProps> = ({
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => refetchPlan()}
+                  onClick={() => refetchPlan({ forceFresh: true })}
                   className="border-red-300 text-red-700 hover:bg-red-100"
                 >
                   Tentar novamente

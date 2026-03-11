@@ -1,112 +1,97 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useToast } from '@/hooks/use-toast';
+import { ensureActiveSession } from '@/services/sessionService';
 
 /**
- * 🔒 Hook para implementar timeout automático de sessão
- * Baseado em OWASP Session Management Cheat Sheet
- * 
- * Logout automático após 30 minutos de inatividade
- * Reset do timer em qualquer atividade do usuário
+ * Mantém a sessão autenticada saudável durante navegação longa.
+ * Não faz logout por inatividade no frontend; apenas revalida a sessão
+ * periodicamente e quando a aba volta a ficar visível.
  */
 
-const SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutos
-const WARNING_TIME_MS = 2 * 60 * 1000; // 2 minutos antes do logout
+const SESSION_CHECK_INTERVAL_MS = 5 * 60 * 1000;
+const ACTIVITY_THROTTLE_MS = 60 * 1000;
 
 export const useSessionTimeout = () => {
-  const { logout, user } = useAuth();
-  const { toast } = useToast();
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const warningRef = useRef<NodeJS.Timeout | null>(null);
-  const hasShownWarning = useRef(false);
+  const { user } = useAuth();
+  const intervalRef = useRef<number | null>(null);
+  const isRefreshingRef = useRef(false);
+  const lastActivityRefreshRef = useRef(0);
 
   const clearTimers = useCallback(() => {
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    if (warningRef.current) clearTimeout(warningRef.current);
-    hasShownWarning.current = false;
+    if (intervalRef.current) {
+      window.clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
   }, []);
 
-  const showWarning = useCallback(() => {
-    if (!hasShownWarning.current && user) {
-      hasShownWarning.current = true;
-      toast({
-        title: '⏱️ Sessão expirando',
-        description: 'Sua sessão irá expirar em 2 minutos por inatividade. Mova o mouse para continuar.',
-        duration: 10000
-      });
-    }
-  }, [toast, user]);
+  const refreshSession = useCallback(async (forceRefresh = false) => {
+    if (!user || isRefreshingRef.current) return;
 
-  const performLogout = useCallback(() => {
-    if (user) {
-      logout();
-      toast({
-        title: 'Sessão expirada',
-        description: 'Você foi desconectado por inatividade. Faça login novamente para continuar.',
-        variant: 'destructive',
-        duration: 7000
+    isRefreshingRef.current = true;
+
+    try {
+      await ensureActiveSession({
+        forceRefresh,
+        timeoutMs: forceRefresh ? 8000 : 5000
       });
+    } catch (error) {
+      console.error('[SessionTimeout] Erro ao manter sessão ativa:', error);
+    } finally {
+      isRefreshingRef.current = false;
     }
-  }, [logout, toast, user]);
+  }, [user]);
 
   const resetSessionTimeout = useCallback(() => {
-    clearTimers();
-
-    // Apenas configurar timeout se usuário estiver logado
-    if (!user) return;
-
-    // Timer de aviso (28 minutos)
-    warningRef.current = setTimeout(showWarning, SESSION_TIMEOUT_MS - WARNING_TIME_MS);
-
-    // Timer de logout (30 minutos)
-    timeoutRef.current = setTimeout(performLogout, SESSION_TIMEOUT_MS);
-  }, [clearTimers, performLogout, showWarning, user]);
+    void refreshSession();
+  }, [refreshSession]);
 
   useEffect(() => {
-    // Não ativar se usuário não estiver logado
     if (!user) {
       clearTimers();
       return;
     }
 
-    // Eventos que resetam o timer (atividade do usuário)
-    const events = [
-      'mousedown',
-      'mousemove', 
-      'keydown',
-      'scroll',
-      'touchstart',
-      'click'
-    ];
-
-    // Throttle para evitar reset muito frequente
-    let lastReset = Date.now();
-    const throttleMs = 1000; // Resetar no máximo a cada 1 segundo
-
     const handleActivity = () => {
       const now = Date.now();
-      if (now - lastReset > throttleMs) {
-        resetSessionTimeout();
-        lastReset = now;
+      if (now - lastActivityRefreshRef.current < ACTIVITY_THROTTLE_MS) return;
+      lastActivityRefreshRef.current = now;
+      void refreshSession();
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        void refreshSession(true);
       }
     };
 
-    // Iniciar timeout
-    resetSessionTimeout();
+    const handleFocus = () => {
+      void refreshSession(true);
+    };
 
-    // Adicionar event listeners
+    const events = ['mousedown', 'keydown', 'scroll', 'touchstart', 'click'];
+
+    void refreshSession();
+    intervalRef.current = window.setInterval(() => {
+      void refreshSession();
+    }, SESSION_CHECK_INTERVAL_MS);
+
     events.forEach(event => {
       window.addEventListener(event, handleActivity, { passive: true });
     });
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener('online', handleFocus);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 
-    // Cleanup
     return () => {
       clearTimers();
       events.forEach(event => {
         window.removeEventListener(event, handleActivity);
       });
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('online', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [user, resetSessionTimeout, clearTimers]); // Reagir quando user mudar (login/logout)
+  }, [user, refreshSession, clearTimers]);
 
   return {
     resetTimeout: resetSessionTimeout,

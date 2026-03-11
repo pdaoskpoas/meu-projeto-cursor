@@ -20,6 +20,7 @@ import PurchaseBoostsModal from '@/components/payment/PurchaseBoostsModal';
 import BoostCountdown from '@/components/BoostCountdown';
 import { useUserBoosts } from '@/hooks/useUserBoosts';
 import { NewAnimalWizard } from '@/components/animal/NewAnimalWizard';
+import { runResilientRequest } from '@/services/resilientRequestService';
 import mangalargaImg from '@/assets/mangalarga.jpg';
 import thoroughbredImg from '@/assets/thoroughbred.jpg';
 import quarterHorseImg from '@/assets/quarter-horse.jpg';
@@ -69,6 +70,8 @@ const AnimalsPage = () => {
   const [transferPartners, setTransferPartners] = useState<Array<{ id: string; partner_id: string; partner_name: string }>>([]);
   const [selectedTransferPartner, setSelectedTransferPartner] = useState('');
   const [loadingTransferPartners, setLoadingTransferPartners] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
   // Carregar animais do usuário (incluindo sociedades)
   useEffect(() => {
@@ -77,18 +80,27 @@ const AnimalsPage = () => {
     const loadAnimals = async () => {
       try {
         setLoading(true);
+        setLoadError(null);
         // Usar getUserAnimalsWithPartnerships para incluir animais em sociedade
-        const userAnimals = await partnershipService.getUserAnimalsWithPartnerships(user.id);
+        const userAnimals = await runResilientRequest(
+          () => partnershipService.getUserAnimalsWithPartnerships(user.id),
+          {
+            timeoutMs: 15000,
+            errorMessage: 'O carregamento dos animais demorou demais.'
+          }
+        );
         setAnimals(userAnimals);
       } catch (error) {
-        toast({ title: 'Erro ao carregar animais', variant: 'destructive' });
+        const message = error instanceof Error ? error.message : 'Erro ao carregar animais';
+        setLoadError(message);
+        toast({ title: 'Erro ao carregar animais', description: message, variant: 'destructive' });
       } finally {
         setLoading(false);
       }
     };
 
     loadAnimals();
-  }, [user?.id, toast]);
+  }, [user?.id, toast, reloadKey]);
 
   // Filtrar animais
   const filteredAnimals = animals.filter(animal => {
@@ -326,6 +338,23 @@ const AnimalsPage = () => {
         <ModernDashboardWrapper title="Meus Animais" subtitle="Gerencie seus anúncios">
           <Card className="p-6">
             <div className="text-center">Carregando...</div>
+          </Card>
+        </ModernDashboardWrapper>
+      </ProtectedRoute>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <ProtectedRoute>
+        <ModernDashboardWrapper title="Meus Animais" subtitle="Gerencie seus anúncios">
+          <Card className="p-6 space-y-4">
+            <div className="text-center text-red-600">{loadError}</div>
+            <div className="flex justify-center">
+              <Button onClick={() => setReloadKey(prev => prev + 1)} variant="outline">
+                Tentar novamente
+              </Button>
+            </div>
           </Card>
         </ModernDashboardWrapper>
       </ProtectedRoute>

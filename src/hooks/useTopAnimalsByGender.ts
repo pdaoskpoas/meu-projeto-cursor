@@ -1,6 +1,6 @@
 // Hook para buscar top animais por gênero (dados REAIS do Supabase)
 import { useCallback, useEffect, useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { normalizeSupabaseImages } from '@/utils/animalCard';
 
 export interface AnimalWithStats {

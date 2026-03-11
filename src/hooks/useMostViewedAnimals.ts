@@ -1,6 +1,6 @@
 // Hook para buscar animais mais visualizados (dados REAIS do Supabase)
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 
 export interface AnimalWithStats {
   id: string;

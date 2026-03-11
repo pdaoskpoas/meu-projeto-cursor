@@ -16,7 +16,7 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import PhotoGallery from '@/components/PhotoGallery';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { AnimalCardData, getPlaceholderGallery, mapAnimalRecordToCard } from '@/utils/animalCard';
 import AnimalImpressionTracker from '@/components/tracking/AnimalImpressionTracker';
 

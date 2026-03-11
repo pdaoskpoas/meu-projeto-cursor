@@ -9,7 +9,7 @@ import { animalService } from '@/services/animalService';
 import { useBoostManager } from '@/hooks/useBoostManager';
 import { useSupabaseAllAnimalsStats } from '@/hooks/useSupabaseContentStats';
 import { getOwnerDisplayName } from '@/utils/ownerDisplayName';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 
 interface RankingAnimal {
   id: string;

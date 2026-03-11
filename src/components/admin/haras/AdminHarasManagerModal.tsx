@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { NewAnimalWizard } from '@/components/animal/NewAnimalWizard';
 import EditAnimalModal from '@/components/forms/animal/EditAnimalModal';
 import { getUserPlanQuota } from '@/services/planService';

@@ -1,11 +1,12 @@
 import { createClient } from '@supabase/supabase-js'
+import type { Database } from '@/integrations/supabase/types'
 
 // Configuração do Supabase via variáveis de ambiente (Vite)
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string
 
 // 🔒 Configuração segura do cliente Supabase
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
   auth: {
     autoRefreshToken: true,
     persistSession: true,

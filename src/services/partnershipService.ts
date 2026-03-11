@@ -36,6 +36,15 @@ export interface AnimalPartner {
   avatar_url?: string
 }
 
+interface UserAnimalsCacheEntry {
+  data: Record<string, unknown>[]
+  timestamp: number
+}
+
+const USER_ANIMALS_CACHE_TTL_MS = 30 * 1000
+const userAnimalsCache = new Map<string, UserAnimalsCacheEntry>()
+const userAnimalsInFlight = new Map<string, Promise<Record<string, unknown>[]>>()
+
 class PartnershipService {
   /**
    * Enviar convite de sociedade para um sócio
@@ -548,6 +557,17 @@ class PartnershipService {
    * @returns Array de animais com flags 'is_partnership' e 'has_active_partnerships'
    */
   async getUserAnimalsWithPartnerships(userId: string): Promise<Record<string, unknown>[]> {
+    const cached = userAnimalsCache.get(userId)
+    if (cached && Date.now() - cached.timestamp < USER_ANIMALS_CACHE_TTL_MS) {
+      return cached.data
+    }
+
+    const inFlight = userAnimalsInFlight.get(userId)
+    if (inFlight) {
+      return inFlight
+    }
+
+    const request = (async () => {
     try {
       logSupabaseOperation('Get user animals with partnerships', { userId })
 
@@ -601,22 +621,23 @@ class PartnershipService {
         }
       }
 
-      // Para animais próprios, verificar se eles têm sócios ativos
-      const ownAnimalsWithPartnershipFlag = await Promise.all(
-        (ownAnimals || []).map(async (animal) => {
-          const { data: partners } = await supabase
+      const ownAnimalIds = (ownAnimals || []).map(animal => animal.id)
+      const { data: ownAnimalPartnerships } = ownAnimalIds.length > 0
+        ? await supabase
             .from('animal_partnerships')
-            .select('id')
-            .eq('animal_id', animal.id)
-            .limit(1)
+            .select('animal_id')
+            .in('animal_id', ownAnimalIds)
+        : { data: [] }
 
-          return {
-            ...animal,
-            is_partnership: false,
-            has_active_partnerships: (partners && partners.length > 0)
-          }
-        })
+      const partnershipAnimalIds = new Set(
+        (ownAnimalPartnerships || []).map(partnership => partnership.animal_id)
       )
+
+      const ownAnimalsWithPartnershipFlag = (ownAnimals || []).map(animal => ({
+        ...animal,
+        is_partnership: false,
+        has_active_partnerships: partnershipAnimalIds.has(animal.id)
+      }))
 
       const allAnimals = [
         ...ownAnimalsWithPartnershipFlag,
@@ -629,12 +650,23 @@ class PartnershipService {
         total: allAnimals.length
       })
 
+      userAnimalsCache.set(userId, {
+        data: allAnimals,
+        timestamp: Date.now()
+      })
+
       return allAnimals
 
     } catch (error) {
       logSupabaseOperation('Get user animals with partnerships error', null, error)
       throw error
+    } finally {
+      userAnimalsInFlight.delete(userId)
     }
+    })()
+
+    userAnimalsInFlight.set(userId, request)
+    return request
   }
 
   /**

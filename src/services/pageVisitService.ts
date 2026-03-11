@@ -1,4 +1,4 @@
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import type { PageVisitInsert } from '@/types/supabase';
 
 const SESSION_STORAGE_KEY = 'analytics_session_id';

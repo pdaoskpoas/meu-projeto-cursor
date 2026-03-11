@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Menu, X, Globe2, Users2, Building2, Home, Heart, Award, MapPinned } from 'lucide-react';
 import MapboxMap from '@/components/MapboxMap';
 import UserMapPopup from '@/components/UserMapPopup';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { Profile } from '@/types/supabase';
 
 const MapPage = () => {

@@ -30,7 +30,14 @@ const StatsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [activePeriod, setActivePeriod] = useState<'all' | 'month' | 'year'>('month');
   const stats = useUserStats();
-  const { weeklyData, monthlyData, topAnimals, loading: chartsLoading } = useStatsCharts(activePeriod);
+  const {
+    weeklyData,
+    monthlyData,
+    topAnimals,
+    loading: chartsLoading,
+    error: chartsError,
+    refresh: refreshCharts
+  } = useStatsCharts(activePeriod);
 
   // Função helper para obter valores baseados no período
   const getStatsByPeriod = () => {
@@ -112,6 +119,31 @@ const StatsPage: React.FC = () => {
               <p className="text-gray-600">Carregando estatísticas...</p>
             </div>
           </div>
+        </ModernDashboardWrapper>
+      </ProtectedRoute>
+    );
+  }
+
+  if (stats.error || chartsError) {
+    const errorMessage = stats.error || chartsError || 'Erro ao carregar estatísticas.';
+
+    return (
+      <ProtectedRoute>
+        <ModernDashboardWrapper
+          title="Estatísticas"
+          subtitle="Acompanhe o desempenho dos seus animais e anúncios em tempo real"
+        >
+          <Card className="p-6 space-y-4">
+            <div className="text-center text-red-600">{errorMessage}</div>
+            <div className="flex justify-center gap-3">
+              <Button onClick={() => stats.refresh()} variant="outline">
+                Recarregar métricas
+              </Button>
+              <Button onClick={() => refreshCharts()} variant="outline">
+                Recarregar gráficos
+              </Button>
+            </div>
+          </Card>
         </ModernDashboardWrapper>
       </ProtectedRoute>
     );

@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { partnershipService } from '@/services/partnershipService';
+import { runResilientRequest } from '@/services/resilientRequestService';
 
 interface DailyData {
   name: string;
@@ -22,24 +23,50 @@ interface AnimalPerformance {
   ctr: number;
 }
 
+interface StatsChartsCacheEntry {
+  weeklyData: DailyData[];
+  monthlyData: MonthlyData[];
+  topAnimals: AnimalPerformance[];
+  timestamp: number;
+}
+
+const chartsCache = new Map<string, StatsChartsCacheEntry>();
+const CHARTS_CACHE_TTL_MS = 30 * 1000;
+
+const dayNames = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+
 export const useStatsCharts = (activePeriod: 'all' | 'month' | 'year') => {
   const { user } = useAuth();
   const [weeklyData, setWeeklyData] = useState<DailyData[]>([]);
   const [monthlyData, setMonthlyData] = useState<MonthlyData[]>([]);
   const [topAnimals, setTopAnimals] = useState<AnimalPerformance[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const fetchChartData = useCallback(async () => {
     if (!user?.id) {
       setLoading(false);
+      setError(null);
       return;
     }
 
-    const fetchChartData = async () => {
-      try {
-        setLoading(true);
+    try {
+      setLoading(true);
+      setError(null);
 
-        // Buscar animais do usuário + sociedades
+      const cacheKey = `${user.id}:${activePeriod}`;
+      const cached = chartsCache.get(cacheKey);
+
+      if (cached && Date.now() - cached.timestamp < CHARTS_CACHE_TTL_MS) {
+        setWeeklyData(cached.weeklyData);
+        setMonthlyData(cached.monthlyData);
+        setTopAnimals(cached.topAnimals);
+        setLoading(false);
+        return;
+      }
+
+      await runResilientRequest(async () => {
         const userAnimals = await partnershipService.getUserAnimalsWithPartnerships(user.id);
 
         const animalIds = userAnimals?.map(a => a.id) || [];
@@ -53,191 +80,135 @@ export const useStatsCharts = (activePeriod: 'all' | 'month' | 'year') => {
           return;
         }
 
-        // DADOS SEMANAIS (últimos 7 dias)
-        await fetchWeeklyData(animalIds);
+        const monthsToShow = activePeriod === 'year' ? 12 : 6;
+        const today = new Date();
+        const weeklyStart = new Date(today);
+        weeklyStart.setDate(today.getDate() - 6);
+        weeklyStart.setHours(0, 0, 0, 0);
 
-        // DADOS MENSAIS/ANUAIS
-        await fetchPeriodicData(animalIds, activePeriod);
+        const periodicStart = new Date(today.getFullYear(), today.getMonth() - (monthsToShow - 1), 1);
+        const fetchStart = weeklyStart < periodicStart ? weeklyStart : periodicStart;
 
-        // TOP 5 ANIMAIS POR PERFORMANCE
-        await fetchTopAnimals(animalIds, animalMap);
+        const [
+          { data: impressionsData, error: impressionsError },
+          { data: clicksData, error: clicksError }
+        ] = await Promise.all([
+          supabase
+            .from('impressions')
+            .select('content_id, created_at')
+            .eq('content_type', 'animal')
+            .in('content_id', animalIds)
+            .gte('created_at', fetchStart.toISOString()),
+          supabase
+            .from('clicks')
+            .select('content_id, created_at')
+            .eq('content_type', 'animal')
+            .in('content_id', animalIds)
+            .gte('created_at', fetchStart.toISOString())
+        ]);
+
+        if (impressionsError) throw impressionsError;
+        if (clicksError) throw clicksError;
+
+        const nextDay = (date: Date) => {
+          const value = new Date(date);
+          value.setDate(value.getDate() + 1);
+          return value;
+        };
+
+        const weekData: DailyData[] = [];
+        for (let i = 6; i >= 0; i--) {
+          const date = new Date(today);
+          date.setDate(date.getDate() - i);
+          date.setHours(0, 0, 0, 0);
+          const nextDate = nextDay(date);
+
+          weekData.push({
+            name: dayNames[date.getDay()],
+            views: (impressionsData || []).filter(item =>
+              item.created_at &&
+              item.created_at >= date.toISOString() &&
+              item.created_at < nextDate.toISOString()
+            ).length,
+            clicks: (clicksData || []).filter(item =>
+              item.created_at &&
+              item.created_at >= date.toISOString() &&
+              item.created_at < nextDate.toISOString()
+            ).length
+          });
+        }
+
+        const periodicData: MonthlyData[] = [];
+        for (let i = monthsToShow - 1; i >= 0; i--) {
+          const monthDate = new Date(today.getFullYear(), today.getMonth() - i, 1);
+          const nextMonthDate = new Date(today.getFullYear(), today.getMonth() - i + 1, 1);
+
+          periodicData.push({
+            month: monthNames[monthDate.getMonth()],
+            impressions: (impressionsData || []).filter(item =>
+              item.created_at &&
+              item.created_at >= monthDate.toISOString() &&
+              item.created_at < nextMonthDate.toISOString()
+            ).length,
+            clicks: (clicksData || []).filter(item =>
+              item.created_at &&
+              item.created_at >= monthDate.toISOString() &&
+              item.created_at < nextMonthDate.toISOString()
+            ).length
+          });
+        }
+
+        const performanceData: AnimalPerformance[] = userAnimals
+          .map(animal => {
+            const views = Number(animal.impression_count || 0);
+            const clicks = Number(animal.click_count || 0);
+            const ctr = views > 0 ? Math.round((clicks / views) * 100) : 0;
+
+            return {
+              name: animalMap.get(animal.id) || 'Animal',
+              views,
+              clicks,
+              ctr
+            };
+          })
+          .filter(item => item.views > 0 || item.clicks > 0)
+          .sort((a, b) => b.views - a.views)
+          .slice(0, 5);
+
+        chartsCache.set(cacheKey, {
+          weeklyData: weekData,
+          monthlyData: periodicData,
+          topAnimals: performanceData,
+          timestamp: Date.now()
+        });
+
+        setWeeklyData(weekData);
+        setMonthlyData(periodicData);
+        setTopAnimals(performanceData);
 
         setLoading(false);
-      } catch (error) {
-        console.error('Erro ao buscar dados dos gráficos:', error);
-        setLoading(false);
-      }
-    };
-
-    fetchChartData();
+      }, {
+        timeoutMs: 15000,
+        errorMessage: 'O carregamento dos gráficos demorou demais.'
+      });
+    } catch (error) {
+      console.error('Erro ao buscar dados dos gráficos:', error);
+      setLoading(false);
+      setError(error instanceof Error ? error.message : 'Erro ao carregar gráficos');
+    }
   }, [user?.id, activePeriod]);
 
-  const fetchWeeklyData = async (animalIds: string[]) => {
-    const dayNames = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
-    const today = new Date();
-
-    // ✅ OTIMIZAÇÃO: Criar todas as promises e executar em paralelo
-    const dailyPromises = [];
-    
-    for (let i = 6; i >= 0; i--) {
-      const date = new Date(today);
-      date.setDate(date.getDate() - i);
-      date.setHours(0, 0, 0, 0);
-      
-      const nextDate = new Date(date);
-      nextDate.setDate(nextDate.getDate() + 1);
-
-      // Adicionar ambas as queries (views e clicks) ao array de promises
-      dailyPromises.push(
-        Promise.all([
-          // Buscar impressões do dia
-          supabase
-            .from('impressions')
-            .select('*', { count: 'exact', head: true })
-            .eq('content_type', 'animal')
-            .in('content_id', animalIds)
-            .gte('created_at', date.toISOString())
-            .lt('created_at', nextDate.toISOString()),
-          
-          // Buscar cliques do dia
-          supabase
-            .from('clicks')
-            .select('*', { count: 'exact', head: true })
-            .eq('content_type', 'animal')
-            .in('content_id', animalIds)
-            .gte('created_at', date.toISOString())
-            .lt('created_at', nextDate.toISOString()),
-          
-          // Passar o nome do dia junto
-          Promise.resolve(dayNames[date.getDay()])
-        ])
-      );
-    }
-
-    // Executar todas as queries em paralelo
-    const results = await Promise.all(dailyPromises);
-    
-    // Construir o array de dados a partir dos resultados
-    const weekData: DailyData[] = results.map(([viewsResult, clicksResult, dayName]) => ({
-      name: dayName,
-      views: viewsResult.count || 0,
-      clicks: clicksResult.count || 0
-    }));
-
-    setWeeklyData(weekData);
-  };
-
-  const fetchPeriodicData = async (animalIds: string[], period: 'all' | 'month' | 'year') => {
-    const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
-    const today = new Date();
-    const currentMonth = today.getMonth();
-    const currentYear = today.getFullYear();
-
-    // Determinar quantos meses mostrar baseado no período
-    const monthsToShow = period === 'year' ? 12 : 6;
-
-    // ✅ OTIMIZAÇÃO: Criar todas as promises e executar em paralelo
-    const monthlyPromises = [];
-
-    for (let i = monthsToShow - 1; i >= 0; i--) {
-      const monthDate = new Date(currentYear, currentMonth - i, 1);
-      const nextMonthDate = new Date(currentYear, currentMonth - i + 1, 1);
-
-      // Adicionar ambas as queries (impressions e clicks) ao array de promises
-      monthlyPromises.push(
-        Promise.all([
-          // Buscar impressões do mês
-          supabase
-            .from('impressions')
-            .select('*', { count: 'exact', head: true })
-            .eq('content_type', 'animal')
-            .in('content_id', animalIds)
-            .gte('created_at', monthDate.toISOString())
-            .lt('created_at', nextMonthDate.toISOString()),
-          
-          // Buscar cliques do mês
-          supabase
-            .from('clicks')
-            .select('*', { count: 'exact', head: true })
-            .eq('content_type', 'animal')
-            .in('content_id', animalIds)
-            .gte('created_at', monthDate.toISOString())
-            .lt('created_at', nextMonthDate.toISOString()),
-          
-          // Passar o nome do mês junto
-          Promise.resolve(monthNames[monthDate.getMonth()])
-        ])
-      );
-    }
-
-    // Executar todas as queries em paralelo
-    const results = await Promise.all(monthlyPromises);
-    
-    // Construir o array de dados a partir dos resultados
-    const periodicData: MonthlyData[] = results.map(([impressionsResult, clicksResult, monthName]) => ({
-      month: monthName,
-      impressions: impressionsResult.count || 0,
-      clicks: clicksResult.count || 0
-    }));
-
-    setMonthlyData(periodicData);
-  };
-
-  const fetchTopAnimals = async (animalIds: string[], animalMap: Map<string, string>) => {
-    // ✅ OTIMIZAÇÃO: Buscar dados de todos os animais em paralelo
-    const animalPromises = animalIds.map(animalId =>
-      Promise.all([
-        // Buscar impressões
-        supabase
-          .from('impressions')
-          .select('*', { count: 'exact', head: true })
-          .eq('content_type', 'animal')
-          .eq('content_id', animalId),
-        
-        // Buscar cliques
-        supabase
-          .from('clicks')
-          .select('*', { count: 'exact', head: true })
-          .eq('content_type', 'animal')
-          .eq('content_id', animalId),
-        
-        // Passar o ID junto
-        Promise.resolve(animalId)
-      ])
-    );
-
-    // Executar todas as queries em paralelo
-    const results = await Promise.all(animalPromises);
-
-    // Converter para array e calcular CTR
-    const performanceData: AnimalPerformance[] = results
-      .filter(([viewsResult, clicksResult]) => 
-        (viewsResult.count || 0) > 0 || (clicksResult.count || 0) > 0
-      )
-      .map(([viewsResult, clicksResult, animalId]) => {
-        const name = animalMap.get(animalId) || 'Animal';
-        const views = viewsResult.count || 0;
-        const clicks = clicksResult.count || 0;
-        const ctr = views > 0 ? Math.round((clicks / views) * 100) : 0;
-        
-        return {
-          name,
-          views,
-          clicks,
-          ctr
-        };
-      });
-
-    // Ordenar por visualizações e pegar top 5
-    performanceData.sort((a, b) => b.views - a.views);
-    setTopAnimals(performanceData.slice(0, 5));
-  };
+  useEffect(() => {
+    fetchChartData();
+  }, [fetchChartData]);
 
   return {
     weeklyData,
     monthlyData,
     topAnimals,
-    loading
+    loading,
+    error,
+    refresh: fetchChartData
   };
 };
 

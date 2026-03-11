@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { ticketService, Ticket, UpdateTicketData } from '@/services/ticketService';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 
 export interface TicketWithUser extends Ticket {
   user_name?: string;

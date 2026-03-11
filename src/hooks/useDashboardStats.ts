@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { partnershipService } from '@/services/partnershipService';
+import { runResilientRequest } from '@/services/resilientRequestService';
 
 export interface DashboardStats {
   // Estatísticas do mês atual
@@ -34,6 +35,14 @@ export interface RecentActivity {
   ticketId?: string;
 }
 
+interface DashboardStatsCacheEntry {
+  data: DashboardStats;
+  timestamp: number;
+}
+
+const dashboardStatsCache = new Map<string, DashboardStatsCacheEntry>();
+const DASHBOARD_STATS_CACHE_TTL_MS = 30 * 1000;
+
 export const useDashboardStats = () => {
   const { user } = useAuth();
   const [stats, setStats] = useState<DashboardStats>({
@@ -56,145 +65,146 @@ export const useDashboardStats = () => {
     }
 
     try {
-      setStats(prev => ({ ...prev, loading: true, error: null }));
-
-      // Data do início do mês atual
-      const startOfMonth = new Date();
-      startOfMonth.setDate(1);
-      startOfMonth.setHours(0, 0, 0, 0);
-      const startOfMonthISO = startOfMonth.toISOString();
-
-      // ✅ OTIMIZAÇÃO 1: Executar queries de animais e conversas em paralelo
-      const [
-        userAnimals,
-        { data: userConversations, error: conversationsError },
-        { data: profileData, error: profileError }
-      ] = await Promise.all([
-        // 1. Buscar animais do usuário + sociedades
-        partnershipService.getUserAnimalsWithPartnerships(user.id),
-        // 2. Buscar conversas do usuário (apenas dono recebe mensagens)
-        supabase
-          .from('conversations')
-          .select('id')
-          .eq('animal_owner_id', user.id),
-        // 3. Buscar boosts disponíveis
-        supabase
-          .from('profiles')
-          .select('available_boosts, plan_boost_credits, purchased_boost_credits')
-          .eq('id', user.id)
-          .single()
-      ]);
-
-      // Verificar erros das queries paralelas
-      if (conversationsError) throw conversationsError;
-      if (profileError) throw profileError;
-
-      const animalIds = userAnimals?.map(animal => animal.id) || [];
-      const conversationIds = userConversations?.map(conv => conv.id) || [];
-      const availableBoosts = (profileData?.available_boosts || 0) + 
-                             (profileData?.plan_boost_credits || 0) + 
-                             (profileData?.purchased_boost_credits || 0);
-      const totalAnimals = userAnimals?.length || 0;
-      const featuredAnimals = userAnimals?.filter(a =>
-        a.is_boosted &&
-        a.ad_status === 'active' &&
-        a.boost_expires_at &&
-        new Date(a.boost_expires_at) > new Date()
-      ).length || 0;
-
-      let monthlyImpressions = 0;
-      let monthlyClicks = 0;
-      let monthlyFavorites = 0;
-      let monthlyMessages = 0;
-
-      // ✅ OTIMIZAÇÃO 2: Executar queries de métricas mensais em paralelo
-      if (animalIds.length > 0 || conversationIds.length > 0) {
-        const metricsPromises = [];
-
-        // Adicionar queries de animais se houver
-        if (animalIds.length > 0) {
-          metricsPromises.push(
-            // Impressões
-            supabase
-              .from('impressions')
-              .select('*', { count: 'exact', head: true })
-              .in('content_id', animalIds)
-              .eq('content_type', 'animal')
-              .gte('created_at', startOfMonthISO),
-            
-            // Cliques
-            supabase
-              .from('clicks')
-              .select('*', { count: 'exact', head: true })
-              .in('content_id', animalIds)
-              .eq('content_type', 'animal')
-              .gte('created_at', startOfMonthISO),
-            
-            // Favoritos
-            supabase
-              .from('favorites')
-              .select('*', { count: 'exact', head: true })
-              .in('animal_id', animalIds)
-              .gte('created_at', startOfMonthISO)
-          );
-        } else {
-          // Adicionar placeholders se não houver animais
-          metricsPromises.push(
-            Promise.resolve({ count: 0, error: null }),
-            Promise.resolve({ count: 0, error: null }),
-            Promise.resolve({ count: 0, error: null })
-          );
-        }
-
-        // Adicionar query de mensagens se houver conversas
-        if (conversationIds.length > 0) {
-          metricsPromises.push(
-            supabase
-              .from('messages')
-              .select('*', { count: 'exact', head: true })
-              .in('conversation_id', conversationIds)
-              .neq('sender_id', user.id)
-              .gte('created_at', startOfMonthISO)
-          );
-        } else {
-          metricsPromises.push(Promise.resolve({ count: 0, error: null }));
-        }
-
-        // Executar todas as queries de métricas em paralelo
-        const [
-          { count: impressionsCount, error: impressionsError },
-          { count: clicksCount, error: clicksError },
-          { count: favoritesCount, error: favoritesError },
-          { count: messagesCount, error: messagesError }
-        ] = await Promise.all(metricsPromises);
-
-        // Verificar erros
-        if (impressionsError) throw impressionsError;
-        if (clicksError) throw clicksError;
-        if (favoritesError) throw favoritesError;
-        if (messagesError) throw messagesError;
-
-        monthlyImpressions = impressionsCount || 0;
-        monthlyClicks = clicksCount || 0;
-        monthlyFavorites = favoritesCount || 0;
-        monthlyMessages = messagesCount || 0;
+      const cached = dashboardStatsCache.get(user.id);
+      if (cached && Date.now() - cached.timestamp < DASHBOARD_STATS_CACHE_TTL_MS) {
+        setStats({ ...cached.data, loading: false });
+        return;
       }
 
-      // 6. Buscar atividades recentes (otimizado separadamente)
-      const recentActivities = await fetchRecentActivities(user.id, animalIds);
+      setStats(prev => ({ ...prev, loading: true, error: null }));
 
-      // Atualizar estado
-      setStats({
-        monthlyImpressions: monthlyImpressions || 0,
-        monthlyClicks: monthlyClicks || 0,
-        monthlyFavorites: monthlyFavorites || 0,
-        monthlyMessages: monthlyMessages || 0,
-        totalAnimals: totalAnimals || 0,
-        featuredAnimals: featuredAnimals || 0,
-        availableBoosts,
-        recentActivities,
-        loading: false,
-        error: null,
+      await runResilientRequest(async () => {
+        // Data do início do mês atual
+        const startOfMonth = new Date();
+        startOfMonth.setDate(1);
+        startOfMonth.setHours(0, 0, 0, 0);
+        const startOfMonthISO = startOfMonth.toISOString();
+
+        // ✅ OTIMIZAÇÃO 1: Executar queries de animais e conversas em paralelo
+        const [
+          userAnimals,
+          { data: userConversations, error: conversationsError },
+          { data: profileData, error: profileError }
+        ] = await Promise.all([
+          partnershipService.getUserAnimalsWithPartnerships(user.id),
+          supabase
+            .from('conversations')
+            .select('id')
+            .eq('animal_owner_id', user.id),
+          supabase
+            .from('profiles')
+            .select('available_boosts, plan_boost_credits, purchased_boost_credits')
+            .eq('id', user.id)
+            .single()
+        ]);
+
+        if (conversationsError) throw conversationsError;
+        if (profileError) throw profileError;
+
+        const animalIds = userAnimals?.map(animal => animal.id) || [];
+        const conversationIds = userConversations?.map(conv => conv.id) || [];
+        const availableBoosts = (profileData?.available_boosts || 0) +
+          (profileData?.plan_boost_credits || 0) +
+          (profileData?.purchased_boost_credits || 0);
+        const totalAnimals = userAnimals?.length || 0;
+        const featuredAnimals = userAnimals?.filter(a =>
+          a.is_boosted &&
+          a.ad_status === 'active' &&
+          a.boost_expires_at &&
+          new Date(a.boost_expires_at) > new Date()
+        ).length || 0;
+
+        let monthlyImpressions = 0;
+        let monthlyClicks = 0;
+        let monthlyFavorites = 0;
+        let monthlyMessages = 0;
+
+        if (animalIds.length > 0 || conversationIds.length > 0) {
+          const metricsPromises = [];
+
+          if (animalIds.length > 0) {
+            metricsPromises.push(
+              supabase
+                .from('impressions')
+                .select('*', { count: 'exact', head: true })
+                .in('content_id', animalIds)
+                .eq('content_type', 'animal')
+                .gte('created_at', startOfMonthISO),
+              supabase
+                .from('clicks')
+                .select('*', { count: 'exact', head: true })
+                .in('content_id', animalIds)
+                .eq('content_type', 'animal')
+                .gte('created_at', startOfMonthISO),
+              supabase
+                .from('favorites')
+                .select('*', { count: 'exact', head: true })
+                .in('animal_id', animalIds)
+                .gte('created_at', startOfMonthISO)
+            );
+          } else {
+            metricsPromises.push(
+              Promise.resolve({ count: 0, error: null }),
+              Promise.resolve({ count: 0, error: null }),
+              Promise.resolve({ count: 0, error: null })
+            );
+          }
+
+          if (conversationIds.length > 0) {
+            metricsPromises.push(
+              supabase
+                .from('messages')
+                .select('*', { count: 'exact', head: true })
+                .in('conversation_id', conversationIds)
+                .neq('sender_id', user.id)
+                .gte('created_at', startOfMonthISO)
+            );
+          } else {
+            metricsPromises.push(Promise.resolve({ count: 0, error: null }));
+          }
+
+          const [
+            { count: impressionsCount, error: impressionsError },
+            { count: clicksCount, error: clicksError },
+            { count: favoritesCount, error: favoritesError },
+            { count: messagesCount, error: messagesError }
+          ] = await Promise.all(metricsPromises);
+
+          if (impressionsError) throw impressionsError;
+          if (clicksError) throw clicksError;
+          if (favoritesError) throw favoritesError;
+          if (messagesError) throw messagesError;
+
+          monthlyImpressions = impressionsCount || 0;
+          monthlyClicks = clicksCount || 0;
+          monthlyFavorites = favoritesCount || 0;
+          monthlyMessages = messagesCount || 0;
+        }
+
+        const recentActivities = await fetchRecentActivities(user.id, animalIds);
+
+        const nextStats: DashboardStats = {
+          monthlyImpressions: monthlyImpressions || 0,
+          monthlyClicks: monthlyClicks || 0,
+          monthlyFavorites: monthlyFavorites || 0,
+          monthlyMessages: monthlyMessages || 0,
+          totalAnimals: totalAnimals || 0,
+          featuredAnimals: featuredAnimals || 0,
+          availableBoosts,
+          recentActivities,
+          loading: false,
+          error: null,
+        };
+
+        dashboardStatsCache.set(user.id, {
+          data: nextStats,
+          timestamp: Date.now()
+        });
+
+        setStats(nextStats);
+      }, {
+        timeoutMs: 15000,
+        errorMessage: 'O carregamento do dashboard demorou demais.'
       });
 
     } catch (error: unknown) {
