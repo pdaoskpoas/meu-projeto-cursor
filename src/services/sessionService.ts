@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { diagnostics } from '@/lib/diagnostics';
 
 interface EnsureSessionOptions {
   forceRefresh?: boolean;
@@ -6,35 +7,40 @@ interface EnsureSessionOptions {
 }
 
 const DEFAULT_TIMEOUT_MS = 15000;
+const SESSION_SCOPE = 'session-service';
 
-function withTimeout<T>(promise: Promise<T>, timeoutMs: number, timeoutMessage: string): Promise<T> {
-  let timeoutId: ReturnType<typeof setTimeout> | undefined;
-
-  const timeoutPromise = new Promise<never>((_, reject) => {
-    timeoutId = setTimeout(() => {
-      reject(new Error(timeoutMessage));
-    }, timeoutMs);
-  });
-
-  return Promise.race([promise, timeoutPromise]).finally(() => {
-    if (timeoutId) {
-      clearTimeout(timeoutId);
-    }
-  });
-}
+const withTimeout = async <T>(
+  operation: Promise<T>,
+  timeoutMs: number,
+  operationName: string
+) =>
+  Promise.race<T>([
+    operation,
+    new Promise<T>((_, reject) => {
+      window.setTimeout(
+        () => reject(new Error(`Timeout while waiting for ${operationName}`)),
+        timeoutMs
+      );
+    })
+  ]);
 
 export async function refreshActiveSession(timeoutMs = DEFAULT_TIMEOUT_MS) {
-  const refreshPromise = supabase.auth.refreshSession();
+  diagnostics.info(SESSION_SCOPE, 'Refreshing session', { timeoutMs });
   const { data, error } = await withTimeout(
-    refreshPromise,
+    supabase.auth.refreshSession(),
     timeoutMs,
-    'Tempo limite ao renovar sessão. Tente novamente.'
+    'supabase.auth.refreshSession'
   );
 
   if (error || !data.session) {
+    diagnostics.warn(SESSION_SCOPE, 'Session refresh failed', {
+      hasError: Boolean(error),
+      hasSession: Boolean(data?.session)
+    });
     throw new Error('Sua sessão expirou. Faça login novamente para continuar.');
   }
 
+  diagnostics.debug(SESSION_SCOPE, 'Session refresh succeeded');
   return data.session;
 }
 
@@ -47,19 +53,21 @@ export async function ensureActiveSession(
     return refreshActiveSession(timeoutMs);
   }
 
-  const sessionPromise = supabase.auth.getSession();
   const { data, error } = await withTimeout(
-    sessionPromise,
+    supabase.auth.getSession(),
     timeoutMs,
-    'Tempo limite ao validar sessão. Tente novamente.'
+    'supabase.auth.getSession'
   );
   const session = data.session;
 
   if (error || !session) {
+    diagnostics.warn(SESSION_SCOPE, 'No valid local session, forcing refresh', {
+      hasError: Boolean(error),
+      hasSession: Boolean(session)
+    });
     return refreshActiveSession(timeoutMs);
   }
 
-  // Evita refresh agressivo em foco/troca de rota.
-  // O refresh explícito fica apenas para operações críticas.
+  diagnostics.debug(SESSION_SCOPE, 'Active session confirmed');
   return session;
 }

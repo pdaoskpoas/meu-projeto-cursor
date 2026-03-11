@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
+import { diagnostics } from '@/lib/diagnostics';
+import { runResilientRequest } from '@/services/resilientRequestService';
 
 interface UnreadCounts {
   messages: number;
@@ -28,13 +30,22 @@ export const useUnreadCounts = () => {
 
     if (fetchInFlightRef.current) return;
     fetchInFlightRef.current = true;
+    diagnostics.debug('hook-unread-counts', 'Fetching unread counts', { userId: user.id });
 
     try {
       // 1) Buscar conversas do usuário
-      const { data: conversations, error: conversationsError } = await supabase
-        .from('conversations')
-        .select('id')
-        .or(`animal_owner_id.eq.${user.id},interested_user_id.eq.${user.id}`);
+      const { data: conversations, error: conversationsError } = await runResilientRequest(
+        async () =>
+          supabase
+            .from('conversations')
+            .select('id')
+            .or(`animal_owner_id.eq.${user.id},interested_user_id.eq.${user.id}`),
+        {
+          timeoutMs: 12000,
+          errorMessage: 'Falha ao carregar conversas nao lidas.',
+          requestKey: `unread-counts:conversations:${user.id}`
+        }
+      );
 
       if (conversationsError) throw conversationsError;
 
@@ -43,12 +54,20 @@ export const useUnreadCounts = () => {
       let unreadConversations = 0;
       if (conversationIds.length > 0) {
         // 2) Buscar mensagens não lidas em lote e contar conversas únicas
-        const { data: unreadMessages, error: unreadMessagesError } = await supabase
-          .from('messages')
-          .select('conversation_id')
-          .in('conversation_id', conversationIds)
-          .neq('sender_id', user.id)
-          .is('read_at', null);
+        const { data: unreadMessages, error: unreadMessagesError } = await runResilientRequest(
+          async () =>
+            supabase
+              .from('messages')
+              .select('conversation_id')
+              .in('conversation_id', conversationIds)
+              .neq('sender_id', user.id)
+              .is('read_at', null),
+          {
+            timeoutMs: 12000,
+            errorMessage: 'Falha ao carregar mensagens nao lidas.',
+            requestKey: `unread-counts:messages:${user.id}`
+          }
+        );
 
         if (unreadMessagesError) throw unreadMessagesError;
         unreadConversations = new Set((unreadMessages || []).map(msg => msg.conversation_id)).size;
@@ -58,12 +77,20 @@ export const useUnreadCounts = () => {
       const pendingPartnerships = 0;
 
       // 4) Notificações não lidas (sem mensagens, contador próprio)
-      const { count: unreadNotifications, error: unreadNotificationsError } = await supabase
-        .from('notifications')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id)
-        .eq('is_read', false)
-        .neq('type', 'message_received');
+      const { count: unreadNotifications, error: unreadNotificationsError } = await runResilientRequest(
+        async () =>
+          supabase
+            .from('notifications')
+            .select('*', { count: 'exact', head: true })
+            .eq('user_id', user.id)
+            .eq('is_read', false)
+            .neq('type', 'message_received'),
+        {
+          timeoutMs: 12000,
+          errorMessage: 'Falha ao carregar notificacoes nao lidas.',
+          requestKey: `unread-counts:notifications:${user.id}`
+        }
+      );
 
       if (unreadNotificationsError) throw unreadNotificationsError;
 
@@ -73,7 +100,7 @@ export const useUnreadCounts = () => {
         partnerships: pendingPartnerships || 0
       });
     } catch (error) {
-      console.error('Erro ao buscar contagens:', error);
+      diagnostics.warn('hook-unread-counts', 'Fetch failed', error);
     } finally {
       fetchInFlightRef.current = false;
       setLoading(false);
@@ -146,6 +173,3 @@ export const useUnreadCounts = () => {
 
   return { counts, loading, refetch: fetchUnreadCounts };
 };
-
-
-

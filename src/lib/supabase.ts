@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import type { Database } from '@/integrations/supabase/types'
+import { diagnostics } from '@/lib/diagnostics'
 
 // Configuração do Supabase via variáveis de ambiente (Vite)
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string
@@ -25,6 +26,16 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
     }
   }
 })
+
+// Diagnostico de sessao em runtime (habilitado em DEV ou localStorage vdc:diagnostics=1).
+supabase.auth.onAuthStateChange((event, session) => {
+  diagnostics.info('supabase-client', 'Auth event observed', {
+    event,
+    hasSession: Boolean(session),
+    userId: session?.user?.id ?? null,
+    expiresAt: session?.expires_at ?? null
+  });
+});
 
 // Tipos de erro do Supabase
 export type SupabaseError = {

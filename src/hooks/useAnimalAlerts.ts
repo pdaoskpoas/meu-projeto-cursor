@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
+import { diagnostics } from '@/lib/diagnostics';
+import { runResilientRequest } from '@/services/resilientRequestService';
 
 /**
  * Hook para contar animais que precisam de atenção do usuário.
@@ -29,31 +31,53 @@ export const useAnimalAlerts = () => {
       if (isFetchingRef.current) return;
       isFetchingRef.current = true;
       const requestId = ++requestIdRef.current;
+      diagnostics.debug('hook-animal-alerts', 'Fetch started', { userId: user.id, requestId });
 
       try {
         setLoading(true);
 
         // Buscar animais pausados
-        const { count: pausedCount } = await supabase
-          .from('animals')
-          .select('*', { count: 'exact', head: true })
-          .eq('owner_id', user.id)
-          .eq('ad_status', 'paused');
+        const { count: pausedCount } = await runResilientRequest(
+          async () =>
+            supabase
+              .from('animals')
+              .select('*', { count: 'exact', head: true })
+              .eq('owner_id', user.id)
+              .eq('ad_status', 'paused'),
+          {
+            timeoutMs: 12000,
+            errorMessage: 'Falha ao buscar alertas de animais pausados.',
+            requestKey: `animal-alerts:paused:${user.id}`
+          }
+        );
 
         // Buscar animais expirados
-        const { count: expiredCount } = await supabase
-          .from('animals')
-          .select('*', { count: 'exact', head: true })
-          .eq('owner_id', user.id)
-          .eq('ad_status', 'expired');
+        const { count: expiredCount } = await runResilientRequest(
+          async () =>
+            supabase
+              .from('animals')
+              .select('*', { count: 'exact', head: true })
+              .eq('owner_id', user.id)
+              .eq('ad_status', 'expired'),
+          {
+            timeoutMs: 12000,
+            errorMessage: 'Falha ao buscar alertas de animais expirados.',
+            requestKey: `animal-alerts:expired:${user.id}`
+          }
+        );
 
         // Soma total de alertas (pausados + expirados)
         const total = (pausedCount || 0) + (expiredCount || 0);
         if (requestId !== requestIdRef.current) return;
         setAlertCount(total);
+        diagnostics.debug('hook-animal-alerts', 'Fetch succeeded', {
+          userId: user.id,
+          requestId,
+          total
+        });
       } catch (error) {
         if (requestId !== requestIdRef.current) return;
-        console.error('Erro ao buscar alertas de animais:', error);
+        diagnostics.warn('hook-animal-alerts', 'Fetch failed', error);
         setAlertCount(0);
       } finally {
         if (requestId === requestIdRef.current) {
@@ -73,6 +97,3 @@ export const useAnimalAlerts = () => {
 
   return { alertCount, loading };
 };
-
-
-

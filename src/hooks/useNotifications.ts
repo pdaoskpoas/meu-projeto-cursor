@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
+import { diagnostics } from '@/lib/diagnostics';
+import { runResilientRequest } from '@/services/resilientRequestService';
 
 export interface Notification {
   id: string;
@@ -48,6 +50,7 @@ export const useNotifications = (): UseNotificationsReturn => {
     if (isFetchingRef.current) return;
     isFetchingRef.current = true;
     const requestId = ++requestIdRef.current;
+    diagnostics.debug('hook-notifications', 'Fetch started', { userId: user.id, requestId });
 
     try {
       setLoading(true);
@@ -55,21 +58,34 @@ export const useNotifications = (): UseNotificationsReturn => {
 
       // 🔔 Sistema de limite automático: máximo de 20 notificações por usuário
       // O banco de dados deleta automaticamente as mais antigas quando uma nova é criada
-      const { data, error: fetchError } = await supabase
-        .from('notifications')
-        .select('*')
-        .eq('user_id', user.id)
-        .neq('type', 'message_received') // Excluir notificações de mensagens (já tem contador próprio)
-        .order('created_at', { ascending: false })
-        .limit(20); // Limite máximo de notificações por usuário
+      const { data, error: fetchError } = await runResilientRequest(
+        async () =>
+          supabase
+            .from('notifications')
+            .select('*')
+            .eq('user_id', user.id)
+            .neq('type', 'message_received') // Excluir notificações de mensagens (já tem contador próprio)
+            .order('created_at', { ascending: false })
+            .limit(20), // Limite máximo de notificações por usuário
+        {
+          timeoutMs: 12000,
+          errorMessage: 'Falha ao carregar notificacoes.',
+          requestKey: `notifications:list:${user.id}`
+        }
+      );
 
       if (fetchError) throw fetchError;
 
       if (requestId !== requestIdRef.current) return;
       setNotifications(data || []);
+      diagnostics.debug('hook-notifications', 'Fetch succeeded', {
+        userId: user.id,
+        requestId,
+        count: data?.length ?? 0
+      });
     } catch (err: unknown) {
       if (requestId !== requestIdRef.current) return;
-      console.error('Erro ao buscar notificações:', err);
+      diagnostics.warn('hook-notifications', 'Fetch failed', err);
       setError(err instanceof Error ? err.message : 'Erro ao buscar notificações');
     } finally {
       if (requestId === requestIdRef.current) {
@@ -195,4 +211,3 @@ export const useNotifications = (): UseNotificationsReturn => {
     refreshNotifications: fetchNotifications
   };
 };
-

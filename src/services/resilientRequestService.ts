@@ -1,4 +1,5 @@
 import { ensureActiveSession } from '@/services/sessionService';
+import { diagnostics } from '@/lib/diagnostics';
 
 interface ResilientRequestOptions {
   timeoutMs?: number;
@@ -8,6 +9,7 @@ interface ResilientRequestOptions {
 }
 
 const DEFAULT_TIMEOUT_MS = 12000;
+const RESILIENT_SCOPE = 'resilient-request';
 
 class RequestTimeoutError extends Error {
   constructor(message: string) {
@@ -107,9 +109,14 @@ export async function runResilientRequest<T>(
     requestKey
   } = options;
   const requestToken = createRequestToken(requestKey);
+  diagnostics.debug(RESILIENT_SCOPE, 'Request started', {
+    requestKey,
+    timeoutMs
+  });
 
   try {
     const result = await withTimeout(operation(), timeoutMs, errorMessage);
+    diagnostics.debug(RESILIENT_SCOPE, 'Request succeeded', { requestKey });
     return ensureLatestRequest(requestToken, result);
   } catch (error) {
     if (isStaleRequestError(error)) {
@@ -117,19 +124,38 @@ export async function runResilientRequest<T>(
     }
 
     if (!retryOnRecoverableError || !isRecoverableError(error)) {
+      diagnostics.warn(RESILIENT_SCOPE, 'Request failed without retry', {
+        requestKey,
+        error: error instanceof Error ? error.message : String(error)
+      });
       throw normalizeError(error, errorMessage);
     }
 
     try {
-      await ensureActiveSession({ forceRefresh: true, timeoutMs: 8000 });
+      diagnostics.info(RESILIENT_SCOPE, 'Attempting session refresh before retry', {
+        requestKey
+      });
+      await withTimeout(
+        ensureActiveSession({ forceRefresh: true, timeoutMs: 8000 }),
+        10000,
+        'ensureActiveSession(forceRefresh)'
+      );
     } catch (sessionError) {
-      console.warn('[ResilientRequest] Falha ao renovar sessão, tentando a operação mesmo assim:', sessionError);
+      diagnostics.warn(RESILIENT_SCOPE, 'Session refresh failed before retry', {
+        requestKey,
+        error: sessionError instanceof Error ? sessionError.message : String(sessionError)
+      });
     }
 
     try {
       const retryResult = await withTimeout(operation(), Math.round(timeoutMs * 2), errorMessage);
+      diagnostics.info(RESILIENT_SCOPE, 'Retry succeeded', { requestKey });
       return ensureLatestRequest(requestToken, retryResult);
     } catch (retryError) {
+      diagnostics.error(RESILIENT_SCOPE, 'Retry failed', {
+        requestKey,
+        error: retryError instanceof Error ? retryError.message : String(retryError)
+      });
       throw normalizeError(retryError, errorMessage);
     }
   }
