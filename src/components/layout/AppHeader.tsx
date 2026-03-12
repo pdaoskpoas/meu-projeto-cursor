@@ -11,12 +11,14 @@ import {
   User, 
   LogOut,
   Settings,
-  Shield
+  Shield,
+  PanelLeft
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAuth } from '@/contexts/AuthContext';
 import { NotificationsDropdown } from '@/components/layout/NotificationsDropdown';
+import { SidebarTrigger } from '@/components/ui/sidebar';
 
 interface AppHeaderProps {
   onToggleSidebar?: () => void;
@@ -260,22 +262,32 @@ const AppHeader: React.FC<AppHeaderProps> = ({ onToggleSidebar, sidebarOpen }) =
                 </div>
               </>
             ) : (
-              // Usuário Não Logado — botão Entrar visível em mobile como ícone
+              // Usuário Não Logado — botão Acessar em mobile, Entrar/Cadastrar em desktop
               <div className="flex items-center space-x-1.5 sm:space-x-3">
                 <Link to="/login">
-                  <Button variant="ghost" size="icon" className="sm:hidden h-10 w-10" aria-label="Entrar">
+                  <Button variant="ghost" size="icon" className="sm:hidden h-10 w-10" aria-label="Acessar">
                     <User className="h-5 w-5 text-slate-600" />
                   </Button>
                   <Button variant="outline" className="hidden sm:flex">
                     Entrar
                   </Button>
                 </Link>
-                <Link to="/register">
-                  <Button className="h-10 px-3 sm:px-4 text-sm sm:text-base bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800">
+                <Link to="/login">
+                  <Button className="sm:hidden h-10 px-3 text-sm bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800">
+                    Acessar
+                  </Button>
+                </Link>
+                <Link to="/register" className="hidden sm:block">
+                  <Button className="h-10 px-4 text-base bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800">
                     Cadastrar
                   </Button>
                 </Link>
               </div>
+            )}
+
+            {/* Sidebar Toggle - apenas no dashboard em mobile */}
+            {isDashboardRoute && user && (
+              <SidebarTrigger className="lg:hidden h-10 w-10" />
             )}
 
             {/* Mobile Menu Toggle */}
