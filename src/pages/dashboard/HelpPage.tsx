@@ -146,11 +146,11 @@ const HelpPage = () => {
       faqs: [
         {
           question: 'Como criar minha conta?',
-          answer: 'Para criar sua conta, clique em "Cadastre-se" no topo da página. Escolha entre conta pessoal ou institucional (para haras e fazendas). Preencha seus dados básicos como nome, CPF, e-mail e crie uma senha segura. Após o cadastro, você receberá um e-mail de confirmação. Verifique sua caixa de entrada e spam.'
+          answer: 'Para criar sua conta, clique em "Cadastre-se" no topo da página. Escolha entre conta pessoal ou institucional (para haras e fazendas). Preencha seus dados básicos como nome, CPF, e-mail e crie uma senha segura.'
         },
         {
           question: 'Como configurar meu perfil?',
-          answer: 'Acesse o menu "Meu Perfil" no dashboard. Preencha informações importantes como foto de perfil, descrição do haras, localização, telefone e redes sociais. Para contas institucionais, adicione o logo do haras e informações sobre a propriedade. Quanto mais completo seu perfil, maior a confiança dos compradores.'
+          answer: 'Acesse o menu "Meu Perfil" no dashboard. Preencha informações importantes como foto de perfil, descrição do haras, localização, telefone e redes sociais. Para contas institucionais, adicione o logo do haras e informações sobre a propriedade.'
         },
         {
           question: 'Como adicionar meu primeiro animal?',
@@ -158,7 +158,7 @@ const HelpPage = () => {
         },
         {
           question: 'Quais são os planos disponíveis?',
-          answer: 'Oferecemos plano gratuito com funcionalidades básicas e planos premium com recursos avançados como turbinar anúncios, destaque nos resultados de busca, estatísticas detalhadas e suporte prioritário. Cada plano permite um número diferente de animais cadastrados. Consulte a página de planos para ver todas as opções e escolher a ideal para você.'
+          answer: 'Oferecemos planos com diferentes funcionalidades e recursos. Cada plano permite um número diferente de animais cadastrados. Consulte a página de planos para ver todas as opções e escolher a ideal para você. <a href="https://www.vitrinedocavalo.com.br/planos" class="text-blue-600 hover:text-blue-700 underline">Ver planos</a>'
         }
       ]
     },
@@ -178,11 +178,11 @@ const HelpPage = () => {
         },
         {
           question: 'O que é o sistema de turbinar?',
-          answer: 'Turbinar destaca seu animal nos resultados de busca e na página inicial, aumentando significativamente a visibilidade. Animais turbinados aparecem no topo das listagens com um badge especial. Você pode turbinar por 7, 15 ou 30 dias. Disponível para assinantes premium. Acompanhe as estatísticas de visualizações no painel de controle.'
+          answer: 'Turbinar destaca seu animal nos resultados de busca e na página inicial, aumentando significativamente a visibilidade. Cada turbinar dura 24 horas. O usuário pode aplicar vários turbinars para prolongar o tempo de destaque. 1 turbinar equivale a 24h de destaque. Animais turbinados aparecem no topo das listagens com um badge especial.'
         },
         {
           question: 'Quantas fotos posso adicionar?',
-          answer: 'Você pode adicionar até 10 fotos por animal no plano gratuito e até 20 fotos nos planos premium. Recomendamos fotos de alta qualidade, bem iluminadas, mostrando diferentes ângulos do animal. A primeira foto será a capa do anúncio. Você pode reordenar as fotos arrastando-as na galeria.'
+          answer: 'Independente do plano do usuário, cada animal pode ter no máximo 4 fotos. Recomendamos fotos de alta qualidade, bem iluminadas, mostrando diferentes ângulos do animal. A primeira foto será a capa do anúncio. Você pode reordenar as fotos arrastando-as na galeria.'
         }
       ]
     },
@@ -194,7 +194,7 @@ const HelpPage = () => {
       faqs: [
         {
           question: 'Como criar uma sociedade?',
-          answer: 'Acesse "Sociedades" no menu do dashboard e clique em "Nova Sociedade". Defina um nome para a sociedade, adicione uma descrição e escolha se será pública (qualquer pessoa pode solicitar entrada) ou privada (apenas por convite). Você pode definir os percentuais de participação de cada membro e gerenciar permissões.'
+          answer: 'Cada usuário possui um código único disponível no dashboard na área Sociedades. Esse código é utilizado para vincular um animal a outro usuário. Para convidar alguém para a sociedade de um animal, o outro usuário também precisa possuir um plano VIP ativo. O convidado deve informar seu código individual para quem está enviando o convite. Após o convite ser enviado, o usuário convidado precisa aceitar para que o animal passe a aparecer também no perfil dele.'
         },
         {
           question: 'O que são códigos públicos?',
@@ -218,7 +218,7 @@ const HelpPage = () => {
       faqs: [
         {
           question: 'Quais são os tipos de planos disponíveis?',
-          answer: 'Oferecemos 3 tipos de plano: GRATUITO (até 3 animais, funcionalidades básicas), PREMIUM (até 15 animais, turbinar, estatísticas avançadas) e PROFISSIONAL (animais ilimitados, máxima visibilidade, suporte prioritário, API). Todos os planos incluem galeria de fotos, cadastro de haras e perfil público.'
+          answer: 'Oferecemos os seguintes planos: Gratuito, Iniciante, Pro e Elite. <a href="https://www.vitrinedocavalo.com.br/planos" class="text-blue-600 hover:text-blue-700 underline">Ver planos</a>'
         },
         {
           question: 'Como fazer upgrade do meu plano?',
@@ -226,11 +226,11 @@ const HelpPage = () => {
         },
         {
           question: 'Como cancelar meu plano?',
-          answer: 'Acesse "Configurações" > "Planos e Assinaturas" e clique em "Cancelar Assinatura". Você pode cancelar a qualquer momento sem taxas. O plano permanece ativo até o fim do período já pago. Após o cancelamento, você volta automaticamente para o plano gratuito e seus animais excedentes ficarão inativos até a remoção ou novo upgrade.'
+          answer: 'Acesse "Configurações" > "Planos e Assinaturas" e clique em "Cancelar Assinatura". Você pode cancelar a qualquer momento. O plano permanece ativo até o fim do período já pago. Após o cancelamento, você volta automaticamente para o plano gratuito e seus animais excedentes ficarão inativos até a remoção ou novo upgrade.'
         },
         {
           question: 'Qual é a política de reembolso?',
-          answer: 'Oferecemos garantia de 7 dias para novos assinantes. Se você não estiver satisfeito, solicite o reembolso total em até 7 dias após a contratação. Após esse período, não realizamos reembolsos proporcionais, mas você pode cancelar a qualquer momento e usar o plano até o fim do período pago. Entre em contato via ticket para solicitar reembolso.'
+          answer: 'Após contratar um plano, você pode solicitar o cancelamento em até 7 dias, período em que a solicitação poderá ser analisada para reembolso. Após esse prazo, o valor já pago não é reembolsado. No entanto, ao cancelar sua assinatura, novas cobranças automáticas não serão realizadas, e o plano permanecerá ativo até o final do período já contratado. Essa regra se aplica tanto para planos mensais quanto anuais.'
         }
       ]
     }
@@ -250,6 +250,53 @@ const HelpPage = () => {
   const toggleFAQ = (categoryId: string, index: number) => {
     const faqId = `${categoryId}-${index}`;
     setExpandedFAQ(expandedFAQ === faqId ? null : faqId);
+  };
+
+  const renderFAQAnswer = (answer: string) => {
+    // Processa links no formato <a href="..." class="...">texto</a>
+    const linkRegex = /<a href="([^"]+)" class="([^"]+)">([^<]+)<\/a>/g;
+    const parts: (string | JSX.Element)[] = [];
+    let lastIndex = 0;
+    let match;
+    let keyCounter = 0;
+
+    while ((match = linkRegex.exec(answer)) !== null) {
+      // Adiciona texto antes do link
+      if (match.index > lastIndex) {
+        parts.push(answer.substring(lastIndex, match.index));
+      }
+      // Verifica se é link externo (começa com http:// ou https://)
+      const isExternalLink = match[1].startsWith('http://') || match[1].startsWith('https://');
+      
+      if (isExternalLink) {
+        // Link externo - usa elemento <a> normal
+        parts.push(
+          <a 
+            key={`link-${keyCounter++}`} 
+            href={match[1]} 
+            className={match[2]}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {match[3]}
+          </a>
+        );
+      } else {
+        // Link interno - usa componente Link do React Router
+        parts.push(
+          <Link key={`link-${keyCounter++}`} to={match[1]} className={match[2]}>
+            {match[3]}
+          </Link>
+        );
+      }
+      lastIndex = match.index + match[0].length;
+    }
+    // Adiciona texto restante
+    if (lastIndex < answer.length) {
+      parts.push(answer.substring(lastIndex));
+    }
+    
+    return parts.length > 0 ? <>{parts}</> : answer;
   };
 
   const loadMyTickets = useCallback(async () => {
@@ -417,7 +464,7 @@ const HelpPage = () => {
                                 {isExpanded && (
                                   <div className="px-4 pb-4 pt-2 bg-slate-50 border-t border-slate-200">
                                     <p className="text-slate-700 leading-relaxed">
-                                      {faq.answer}
+                                      {renderFAQAnswer(faq.answer)}
                                     </p>
                                   </div>
                                 )}

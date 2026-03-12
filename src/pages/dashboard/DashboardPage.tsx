@@ -177,13 +177,12 @@ const DashboardPage = () => {
                 {/* CTA Buttons */}
                 <div className="flex gap-3 w-full lg:w-auto">
                   <Button
-                    onClick={refreshStats}
+                    onClick={() => window.location.reload()}
                     variant="outline"
                     size="lg"
-                    disabled={statsLoading}
                     className="flex-1 lg:flex-none"
                   >
-                    <RefreshCw className={cn("h-4 w-4 mr-2", statsLoading && "animate-spin")} />
+                    <RefreshCw className="h-4 w-4 mr-2" />
                     Atualizar
                   </Button>
                   <Link to={`/${user?.accountType === 'institutional' ? 'haras' : 'perfil'}/${user?.propertyId || user?.id}`} className="flex-1 lg:flex-none">
