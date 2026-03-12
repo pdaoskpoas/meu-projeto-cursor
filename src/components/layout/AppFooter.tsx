@@ -115,6 +115,15 @@ const AppFooter: React.FC = () => {
                   Buscar Animais
                 </Link>
               </li>
+              <li>
+                <Link 
+                  to="/ranking" 
+                  className="text-slate-300 hover:text-blue-400 transition-colors text-sm inline-flex items-center group"
+                >
+                  <span className="w-0 group-hover:w-2 h-px bg-blue-400 transition-all duration-300 mr-0 group-hover:mr-2"></span>
+                  Ranking Histórico
+                </Link>
+              </li>
             </ul>
           </div>
 

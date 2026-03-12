@@ -27,6 +27,7 @@ const HarasPage = lazy(() => import("./pages/HarasPage"));
 const ShortHarasRedirect = lazy(() => import("./pages/ShortHarasRedirect"));
 const ProfilePage = lazy(() => import("./pages/ProfilePage"));
 const RankingPage = lazy(() => import("./pages/RankingPage"));
+const RankingHistoryPage = lazy(() => import("./pages/ranking/RankingHistoryPage"));
 const NewsPage = lazy(() => import("./pages/NewsPage"));
 const ArticlePage = lazy(() => import("./pages/ArticlePage"));
 const EventsPage = lazy(() => import("./pages/events/EventsPage"));
@@ -116,6 +117,14 @@ const App = () => (
                         element={
                           <FavoritesProviderBoundary>
                             <RankingPage />
+                          </FavoritesProviderBoundary>
+                        }
+                      />
+                      <Route
+                        path="/ranking"
+                        element={
+                          <FavoritesProviderBoundary>
+                            <RankingHistoryPage />
                           </FavoritesProviderBoundary>
                         }
                       />

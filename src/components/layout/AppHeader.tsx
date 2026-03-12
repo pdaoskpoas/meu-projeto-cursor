@@ -12,7 +12,8 @@ import {
   LogOut,
   Settings,
   Shield,
-  PanelLeft
+  PanelLeft,
+  Award
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -152,6 +153,17 @@ const AppHeader: React.FC<AppHeaderProps> = ({ onToggleSidebar, sidebarOpen }) =
             >
               <Calendar className="h-4 w-4" />
               <span>Eventos</span>
+            </Link>
+            <Link
+              to="/ranking"
+              className={`flex items-center space-x-2 px-4 py-2.5 rounded-xl font-semibold transition-all duration-300 ${
+                isActive('/ranking')
+                  ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg'
+                  : 'text-slate-700 hover:bg-slate-100'
+              }`}
+            >
+              <Award className="h-4 w-4" />
+              <span>Ranking</span>
             </Link>
             <Link
               to="/ajuda"
@@ -365,6 +377,19 @@ const AppHeader: React.FC<AppHeaderProps> = ({ onToggleSidebar, sidebarOpen }) =
                 >
                   <Calendar className="h-5 w-5" />
                   <span>Eventos</span>
+                </Link>
+
+                <Link
+                  to="/ranking"
+                  className={`flex items-center space-x-3 px-4 py-3.5 rounded-xl font-semibold transition-all min-h-[48px] ${
+                    isActive('/ranking')
+                      ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white'
+                      : 'text-slate-700 hover:bg-slate-100'
+                  }`}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <Award className="h-5 w-5" />
+                  <span>Ranking</span>
                 </Link>
 
                 <Link
