@@ -216,7 +216,7 @@ export function AdminUsers() {
               <SelectTrigger>
                 <SelectValue placeholder="Filtrar por plano" />
               </SelectTrigger>
-              <SelectContent side="bottom" align="start">
+              <SelectContent side="bottom" align="start" avoidCollisions={false}>
                 <SelectItem value="all">Todos os planos</SelectItem>
                 <SelectItem value="free">Free</SelectItem>
                 <SelectItem value="basic">Basic</SelectItem>
@@ -230,7 +230,7 @@ export function AdminUsers() {
               <SelectTrigger>
                 <SelectValue placeholder="Filtrar por tipo" />
               </SelectTrigger>
-              <SelectContent side="bottom" align="start">
+              <SelectContent side="bottom" align="start" avoidCollisions={false}>
                 <SelectItem value="all">Todos os tipos</SelectItem>
                 <SelectItem value="personal">Pessoal</SelectItem>
                 <SelectItem value="institutional">Institucional</SelectItem>

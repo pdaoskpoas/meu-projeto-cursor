@@ -675,7 +675,7 @@ const ArticleForm: React.FC<ArticleFormProps> = ({ articleId, onSuccess }) => {
               <SelectTrigger id="category" aria-labelledby="category-label" aria-required="true">
                 <SelectValue placeholder="Selecione uma categoria" />
               </SelectTrigger>
-              <SelectContent side="bottom" align="start">
+              <SelectContent side="bottom" align="start" avoidCollisions={false}>
                 {categories.map((cat) => (
                   <SelectItem key={cat} value={cat}>
                     {cat}

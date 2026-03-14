@@ -160,7 +160,7 @@ const UpgradeToInstitutionalPage = () => {
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione o estado" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent side="bottom" align="start" avoidCollisions={false}>
                     {brazilianStates.map((state) => (
                       <SelectItem key={state} value={state}>
                         {state}

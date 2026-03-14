@@ -47,7 +47,7 @@ const EventBasicInfoStep: React.FC<EventBasicInfoStepProps> = ({ formData, setFo
             <SelectTrigger className="mt-1">
               <SelectValue placeholder="Selecione a categoria" />
             </SelectTrigger>
-            <SelectContent side="bottom" align="start">
+            <SelectContent side="bottom" align="start" avoidCollisions={false}>
               {eventCategories.map((category) => (
                 <SelectItem key={category.value} value={category.value}>
                   <div className="flex items-center gap-2">

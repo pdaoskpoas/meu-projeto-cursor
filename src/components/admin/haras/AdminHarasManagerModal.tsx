@@ -446,7 +446,7 @@ const AdminHarasManagerModal: React.FC<AdminHarasManagerModalProps> = ({
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione o tipo" />
                     </SelectTrigger>
-                    <SelectContent side="bottom" align="start">
+                    <SelectContent side="bottom" align="start" avoidCollisions={false}>
                       <SelectItem value="haras">Haras</SelectItem>
                       <SelectItem value="fazenda">Fazenda</SelectItem>
                       <SelectItem value="cte">CTE</SelectItem>
@@ -466,7 +466,7 @@ const AdminHarasManagerModal: React.FC<AdminHarasManagerModalProps> = ({
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione o plano" />
                     </SelectTrigger>
-                    <SelectContent side="bottom" align="start">
+                    <SelectContent side="bottom" align="start" avoidCollisions={false}>
                       <SelectItem value="free">Free</SelectItem>
                       <SelectItem value="basic">Basic</SelectItem>
                       <SelectItem value="pro">Pro</SelectItem>

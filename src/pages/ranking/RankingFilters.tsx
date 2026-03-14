@@ -201,7 +201,7 @@ const RankingFilters: React.FC<RankingFiltersProps> = ({
             <SelectTrigger className="h-11 border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-lg">
               <SelectValue placeholder="Todos" />
             </SelectTrigger>
-            <SelectContent align="start" side="bottom">
+            <SelectContent align="start" side="bottom" avoidCollisions={false}>
               <SelectItem value="all">Todos</SelectItem>
               <SelectItem value="Macho">Macho</SelectItem>
               <SelectItem value="Fêmea">Fêmea</SelectItem>
@@ -216,7 +216,7 @@ const RankingFilters: React.FC<RankingFiltersProps> = ({
             <SelectTrigger className="h-11 border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-lg">
               <SelectValue placeholder="Todos" />
             </SelectTrigger>
-            <SelectContent align="start" side="bottom">
+            <SelectContent align="start" side="bottom" avoidCollisions={false}>
               <SelectItem value="all">Todos</SelectItem>
               <SelectItem value="Garanhão">Garanhão</SelectItem>
               <SelectItem value="Castrado">Castrado</SelectItem>
@@ -236,7 +236,7 @@ const RankingFilters: React.FC<RankingFiltersProps> = ({
             <SelectTrigger className="h-11 border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-lg">
               <SelectValue placeholder="Todos os perfis" />
             </SelectTrigger>
-            <SelectContent align="start" side="bottom">
+            <SelectContent align="start" side="bottom" avoidCollisions={false}>
               <SelectItem value="all">Todos os perfis</SelectItem>
               <SelectItem value="institutional">Perfil Institucional</SelectItem>
               <SelectItem value="personal">Perfil Pessoal</SelectItem>
@@ -254,7 +254,7 @@ const RankingFilters: React.FC<RankingFiltersProps> = ({
             <SelectTrigger className="h-11 border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-lg">
               <SelectValue placeholder="Todos os estados" />
             </SelectTrigger>
-            <SelectContent align="start" side="bottom">
+            <SelectContent align="start" side="bottom" avoidCollisions={false}>
               <SelectItem value="all">Todos os estados</SelectItem>
               {availableStates.map((state) => (
                 <SelectItem key={state} value={state}>{state}</SelectItem>
@@ -269,7 +269,7 @@ const RankingFilters: React.FC<RankingFiltersProps> = ({
             <SelectTrigger className="h-11 border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-lg disabled:opacity-50">
               <SelectValue placeholder={availableCities.length ? "Todas as cidades" : "Selecione um estado primeiro"} />
             </SelectTrigger>
-            <SelectContent align="start" side="bottom">
+            <SelectContent align="start" side="bottom" avoidCollisions={false}>
               <SelectItem value="all">Todas as cidades</SelectItem>
               {availableCities.map((city) => (
                 <SelectItem key={city} value={city}>{city}</SelectItem>
@@ -285,7 +285,7 @@ const RankingFilters: React.FC<RankingFiltersProps> = ({
             <SelectTrigger className="h-11 border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-lg">
               <SelectValue placeholder="Todos" />
             </SelectTrigger>
-            <SelectContent align="start" side="bottom">
+            <SelectContent align="start" side="bottom" avoidCollisions={false}>
               <SelectItem value="all">Todos</SelectItem>
               <SelectItem value="Sim">Sim</SelectItem>
               <SelectItem value="Não">Não</SelectItem>
@@ -300,7 +300,7 @@ const RankingFilters: React.FC<RankingFiltersProps> = ({
             <SelectTrigger className="h-11 border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-lg">
               <SelectValue placeholder="Todas" />
             </SelectTrigger>
-            <SelectContent align="start" side="bottom">
+            <SelectContent align="start" side="bottom" avoidCollisions={false}>
               <SelectItem value="all">Todas</SelectItem>
               <SelectItem value="0-2">Até 2 anos</SelectItem>
               <SelectItem value="3-5">3 a 5 anos</SelectItem>
@@ -318,7 +318,7 @@ const RankingFilters: React.FC<RankingFiltersProps> = ({
             <SelectTrigger className="h-11 border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-lg">
               <SelectValue placeholder="Todos" />
             </SelectTrigger>
-            <SelectContent align="start" side="bottom">
+            <SelectContent align="start" side="bottom" avoidCollisions={false}>
               <SelectItem value="all">Todos</SelectItem>
               <SelectItem value="Sim">Sim</SelectItem>
               <SelectItem value="Não">Não</SelectItem>
@@ -333,7 +333,7 @@ const RankingFilters: React.FC<RankingFiltersProps> = ({
             <SelectTrigger className="h-11 border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-lg">
               <SelectValue placeholder="Mais relevantes" />
             </SelectTrigger>
-            <SelectContent align="start" side="bottom">
+            <SelectContent align="start" side="bottom" avoidCollisions={false}>
               <SelectItem value="relevant">Mais relevantes</SelectItem>
               <SelectItem value="recent">Mais recentes</SelectItem>
               <SelectItem value="views">Mais visualizados</SelectItem>

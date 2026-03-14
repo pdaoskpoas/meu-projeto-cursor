@@ -455,7 +455,7 @@ const SocietyPage = () => {
                     <SelectTrigger className="w-full md:w-48">
                       <SelectValue placeholder="Status" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent side="bottom" align="start" avoidCollisions={false}>
                       <SelectItem value="all">Todas as Sociedades</SelectItem>
                       <SelectItem value="pending">Pendentes</SelectItem>
                       <SelectItem value="accepted">Ativas</SelectItem>
@@ -699,7 +699,7 @@ const SocietyPage = () => {
                     <SelectTrigger>
                       <SelectValue placeholder="Escolha um animal" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent side="bottom" align="start" avoidCollisions={false}>
                       {userAnimals.filter(a => !a.is_partnership).map(animal => (
                         <SelectItem key={animal.id} value={animal.id}>
                           {animal.name} - {animal.breed}

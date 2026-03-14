@@ -317,7 +317,7 @@ const EventsPage = () => {
                 <SelectTrigger>
                   <SelectValue placeholder="Todas as categorias" />
                 </SelectTrigger>
-                <SelectContent side="bottom" align="start">
+                <SelectContent side="bottom" align="start" avoidCollisions={false}>
                   <SelectItem value="all">Todas as categorias</SelectItem>
                   <SelectItem value="Competição">Competição</SelectItem>
                   <SelectItem value="Leilão">Leilão</SelectItem>
@@ -334,7 +334,7 @@ const EventsPage = () => {
                 <SelectTrigger>
                   <SelectValue placeholder="Todos os status" />
                 </SelectTrigger>
-                <SelectContent side="bottom" align="start">
+                <SelectContent side="bottom" align="start" avoidCollisions={false}>
                   <SelectItem value="all">Todos os status</SelectItem>
                   <SelectItem value="active">Ativo</SelectItem>
                   <SelectItem value="paused">Pausado</SelectItem>

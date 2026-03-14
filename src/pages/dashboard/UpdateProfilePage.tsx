@@ -457,7 +457,7 @@ const UpdateProfilePage = () => {
                       <SelectTrigger className={errors.property_type ? 'border-red-500' : ''}>
                         <SelectValue placeholder="Selecione o tipo" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent side="bottom" align="start" avoidCollisions={false}>
                         <SelectItem value="haras">Haras</SelectItem>
                         <SelectItem value="fazenda">Fazenda</SelectItem>
                         <SelectItem value="cte">CTE (Centro de Treinamento Equestre)</SelectItem>

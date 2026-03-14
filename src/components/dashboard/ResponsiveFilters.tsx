@@ -60,7 +60,7 @@ const ResponsiveFilters: React.FC<ResponsiveFiltersProps> = ({
             <SelectTrigger className="h-12 border-slate-200 focus:border-blue-500 focus:ring-blue-500 rounded-xl">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent side="bottom" align="start">
+            <SelectContent side="bottom" align="start" avoidCollisions={false}>
               {filter.options.map((option) => (
                 <SelectItem key={option.value} value={option.value}>
                   {option.label}

@@ -205,7 +205,7 @@ const EventsPage = () => {
                     <SelectTrigger className="h-11">
                       <SelectValue placeholder="Tipo de Evento" />
                     </SelectTrigger>
-                    <SelectContent side="bottom" align="start">
+                    <SelectContent side="bottom" align="start" avoidCollisions={false}>
                       <SelectItem value="all">Todos os tipos</SelectItem>
                       {eventTypes.map((type) => (
                         <SelectItem key={type} value={type}>
@@ -221,7 +221,7 @@ const EventsPage = () => {
                     <SelectTrigger className="h-11">
                       <SelectValue placeholder="Estado" />
                     </SelectTrigger>
-                    <SelectContent side="bottom" align="start">
+                    <SelectContent side="bottom" align="start" avoidCollisions={false}>
                       <SelectItem value="all">Todos os estados</SelectItem>
                       {states.map((state) => (
                         <SelectItem key={state} value={state}>

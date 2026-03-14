@@ -58,7 +58,7 @@ const HarasFilters: React.FC<HarasFiltersProps> = ({
             <SelectTrigger className="w-48">
               <SelectValue placeholder="Todos os estados" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent side="bottom" align="start" avoidCollisions={false}>
               <SelectItem value="all">Todos os estados</SelectItem>
               {brazilianStates.map((state) => (
                 <SelectItem key={state} value={state}>
@@ -73,7 +73,7 @@ const HarasFilters: React.FC<HarasFiltersProps> = ({
             <SelectTrigger className="w-48">
               <SelectValue placeholder="Todos os tipos" />
             </SelectTrigger>
-            <SelectContent side="bottom" align="start">
+            <SelectContent side="bottom" align="start" avoidCollisions={false}>
               <SelectItem value="all">Todos os tipos</SelectItem>
               {harasTypes.map((type) => (
                 <SelectItem key={type.value} value={type.value}>
@@ -101,7 +101,7 @@ const HarasFilters: React.FC<HarasFiltersProps> = ({
             <SelectTrigger className="w-48">
               <SelectValue placeholder="Todos os planos" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent side="bottom" align="start" avoidCollisions={false}>
               <SelectItem value="all">Todos os planos</SelectItem>
               {planTypes.map((plan) => (
                 <SelectItem key={plan.value} value={plan.value}>
@@ -116,7 +116,7 @@ const HarasFilters: React.FC<HarasFiltersProps> = ({
             <SelectTrigger className="w-48">
               <SelectValue placeholder="Todos os status" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent side="bottom" align="start" avoidCollisions={false}>
               <SelectItem value="all">Todos os status</SelectItem>
               {statusTypes.map((status) => (
                 <SelectItem key={status.value} value={status.value}>

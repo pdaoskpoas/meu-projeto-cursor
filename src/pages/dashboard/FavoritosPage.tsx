@@ -96,7 +96,7 @@ const FavoritosPage = () => {
                     <SelectTrigger className="h-12 border-slate-200 focus:border-blue-500 focus:ring-blue-500 rounded-xl">
                       <SelectValue placeholder="Selecione uma raça" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent side="bottom" align="start" avoidCollisions={false}>
                       {breeds.map(breed => (
                         <SelectItem key={breed} value={breed}>
                           {breed === 'all' ? 'Todas as raças' : breed}
