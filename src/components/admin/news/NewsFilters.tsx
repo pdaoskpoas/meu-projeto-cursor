@@ -63,7 +63,7 @@ const NewsFilters: React.FC<NewsFiltersProps> = ({
             <SelectTrigger className="w-48">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent side="bottom" align="start">
               {statusOptions.map((option) => (
                 <SelectItem key={option.value} value={option.value}>
                   {option.label}
@@ -77,7 +77,7 @@ const NewsFilters: React.FC<NewsFiltersProps> = ({
             <SelectTrigger className="w-48">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent side="bottom" align="start">
               {sortOptions.map((option) => (
                 <SelectItem key={option.value} value={option.value}>
                   {option.label}
@@ -119,7 +119,7 @@ const NewsFilters: React.FC<NewsFiltersProps> = ({
                 <SelectTrigger>
                   <SelectValue placeholder="Todas as categorias" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent side="bottom" align="start">
                   <SelectItem value="all">Todas as categorias</SelectItem>
                   {newsCategories.map((category) => (
                     <SelectItem key={category} value={category}>
@@ -139,7 +139,7 @@ const NewsFilters: React.FC<NewsFiltersProps> = ({
                 <SelectTrigger>
                   <SelectValue placeholder="Todos os autores" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent side="bottom" align="start">
                   <SelectItem value="all">Todos os autores</SelectItem>
                   {uniqueAuthors.map((author) => (
                     <SelectItem key={author} value={author}>
@@ -159,7 +159,7 @@ const NewsFilters: React.FC<NewsFiltersProps> = ({
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent side="bottom" align="start">
                   <SelectItem value="all">Todos</SelectItem>
                   <SelectItem value="highlighted">Em destaque</SelectItem>
                   <SelectItem value="not_highlighted">Sem destaque</SelectItem>
@@ -176,7 +176,7 @@ const NewsFilters: React.FC<NewsFiltersProps> = ({
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent side="bottom" align="start">
                   <SelectItem value="all">Todos os períodos</SelectItem>
                   <SelectItem value="today">Hoje</SelectItem>
                   <SelectItem value="week">Esta semana</SelectItem>

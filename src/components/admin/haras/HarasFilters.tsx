@@ -73,7 +73,7 @@ const HarasFilters: React.FC<HarasFiltersProps> = ({
             <SelectTrigger className="w-48">
               <SelectValue placeholder="Todos os tipos" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent side="bottom" align="start">
               <SelectItem value="all">Todos os tipos</SelectItem>
               {harasTypes.map((type) => (
                 <SelectItem key={type.value} value={type.value}>

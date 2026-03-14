@@ -133,7 +133,7 @@ const EventDateLocationStep: React.FC<EventDateLocationStepProps> = ({ formData,
                   <SelectTrigger className="mt-1">
                     <SelectValue placeholder="Selecione o estado" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent side="bottom" align="start">
                     {brazilianStates.map((state) => (
                       <SelectItem key={state.value} value={state.value}>
                         {state.label}

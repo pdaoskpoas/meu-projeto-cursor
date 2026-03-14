@@ -59,7 +59,7 @@ const RankingHistoryPage = () => {
               <SelectTrigger className="w-full sm:w-[200px]">
                 <SelectValue placeholder="Todos os anos" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent side="bottom" align="start">
                 <SelectItem value="all">Todos os anos</SelectItem>
                 {availableYears.map((year) => (
                   <SelectItem key={year} value={year.toString()}>

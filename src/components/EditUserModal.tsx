@@ -195,7 +195,7 @@ export function EditUserModal({ user, isOpen, onClose, onSave }: EditUserModalPr
               <SelectTrigger>
                 <SelectValue placeholder="Selecione o tipo" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent side="bottom" align="start">
                 <SelectItem value="personal">Pessoal</SelectItem>
                 <SelectItem value="institutional">Institucional</SelectItem>
               </SelectContent>
@@ -221,7 +221,7 @@ export function EditUserModal({ user, isOpen, onClose, onSave }: EditUserModalPr
               <SelectTrigger>
                 <SelectValue placeholder="Selecione o plano" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent side="bottom" align="start">
                 <SelectItem value="free">Free</SelectItem>
                 <SelectItem value="basic">Basic</SelectItem>
                 <SelectItem value="pro">Pro</SelectItem>

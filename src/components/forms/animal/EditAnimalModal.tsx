@@ -385,7 +385,7 @@ const EditAnimalModal: React.FC<EditAnimalModalProps> = ({
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione a raça" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent side="bottom" align="start">
                     <SelectItem value="Mangalarga Marchador">Mangalarga Marchador</SelectItem>
                     <SelectItem value="Quarto de Milha">Quarto de Milha</SelectItem>
                     <SelectItem value="Puro Sangue Inglês">Puro Sangue Inglês</SelectItem>
@@ -417,7 +417,7 @@ const EditAnimalModal: React.FC<EditAnimalModalProps> = ({
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent side="bottom" align="start">
                     <SelectItem value="Macho">Macho</SelectItem>
                     <SelectItem value="Fêmea">Fêmea</SelectItem>
                   </SelectContent>
@@ -430,7 +430,7 @@ const EditAnimalModal: React.FC<EditAnimalModalProps> = ({
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione a pelagem" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent side="bottom" align="start">
                     {COAT_OPTIONS.map((coat) => (
                       <SelectItem key={coat} value={coat}>
                         {coat}
@@ -447,7 +447,7 @@ const EditAnimalModal: React.FC<EditAnimalModalProps> = ({
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione a categoria" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent side="bottom" align="start">
                   {CATEGORY_OPTIONS.map((category) => (
                     <SelectItem key={category} value={category}>
                       {category}
@@ -684,7 +684,7 @@ const EditAnimalModal: React.FC<EditAnimalModalProps> = ({
                     <SelectTrigger>
                       <SelectValue placeholder="UF" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent side="bottom" align="start">
                       {BRAZILIAN_STATES.map((state) => (
                         <SelectItem key={state} value={state}>
                           {state}

@@ -100,7 +100,7 @@ const EventDateLocationStep: React.FC<EventDateLocationStepProps> = ({ formData,
               <SelectTrigger className="h-11 border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-lg">
                 <SelectValue placeholder="Selecione" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent side="bottom" align="start">
                 {brazilStates.map((state) => (
                   <SelectItem key={state} value={state}>
                     {state}

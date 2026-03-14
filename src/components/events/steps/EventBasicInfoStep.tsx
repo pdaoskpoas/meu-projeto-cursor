@@ -52,7 +52,7 @@ const EventBasicInfoStep: React.FC<EventBasicInfoStepProps> = ({ formData, onInp
             <SelectTrigger className="h-11 border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-lg">
               <SelectValue placeholder="Selecione o tipo" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent side="bottom" align="start">
               {eventTypes.map((type) => (
                 <SelectItem key={type.value} value={type.value}>
                   {type.label}

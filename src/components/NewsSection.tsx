@@ -193,7 +193,7 @@ const NewsSection = () => {
         {/* Header */}
         <div className="text-center space-content mb-12 sm:mb-16">
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-slate-900 text-balance">
-            Principais noticias da
+            Últimas notícias da
             <span className="bg-gradient-to-r from-red-600 to-orange-600 bg-clip-text text-transparent"> Vitrine</span>
           </h2>
           <p className="text-lg sm:text-xl text-slate-600 max-w-3xl mx-auto leading-relaxed mt-4">

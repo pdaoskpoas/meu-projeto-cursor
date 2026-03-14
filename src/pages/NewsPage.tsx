@@ -424,7 +424,7 @@ const NewsPage = () => {
                     <SelectTrigger className="h-10 border-slate-200 focus:border-blue-500 focus:ring-blue-500 rounded-lg">
                       <SelectValue placeholder="Selecione a categoria" />
                     </SelectTrigger>
-                    <SelectContent className="z-50">
+                    <SelectContent className="z-50" side="bottom" align="start">
                       <SelectItem value="Todas">Todas as categorias</SelectItem>
                       {categories.slice(1).map(category => (
                         <SelectItem key={category} value={category}>{category}</SelectItem>
@@ -440,7 +440,7 @@ const NewsPage = () => {
                     <SelectTrigger className="h-10 border-slate-200 focus:border-blue-500 focus:ring-blue-500 rounded-lg">
                       <SelectValue placeholder="Selecione a ordenação" />
                     </SelectTrigger>
-                    <SelectContent className="z-50">
+                    <SelectContent className="z-50" side="bottom" align="start">
                       <SelectItem value="recent">Mais recentes</SelectItem>
                       <SelectItem value="popular">Mais populares</SelectItem>
                       <SelectItem value="title">Título A-Z</SelectItem>

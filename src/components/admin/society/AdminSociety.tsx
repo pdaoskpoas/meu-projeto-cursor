@@ -410,7 +410,7 @@ const AdminSociety: React.FC = () => {
             <SelectTrigger className="w-48">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent side="bottom" align="start">
               <SelectItem value="all">Todos</SelectItem>
               <SelectItem value="accepted">Ativas</SelectItem>
               <SelectItem value="pending">Pendentes</SelectItem>

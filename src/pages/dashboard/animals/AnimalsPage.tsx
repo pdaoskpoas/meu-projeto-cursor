@@ -698,7 +698,7 @@ const AnimalsPage = () => {
                   <SelectTrigger>
                     <SelectValue placeholder={loadingTransferPartners ? 'Carregando sócios...' : 'Selecione um sócio'} />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent side="bottom" align="start">
                     {transferPartners.map((partner) => (
                       <SelectItem key={partner.partner_id} value={partner.partner_id}>
                         {partner.partner_name || 'Sócio'}

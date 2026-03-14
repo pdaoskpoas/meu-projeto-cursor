@@ -168,7 +168,7 @@ const NewsDetailedReport: React.FC<NewsDetailedReportProps> = ({ className }) =>
                 <SelectTrigger>
                   <SelectValue placeholder="Todas as notícias" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent side="bottom" align="start">
                   <SelectItem value="all">Todas as notícias</SelectItem>
                   {articles.map((article) => (
                     <SelectItem key={article.id} value={article.id}>
@@ -196,7 +196,7 @@ const NewsDetailedReport: React.FC<NewsDetailedReportProps> = ({ className }) =>
                 <SelectTrigger>
                   <SelectValue placeholder="Todos os anos" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent side="bottom" align="start">
                   <SelectItem value="all">Todos os anos</SelectItem>
                   {availableYears.map((year) => (
                     <SelectItem key={year} value={year.toString()}>
@@ -219,7 +219,7 @@ const NewsDetailedReport: React.FC<NewsDetailedReportProps> = ({ className }) =>
                 <SelectTrigger>
                   <SelectValue placeholder="Todos os meses" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent side="bottom" align="start">
                   <SelectItem value="all">Todos os meses</SelectItem>
                   {monthOptions.map((month) => (
                     <SelectItem key={month.value} value={month.value.toString()}>

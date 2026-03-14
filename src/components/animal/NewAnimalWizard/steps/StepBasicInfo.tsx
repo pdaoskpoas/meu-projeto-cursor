@@ -131,7 +131,7 @@ export const StepBasicInfo: React.FC = () => {
             <SelectTrigger className={errors.breed ? 'border-red-500' : ''}>
               <SelectValue placeholder="Selecione a raça" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent side="bottom" align="start">
               {HORSE_BREEDS.map((breed) => (
                 <SelectItem key={breed} value={breed}>
                   {breed}
@@ -199,7 +199,7 @@ export const StepBasicInfo: React.FC = () => {
             <SelectTrigger className={errors.coat ? 'border-red-500' : ''}>
               <SelectValue placeholder="Selecione a pelagem" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent side="bottom" align="start">
               <SelectItem value="Alazã">Alazã</SelectItem>
               <SelectItem value="Castanha">Castanha</SelectItem>
               <SelectItem value="Preta">Preta</SelectItem>
@@ -234,7 +234,7 @@ export const StepBasicInfo: React.FC = () => {
             <SelectTrigger>
               <SelectValue placeholder="Selecione a categoria" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent side="bottom" align="start">
               {CATEGORIES.map((category) => (
                 <SelectItem key={category} value={category}>
                   {category}

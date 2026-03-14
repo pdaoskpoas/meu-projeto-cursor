@@ -92,7 +92,7 @@ const AdminHarasMap: React.FC = () => {
                     <SelectTrigger>
                       <SelectValue placeholder="Filtrar por plano" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent side="bottom" align="start">
                       <SelectItem value="all">Todos os planos</SelectItem>
                       <SelectItem value="free">Free</SelectItem>
                       <SelectItem value="basic">Basic</SelectItem>
@@ -106,7 +106,7 @@ const AdminHarasMap: React.FC = () => {
                     <SelectTrigger>
                       <SelectValue placeholder="Filtrar por tipo" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent side="bottom" align="start">
                       <SelectItem value="all">Todos os tipos</SelectItem>
                       <SelectItem value="haras">Haras</SelectItem>
                       <SelectItem value="fazenda">Fazenda</SelectItem>

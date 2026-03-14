@@ -320,85 +320,88 @@ const ArticlePage = () => {
 
           {/* Article Content - Typography exatamente como G1 */}
           <div className="mb-16">
-            {/* Parte superior do conteúdo */}
-            {contentParts.top && (
-              <div 
-                className="prose prose-sm max-w-none 
-                  prose-slate 
-                  prose-headings:font-sans prose-headings:font-bold prose-headings:text-slate-900 
-                  prose-h2:text-xl sm:text-2xl prose-h2:mt-16 prose-h2:mb-4 prose-h2:leading-tight prose-h2:font-bold
-                  prose-h3:text-lg sm:text-xl prose-h3:mt-12 prose-h3:mb-3 prose-h3:leading-tight prose-h3:font-bold
-                  prose-p:text-slate-900 prose-p:leading-[1.65] prose-p:mb-5 prose-p:text-[16px] prose-p:font-normal
-                  prose-p:first-of-type:text-[16px] prose-p:first-of-type:leading-[1.65] prose-p:first-of-type:font-normal prose-p:first-of-type:text-slate-900 prose-p:first-of-type:mb-5
-                  prose-a:text-orange-600 prose-a:no-underline hover:prose-a:underline prose-a:font-medium prose-a:transition-all
-                  prose-strong:text-slate-900 prose-strong:font-semibold
-                  prose-ul:my-5 prose-ul:space-y-2 prose-li:text-slate-900 prose-li:leading-[1.65] prose-li:pl-2 prose-li:text-[16px]
-                  prose-ol:my-5 prose-ol:space-y-2 prose-ol:li:text-slate-900 prose-ol:li:leading-[1.65] prose-ol:li:pl-2 prose-ol:li:text-[16px]
-                  prose-blockquote:border-l-4 prose-blockquote:border-orange-500 prose-blockquote:pl-6 prose-blockquote:pr-4 prose-blockquote:py-3 prose-blockquote:my-5 prose-blockquote:italic prose-blockquote:text-slate-900 prose-blockquote:bg-slate-50 prose-blockquote:rounded-r-lg prose-blockquote:text-[16px] prose-blockquote:leading-[1.65]
-                  prose-img:rounded-lg prose-img:shadow-md prose-img:my-6 prose-img:w-full
-                  prose-code:text-orange-600 prose-code:bg-orange-50 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm
-                  [&>p+p]:mt-5 [&>h2+p]:mt-4 [&>h3+p]:mt-3"
-                style={{ fontSize: '16px', lineHeight: '1.65' }}
-                dangerouslySetInnerHTML={{ __html: sanitizeRichText(contentParts.top) }}
-              />
-            )}
+            {/* Se houver divisão de conteúdo (para anúncios), renderizar em partes */}
+            {contentParts.mid ? (
+              <>
+                {/* Parte superior do conteúdo */}
+                {contentParts.top && (
+                  <div 
+                    className="prose prose-sm max-w-none 
+                      prose-slate 
+                      prose-headings:font-sans prose-headings:font-bold prose-headings:text-slate-900 
+                      prose-h2:text-xl sm:text-2xl prose-h2:mt-16 prose-h2:mb-4 prose-h2:leading-tight prose-h2:font-bold
+                      prose-h3:text-lg sm:text-xl prose-h3:mt-12 prose-h3:mb-3 prose-h3:leading-tight prose-h3:font-bold
+                      prose-p:text-slate-900 prose-p:leading-[1.65] prose-p:mb-5 prose-p:text-[16px] prose-p:font-normal
+                      prose-p:first-of-type:text-[16px] prose-p:first-of-type:leading-[1.65] prose-p:first-of-type:font-normal prose-p:first-of-type:text-slate-900 prose-p:first-of-type:mb-5
+                      prose-a:text-orange-600 prose-a:no-underline hover:prose-a:underline prose-a:font-medium prose-a:transition-all
+                      prose-strong:text-slate-900 prose-strong:font-semibold
+                      prose-ul:my-5 prose-ul:space-y-2 prose-li:text-slate-900 prose-li:leading-[1.65] prose-li:pl-2 prose-li:text-[16px]
+                      prose-ol:my-5 prose-ol:space-y-2 prose-ol:li:text-slate-900 prose-ol:li:leading-[1.65] prose-ol:li:pl-2 prose-ol:li:text-[16px]
+                      prose-blockquote:border-l-4 prose-blockquote:border-orange-500 prose-blockquote:pl-6 prose-blockquote:pr-4 prose-blockquote:py-3 prose-blockquote:my-5 prose-blockquote:italic prose-blockquote:text-slate-900 prose-blockquote:bg-slate-50 prose-blockquote:rounded-r-lg prose-blockquote:text-[16px] prose-blockquote:leading-[1.65]
+                      prose-img:rounded-lg prose-img:shadow-md prose-img:my-6 prose-img:w-full
+                      prose-code:text-orange-600 prose-code:bg-orange-50 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm
+                      [&>p+p]:mt-5 [&>h2+p]:mt-4 [&>h3+p]:mt-3"
+                    style={{ fontSize: '16px', lineHeight: '1.65' }}
+                    dangerouslySetInnerHTML={{ __html: sanitizeRichText(contentParts.top) }}
+                  />
+                )}
 
-            {/* Banner AdSense no meio do conteúdo */}
-            {adsenseConfig?.is_active && adsenseConfig?.article_mid_banner && contentParts.mid && (
-              <div className="my-8">
-                <AdSenseBanner 
-                  code={adsenseConfig.article_mid_banner}
-                  className="w-full"
-                />
-              </div>
-            )}
+                {/* Banner AdSense no meio do conteúdo */}
+                {adsenseConfig?.is_active && adsenseConfig?.article_mid_banner && (
+                  <div className="my-8">
+                    <AdSenseBanner 
+                      code={adsenseConfig.article_mid_banner}
+                      className="w-full"
+                    />
+                  </div>
+                )}
 
-            {/* Parte do meio do conteúdo (se houver divisão) */}
-            {contentParts.mid && (
-              <div 
-                className="prose prose-sm max-w-none 
-                  prose-slate 
-                  prose-headings:font-sans prose-headings:font-bold prose-headings:text-slate-900 
-                  prose-h2:text-xl sm:text-2xl prose-h2:mt-16 prose-h2:mb-4 prose-h2:leading-tight prose-h2:font-bold
-                  prose-h3:text-lg sm:text-xl prose-h3:mt-12 prose-h3:mb-3 prose-h3:leading-tight prose-h3:font-bold
-                  prose-p:text-slate-900 prose-p:leading-[1.65] prose-p:mb-5 prose-p:text-[16px] prose-p:font-normal
-                  prose-a:text-orange-600 prose-a:no-underline hover:prose-a:underline prose-a:font-medium prose-a:transition-all
-                  prose-strong:text-slate-900 prose-strong:font-semibold
-                  prose-ul:my-5 prose-ul:space-y-2 prose-li:text-slate-900 prose-li:leading-[1.65] prose-li:pl-2 prose-li:text-[16px]
-                  prose-ol:my-5 prose-ol:space-y-2 prose-ol:li:text-slate-900 prose-ol:li:leading-[1.65] prose-ol:li:pl-2 prose-ol:li:text-[16px]
-                  prose-blockquote:border-l-4 prose-blockquote:border-orange-500 prose-blockquote:pl-6 prose-blockquote:pr-4 prose-blockquote:py-3 prose-blockquote:my-5 prose-blockquote:italic prose-blockquote:text-slate-900 prose-blockquote:bg-slate-50 prose-blockquote:rounded-r-lg prose-blockquote:text-[16px] prose-blockquote:leading-[1.65]
-                  prose-img:rounded-lg prose-img:shadow-md prose-img:my-6 prose-img:w-full
-                  prose-code:text-orange-600 prose-code:bg-orange-50 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm
-                  [&>p+p]:mt-5 [&>h2+p]:mt-4 [&>h3+p]:mt-3"
-                style={{ fontSize: '16px', lineHeight: '1.65' }}
-                dangerouslySetInnerHTML={{ __html: sanitizeRichText(contentParts.mid) }}
-              />
-            )}
+                {/* Parte do meio do conteúdo */}
+                {contentParts.mid && (
+                  <div 
+                    className="prose prose-sm max-w-none 
+                      prose-slate 
+                      prose-headings:font-sans prose-headings:font-bold prose-headings:text-slate-900 
+                      prose-h2:text-xl sm:text-2xl prose-h2:mt-16 prose-h2:mb-4 prose-h2:leading-tight prose-h2:font-bold
+                      prose-h3:text-lg sm:text-xl prose-h3:mt-12 prose-h3:mb-3 prose-h3:leading-tight prose-h3:font-bold
+                      prose-p:text-slate-900 prose-p:leading-[1.65] prose-p:mb-5 prose-p:text-[16px] prose-p:font-normal
+                      prose-a:text-orange-600 prose-a:no-underline hover:prose-a:underline prose-a:font-medium prose-a:transition-all
+                      prose-strong:text-slate-900 prose-strong:font-semibold
+                      prose-ul:my-5 prose-ul:space-y-2 prose-li:text-slate-900 prose-li:leading-[1.65] prose-li:pl-2 prose-li:text-[16px]
+                      prose-ol:my-5 prose-ol:space-y-2 prose-ol:li:text-slate-900 prose-ol:li:leading-[1.65] prose-ol:li:pl-2 prose-ol:li:text-[16px]
+                      prose-blockquote:border-l-4 prose-blockquote:border-orange-500 prose-blockquote:pl-6 prose-blockquote:pr-4 prose-blockquote:py-3 prose-blockquote:my-5 prose-blockquote:italic prose-blockquote:text-slate-900 prose-blockquote:bg-slate-50 prose-blockquote:rounded-r-lg prose-blockquote:text-[16px] prose-blockquote:leading-[1.65]
+                      prose-img:rounded-lg prose-img:shadow-md prose-img:my-6 prose-img:w-full
+                      prose-code:text-orange-600 prose-code:bg-orange-50 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm
+                      [&>p+p]:mt-5 [&>h2+p]:mt-4 [&>h3+p]:mt-3"
+                    style={{ fontSize: '16px', lineHeight: '1.65' }}
+                    dangerouslySetInnerHTML={{ __html: sanitizeRichText(contentParts.mid) }}
+                  />
+                )}
 
-            {/* Parte inferior do conteúdo (se não houver divisão, mostrar conteúdo completo) */}
-            {contentParts.bottom && (
-              <div 
-                className="prose prose-sm max-w-none 
-                  prose-slate 
-                  prose-headings:font-sans prose-headings:font-bold prose-headings:text-slate-900 
-                  prose-h2:text-xl sm:text-2xl prose-h2:mt-16 prose-h2:mb-4 prose-h2:leading-tight prose-h2:font-bold
-                  prose-h3:text-lg sm:text-xl prose-h3:mt-12 prose-h3:mb-3 prose-h3:leading-tight prose-h3:font-bold
-                  prose-p:text-slate-900 prose-p:leading-[1.65] prose-p:mb-5 prose-p:text-[16px] prose-p:font-normal
-                  prose-a:text-orange-600 prose-a:no-underline hover:prose-a:underline prose-a:font-medium prose-a:transition-all
-                  prose-strong:text-slate-900 prose-strong:font-semibold
-                  prose-ul:my-5 prose-ul:space-y-2 prose-li:text-slate-900 prose-li:leading-[1.65] prose-li:pl-2 prose-li:text-[16px]
-                  prose-ol:my-5 prose-ol:space-y-2 prose-ol:li:text-slate-900 prose-ol:li:leading-[1.65] prose-ol:li:pl-2 prose-ol:li:text-[16px]
-                  prose-blockquote:border-l-4 prose-blockquote:border-orange-500 prose-blockquote:pl-6 prose-blockquote:pr-4 prose-blockquote:py-3 prose-blockquote:my-5 prose-blockquote:italic prose-blockquote:text-slate-900 prose-blockquote:bg-slate-50 prose-blockquote:rounded-r-lg prose-blockquote:text-[16px] prose-blockquote:leading-[1.65]
-                  prose-img:rounded-lg prose-img:shadow-md prose-img:my-6 prose-img:w-full
-                  prose-code:text-orange-600 prose-code:bg-orange-50 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm
-                  [&>p+p]:mt-5 [&>h2+p]:mt-4 [&>h3+p]:mt-3"
-                style={{ fontSize: '16px', lineHeight: '1.65' }}
-                dangerouslySetInnerHTML={{ __html: sanitizeRichText(contentParts.bottom) }}
-              />
-            )}
-
-            {/* Se não houve divisão, mostrar conteúdo completo */}
-            {!contentParts.mid && !contentParts.bottom && (
+                {/* Parte inferior do conteúdo */}
+                {contentParts.bottom && (
+                  <div 
+                    className="prose prose-sm max-w-none 
+                      prose-slate 
+                      prose-headings:font-sans prose-headings:font-bold prose-headings:text-slate-900 
+                      prose-h2:text-xl sm:text-2xl prose-h2:mt-16 prose-h2:mb-4 prose-h2:leading-tight prose-h2:font-bold
+                      prose-h3:text-lg sm:text-xl prose-h3:mt-12 prose-h3:mb-3 prose-h3:leading-tight prose-h3:font-bold
+                      prose-p:text-slate-900 prose-p:leading-[1.65] prose-p:mb-5 prose-p:text-[16px] prose-p:font-normal
+                      prose-a:text-orange-600 prose-a:no-underline hover:prose-a:underline prose-a:font-medium prose-a:transition-all
+                      prose-strong:text-slate-900 prose-strong:font-semibold
+                      prose-ul:my-5 prose-ul:space-y-2 prose-li:text-slate-900 prose-li:leading-[1.65] prose-li:pl-2 prose-li:text-[16px]
+                      prose-ol:my-5 prose-ol:space-y-2 prose-ol:li:text-slate-900 prose-ol:li:leading-[1.65] prose-ol:li:pl-2 prose-ol:li:text-[16px]
+                      prose-blockquote:border-l-4 prose-blockquote:border-orange-500 prose-blockquote:pl-6 prose-blockquote:pr-4 prose-blockquote:py-3 prose-blockquote:my-5 prose-blockquote:italic prose-blockquote:text-slate-900 prose-blockquote:bg-slate-50 prose-blockquote:rounded-r-lg prose-blockquote:text-[16px] prose-blockquote:leading-[1.65]
+                      prose-img:rounded-lg prose-img:shadow-md prose-img:my-6 prose-img:w-full
+                      prose-code:text-orange-600 prose-code:bg-orange-50 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm
+                      [&>p+p]:mt-5 [&>h2+p]:mt-4 [&>h3+p]:mt-3"
+                    style={{ fontSize: '16px', lineHeight: '1.65' }}
+                    dangerouslySetInnerHTML={{ __html: sanitizeRichText(contentParts.bottom) }}
+                  />
+                )}
+              </>
+            ) : (
+              /* Se não houver divisão, mostrar conteúdo completo */
               <div 
                 className="prose prose-sm max-w-none 
                   prose-slate 

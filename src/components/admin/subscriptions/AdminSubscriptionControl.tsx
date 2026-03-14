@@ -173,7 +173,7 @@ const AdminSubscriptionControl: React.FC = () => {
             <SelectTrigger className="w-[110px]">
               <SelectValue placeholder="Dias" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent side="bottom" align="start">
               <SelectItem value="7">7 dias</SelectItem>
               <SelectItem value="15">15 dias</SelectItem>
               <SelectItem value="30">30 dias</SelectItem>
@@ -277,7 +277,7 @@ const AdminSubscriptionControl: React.FC = () => {
                         <SelectTrigger>
                           <SelectValue placeholder="Selecione" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent side="bottom" align="start">
                           {outreachStatusOptions.map((option) => (
                             <SelectItem key={option.value} value={option.value}>
                               {option.label}
@@ -296,7 +296,7 @@ const AdminSubscriptionControl: React.FC = () => {
                         <SelectTrigger>
                           <SelectValue placeholder="Selecione" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent side="bottom" align="start">
                           {channelOptions.map((option) => (
                             <SelectItem key={option.value} value={option.value}>
                               {option.label}
@@ -372,7 +372,7 @@ const AdminSubscriptionControl: React.FC = () => {
                           <SelectTrigger>
                             <SelectValue placeholder="Selecione" />
                           </SelectTrigger>
-                          <SelectContent>
+                          <SelectContent side="bottom" align="start">
                             {outreachStatusOptions.map((option) => (
                               <SelectItem key={option.value} value={option.value}>
                                 {option.label}
