@@ -16,9 +16,15 @@ const DEFAULT_CONFIG: DOMPurify.Config = {
 
 // Configuração para rich text (descrições)
 const RICH_TEXT_CONFIG: DOMPurify.Config = {
-  ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'p', 'br', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote'],
-  ALLOWED_ATTR: [],
-  KEEP_CONTENT: true
+  ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'p', 'br', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'a', 'img'],
+  ALLOWED_ATTR: ['href', 'target', 'rel', 'src', 'alt', 'title', 'class'],
+  ALLOW_DATA_ATTR: false,
+  KEEP_CONTENT: true,
+  // Garantir que o HTML seja renderizado, não escapado
+  RETURN_DOM: false,
+  RETURN_DOM_FRAGMENT: false,
+  // Adicionar rel="noopener noreferrer" para links externos
+  ADD_ATTR: ['target'],
 };
 
 // Configuração para texto puro (sem tags)
@@ -37,11 +43,58 @@ export const sanitizeHTML = (dirty: string): string => {
 };
 
 /**
+ * Decodifica HTML entities escapadas
+ */
+const decodeHtmlEntities = (html: string): string => {
+  if (typeof window === 'undefined') {
+    // Servidor-side: usar replace simples
+    return html
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&amp;/g, '&')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'");
+  }
+  
+  // Client-side: usar DOM para decodificar corretamente
+  const textarea = document.createElement('textarea');
+  textarea.innerHTML = html;
+  return textarea.value;
+};
+
+/**
  * Sanitiza rich text (descrições de animais, eventos, artigos)
  */
 export const sanitizeRichText = (dirty: string): string => {
   if (!dirty) return '';
-  return DOMPurify.sanitize(dirty, RICH_TEXT_CONFIG);
+  
+  // Se o conteúdo já está escapado (contém &lt; ou &gt;), decodificar primeiro
+  let content = dirty;
+  if (content.includes('&lt;') || content.includes('&gt;') || content.includes('&amp;')) {
+    content = decodeHtmlEntities(content);
+  }
+  
+  // Sanitizar o HTML - DOMPurify mantém as tags permitidas e remove as não permitidas
+  // IMPORTANTE: DOMPurify NÃO escapa o HTML, ele apenas remove tags não permitidas
+  let sanitized = DOMPurify.sanitize(content, RICH_TEXT_CONFIG);
+  
+  // Adicionar rel="noopener noreferrer" para links externos automaticamente
+  sanitized = sanitized.replace(
+    /<a\s+([^>]*href=["']([^"']+)["'][^>]*)>/gi,
+    (match, attrs, href) => {
+      // Verificar se é link externo
+      const isExternal = href.startsWith('http://') || href.startsWith('https://');
+      if (isExternal && !attrs.includes('rel=')) {
+        return `<a ${attrs} rel="noopener noreferrer" target="_blank">`;
+      }
+      if (isExternal && !attrs.includes('target=')) {
+        return match.replace('>', ' target="_blank">');
+      }
+      return match;
+    }
+  );
+  
+  return sanitized;
 };
 
 /**

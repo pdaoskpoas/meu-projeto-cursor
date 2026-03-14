@@ -17,8 +17,9 @@ import AdminSponsors from '@/components/AdminSponsors';
 import AdminSubscriptions from '@/components/AdminSubscriptions';
 
 import AdminChat from '@/components/AdminChat';
+import AdminMonetization from '@/components/admin/monetization/AdminMonetization';
 
-export type AdminSection = 'dashboard' | 'users' | 'plans' | 'news' | 'reports' | 'stats' | 'tickets' | 'financial' | 'messages' | 'haras' | 'chat' | 'sponsors' | 'society' | 'subscriptions';
+export type AdminSection = 'dashboard' | 'users' | 'plans' | 'news' | 'monetization' | 'reports' | 'stats' | 'tickets' | 'financial' | 'messages' | 'haras' | 'chat' | 'sponsors' | 'society' | 'subscriptions';
 
 const AdminPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -30,6 +31,7 @@ const AdminPage: React.FC = () => {
       'users',
       'plans',
       'news',
+      'monetization',
       'reports',
       'stats',
       'tickets',
@@ -61,6 +63,8 @@ const AdminPage: React.FC = () => {
         return <AdminPlans />;
       case 'news':
         return <AdminNews />;
+      case 'monetization':
+        return <AdminMonetization />;
       case 'reports':
         return <AdminReports />;
       case 'stats':

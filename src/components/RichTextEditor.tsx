@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
@@ -50,8 +50,23 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
         ...(labelledBy ? { 'aria-labelledby': labelledBy } : {}),
         class: 'prose prose-sm sm:prose lg:prose-lg xl:prose-xl max-w-none focus:outline-none min-h-[300px] p-4',
       },
+      handlePaste: (view, event, slice) => {
+        // Permitir que o TipTap processe HTML colado normalmente
+        return false; // false = deixar o TipTap processar
+      },
     },
   });
+
+  // Atualizar o conteúdo do editor quando a prop content mudar
+  useEffect(() => {
+    if (editor && content !== undefined) {
+      const currentContent = editor.getHTML();
+      // Só atualizar se o conteúdo realmente mudou (evitar loops)
+      if (currentContent !== content) {
+        editor.commands.setContent(content || '');
+      }
+    }
+  }, [editor, content]);
 
   if (!editor) {
     return null;

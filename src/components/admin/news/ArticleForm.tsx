@@ -23,12 +23,13 @@ const ArticleForm: React.FC<ArticleFormProps> = ({ articleId, onSuccess }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
-  const { createArticle, updateArticle, articles } = useAdminArticles();
+  const { createArticle, updateArticle, articles, isLoading: isLoadingArticles } = useAdminArticles();
   
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [isLoadingArticle, setIsLoadingArticle] = useState(false);
   
   const [formData, setFormData] = useState({
     title: '',
@@ -66,9 +67,94 @@ const ArticleForm: React.FC<ArticleFormProps> = ({ articleId, onSuccess }) => {
 
   // Carregar artigo existente se estiver editando
   useEffect(() => {
-    if (articleId) {
-      const article = articles.find(a => a.id === articleId);
+    const loadArticle = async () => {
+      if (!articleId) return;
+      
+      // Se os artigos ainda estão carregando, aguardar
+      if (isLoadingArticles) return;
+      
+      // Primeiro, tentar encontrar no array de artigos
+      let article = articles.find(a => a.id === articleId);
+      
+      // Se não encontrou no array, buscar diretamente do banco
+      if (!article) {
+        setIsLoadingArticle(true);
+        try {
+          const { data, error } = await supabase
+            .from('articles')
+            .select(`
+              *,
+              author:profiles(name)
+            `)
+            .eq('id', articleId)
+            .single();
+          
+          if (error) throw error;
+          
+          if (data) {
+            article = {
+              id: data.id,
+              title: data.title,
+              slug: data.slug,
+              content: data.content,
+              excerpt: data.excerpt,
+              authorId: data.author_id,
+              authorName: data.author?.name || 'Admin',
+              category: data.category,
+              tags: data.tags || [],
+              coverImageUrl: data.cover_image_url,
+              publishedAt: data.published_at,
+              scheduledPublishAt: data.scheduled_publish_at,
+              isPublished: data.is_published || false,
+              createdAt: data.created_at,
+              updatedAt: data.updated_at,
+              views: data.views || 0,
+              clicks: 0,
+            };
+          }
+        } catch (error) {
+          console.error('Erro ao carregar artigo:', error);
+          toast({
+            title: 'Erro',
+            description: 'Não foi possível carregar os dados do artigo. Tente novamente.',
+            variant: 'destructive',
+          });
+          setIsLoadingArticle(false);
+          return;
+        } finally {
+          setIsLoadingArticle(false);
+        }
+      }
+      
+      // Se ainda não encontrou o artigo, mostrar erro
+      if (!article) {
+        toast({
+          title: 'Erro',
+          description: 'Artigo não encontrado.',
+          variant: 'destructive',
+        });
+        return;
+      }
+      
+      // Preencher o formulário com os dados do artigo
       if (article) {
+        // Converter scheduledPublishAt para formato datetime-local (YYYY-MM-DDTHH:mm)
+        let scheduledPublishAtFormatted = '';
+        if (article.scheduledPublishAt) {
+          try {
+            const date = new Date(article.scheduledPublishAt);
+            // Ajustar para timezone local
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            scheduledPublishAtFormatted = `${year}-${month}-${day}T${hours}:${minutes}`;
+          } catch (e) {
+            console.error('Erro ao formatar data de agendamento:', e);
+          }
+        }
+        
         setFormData({
           title: article.title || '',
           excerpt: article.excerpt || '',
@@ -77,12 +163,15 @@ const ArticleForm: React.FC<ArticleFormProps> = ({ articleId, onSuccess }) => {
           tags: article.tags || [],
           coverImageUrl: article.coverImageUrl || '',
           isPublished: article.isPublished || false,
-          scheduledPublishAt: article.scheduledPublishAt || '',
+          scheduledPublishAt: scheduledPublishAtFormatted,
           slug: article.slug || '',
         });
+        setHasUnsavedChanges(false); // Resetar flag ao carregar
       }
-    }
-  }, [articleId, articles]);
+    };
+    
+    loadArticle();
+  }, [articleId, articles, isLoadingArticles, toast]);
 
   // Detectar mudanças não salvas
   useEffect(() => {
@@ -94,8 +183,16 @@ const ArticleForm: React.FC<ArticleFormProps> = ({ articleId, onSuccess }) => {
   };
 
   const handleAddTag = () => {
-    if (tagInput.trim() && !formData.tags.includes(tagInput.trim())) {
-      handleInputChange('tags', [...formData.tags, tagInput.trim()]);
+    if (!tagInput.trim()) return;
+    
+    // Processar tags separadas por vírgulas
+    const newTags = tagInput
+      .split(',')
+      .map(tag => tag.trim())
+      .filter(tag => tag.length > 0 && !formData.tags.includes(tag));
+    
+    if (newTags.length > 0) {
+      handleInputChange('tags', [...formData.tags, ...newTags]);
       setTagInput('');
     }
   };
@@ -381,6 +478,16 @@ const ArticleForm: React.FC<ArticleFormProps> = ({ articleId, onSuccess }) => {
     );
   }
 
+  // Mostrar loading enquanto carrega o artigo
+  if (isLoadingArticle || (articleId && isLoadingArticles)) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+        <span className="ml-3 text-gray-600">Carregando dados do artigo...</span>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -658,7 +765,7 @@ const ArticleForm: React.FC<ArticleFormProps> = ({ articleId, onSuccess }) => {
                       handleAddTag();
                     }
                   }}
-                  placeholder="Digite uma tag e pressione Enter"
+                  placeholder="Digite tags separadas por vírgulas (ex: Cavalo, mangalarga marchador, potro)"
                   className="text-sm"
                 />
                 <Button

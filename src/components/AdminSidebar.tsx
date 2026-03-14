@@ -13,7 +13,8 @@ import {
   MapPin,
   Building2,
   Users2,
-  Clock
+  Clock,
+  Coins
 } from 'lucide-react';
 import {
   Sidebar,
@@ -39,6 +40,7 @@ const menuItems = [
   { id: 'plans' as AdminSection, title: 'Planos', icon: CreditCard },
   { id: 'subscriptions' as AdminSection, title: 'Assinaturas', icon: Clock },
   { id: 'news' as AdminSection, title: 'Dicas e Notícias', icon: FileText },
+  { id: 'monetization' as AdminSection, title: 'Monetização', icon: Coins },
   { id: 'reports' as AdminSection, title: 'Denúncias', icon: AlertTriangle },
   { id: 'tickets' as AdminSection, title: 'Tickets', icon: MessageSquare },
   { id: 'messages' as AdminSection, title: 'Mensagens', icon: MessageCircle },

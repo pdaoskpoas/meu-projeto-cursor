@@ -10,6 +10,9 @@ import { newsService, type Article } from '@/services/newsService';
 import { analyticsService } from '@/services/analyticsService';
 import { categories, popularTags } from '@/data/articlesData';
 import heroHorse from '@/assets/hero-horse.jpg';
+import { AdSenseScript } from '@/components/adsense/AdSenseScript';
+import { AdSenseBanner } from '@/components/adsense/AdSenseBanner';
+import { useAdSenseConfig } from '@/hooks/useAdSenseConfig';
 
 const fallbackImage = '/placeholder.svg';
 const defaultImages = {
@@ -206,6 +209,9 @@ const NewsPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // ✅ Buscar configuração do AdSense
+  const { config: adsenseConfig } = useAdSenseConfig();
+
   // Buscar artigos ao montar componente
   useEffect(() => {
     const fetchArticles = async () => {
@@ -306,6 +312,11 @@ const NewsPage = () => {
 
   return (
     <main className="container-responsive section-spacing bg-gradient-to-br from-slate-50 via-white to-slate-50 min-h-screen">
+        {/* AdSense Script Global - Carregado apenas uma vez */}
+        {adsenseConfig?.global_script && (
+          <AdSenseScript script={adsenseConfig.global_script} />
+        )}
+
         {/* Back Navigation */}
         <div className="mb-8">
           <Link to="/" className="inline-flex items-center space-x-2 text-slate-600 hover:text-blue-600 transition-colors font-medium">
@@ -353,12 +364,24 @@ const NewsPage = () => {
                   </p>
                 </Card>
               ) : (
-                /* Cards Grid - Show all articles with tracking */
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-8">
-                  {filteredArticles.map((article) => (
-                    <ArticleCardWithTracking key={article.id} article={article} />
-                  ))}
-                </div>
+                <>
+                  {/* Cards Grid - Show all articles with tracking */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-8">
+                    {filteredArticles.map((article) => (
+                      <ArticleCardWithTracking key={article.id} article={article} />
+                    ))}
+                  </div>
+                  
+                  {/* Banner AdSense após a lista de notícias */}
+                  {adsenseConfig?.is_active && adsenseConfig?.listing_banner && (
+                    <div className="mt-8">
+                      <AdSenseBanner 
+                        code={adsenseConfig.listing_banner}
+                        className="w-full"
+                      />
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>

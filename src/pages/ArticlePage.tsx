@@ -10,6 +10,9 @@ import { analyticsService } from '@/services/analyticsService';
 import { sanitizeRichText } from '@/utils/sanitize';
 import { useAuth } from '@/contexts/AuthContext';
 import ArticleSEO from '@/components/ArticleSEO';
+import { AdSenseScript } from '@/components/adsense/AdSenseScript';
+import { AdSenseBanner } from '@/components/adsense/AdSenseBanner';
+import { useAdSenseConfig } from '@/hooks/useAdSenseConfig';
 
 // Helper para verificar se é UUID
 const isUUID = (str: string): boolean => {
@@ -39,6 +42,9 @@ const ArticlePage = () => {
   const [shares, setShares] = useState(0);
   const [hasLiked, setHasLiked] = useState(false);
   const [hasShared, setHasShared] = useState(false);
+
+  // ✅ Buscar configuração do AdSense
+  const { config: adsenseConfig } = useAdSenseConfig();
 
   // Buscar artigo ao montar componente
   useEffect(() => {
@@ -168,8 +174,46 @@ const ArticlePage = () => {
   };
 
 
+  // Função para dividir o conteúdo em partes para inserir anúncios
+  const splitContentForAds = (content: string) => {
+    if (!adsenseConfig?.is_active || !adsenseConfig?.article_mid_banner) {
+      return { top: content, mid: null, bottom: null };
+    }
+
+    // Dividir por parágrafos (preservando tags de fechamento)
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = content;
+    const paragraphs = Array.from(tempDiv.querySelectorAll('p'));
+    
+    if (paragraphs.length < 3) {
+      return { top: content, mid: null, bottom: null };
+    }
+
+    // Calcular pontos de divisão (40% top, 30% mid, 30% bottom)
+    const topEnd = Math.max(1, Math.floor(paragraphs.length * 0.4));
+    const midEnd = Math.max(topEnd + 1, Math.floor(paragraphs.length * 0.7));
+
+    // Reconstruir HTML das partes
+    const topElements = paragraphs.slice(0, topEnd);
+    const midElements = paragraphs.slice(topEnd, midEnd);
+    const bottomElements = paragraphs.slice(midEnd);
+
+    const topContent = topElements.map(p => p.outerHTML).join('');
+    const midContent = midElements.map(p => p.outerHTML).join('');
+    const bottomContent = bottomElements.map(p => p.outerHTML).join('');
+
+    return { top: topContent, mid: midContent, bottom: bottomContent };
+  };
+
+  const contentParts = article ? splitContentForAds(article.content) : { top: '', mid: null, bottom: null };
+
   return (
     <main className="min-h-screen bg-white">
+        {/* AdSense Script Global - Carregado apenas uma vez */}
+        {adsenseConfig?.global_script && (
+          <AdSenseScript script={adsenseConfig.global_script} />
+        )}
+
         {/* SEO Meta Tags */}
         {/* <ArticleSEO
           title={article.title}
@@ -191,8 +235,8 @@ const ArticlePage = () => {
           </div>
         </div>
 
-        {/* Article Container - Layout profissional */}
-        <article className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        {/* Article Container - Layout profissional estilo sites de notícias */}
+        <article className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           {/* Category Badge */}
           <div className="mb-6">
             <Badge className="bg-orange-50 text-orange-700 hover:bg-orange-100 border-0 text-sm font-semibold px-3 py-1">
@@ -200,20 +244,20 @@ const ArticlePage = () => {
             </Badge>
           </div>
 
-          {/* Title - Grande e impactante */}
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-serif font-bold text-slate-900 mb-8 leading-tight tracking-tight">
+          {/* Title - Estilo G1 */}
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-sans font-bold text-slate-900 mb-4 leading-tight tracking-tight">
             {article.title}
           </h1>
 
           {/* Excerpt - Subtítulo */}
           {article.excerpt && (
-            <p className="text-xl sm:text-2xl text-slate-600 leading-relaxed mb-10 font-light">
+            <p className="text-lg sm:text-xl text-slate-600 leading-relaxed mb-8 font-normal max-w-3xl">
               {article.excerpt}
             </p>
           )}
 
           {/* Author & Date & Reading Time */}
-          <div className="flex items-center justify-between pb-8 mb-8 border-b border-slate-200">
+          <div className="flex items-center justify-between pb-10 mb-12 border-b border-slate-200">
             <div className="flex items-center space-x-4">
               {/* Author Avatar */}
               <div className="flex items-center space-x-3">
@@ -264,24 +308,128 @@ const ArticlePage = () => {
             </figure>
           )}
 
-          {/* Article Content - Typography otimizada */}
+          {/* Banner AdSense no início do conteúdo */}
+          {adsenseConfig?.is_active && adsenseConfig?.article_top_banner && (
+            <div className="mb-8">
+              <AdSenseBanner 
+                code={adsenseConfig.article_top_banner}
+                className="w-full"
+              />
+            </div>
+          )}
+
+          {/* Article Content - Typography exatamente como G1 */}
           <div className="mb-16">
-            <div 
-              className="prose prose-lg sm:prose-xl max-w-none 
-                prose-slate 
-                prose-headings:font-serif prose-headings:font-bold prose-headings:text-slate-900 
-                prose-h2:text-3xl prose-h2:mt-16 prose-h2:mb-6 
-                prose-h3:text-2xl prose-h3:mt-12 prose-h3:mb-4 
-                prose-p:text-slate-700 prose-p:leading-relaxed prose-p:mb-6 prose-p:text-[1.125rem]
-                prose-a:text-orange-600 prose-a:no-underline hover:prose-a:underline prose-a:font-medium
-                prose-strong:text-slate-900 prose-strong:font-semibold
-                prose-ul:my-8 prose-li:my-2 prose-li:text-slate-700
-                prose-blockquote:border-l-4 prose-blockquote:border-orange-500 prose-blockquote:pl-6 prose-blockquote:italic prose-blockquote:text-slate-600
-                prose-img:rounded-xl prose-img:shadow-lg
-                prose-code:text-orange-600 prose-code:bg-orange-50 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded"
-              dangerouslySetInnerHTML={{ __html: sanitizeRichText(article.content) }}
-            />
+            {/* Parte superior do conteúdo */}
+            {contentParts.top && (
+              <div 
+                className="prose prose-sm max-w-none 
+                  prose-slate 
+                  prose-headings:font-sans prose-headings:font-bold prose-headings:text-slate-900 
+                  prose-h2:text-xl sm:text-2xl prose-h2:mt-16 prose-h2:mb-4 prose-h2:leading-tight prose-h2:font-bold
+                  prose-h3:text-lg sm:text-xl prose-h3:mt-12 prose-h3:mb-3 prose-h3:leading-tight prose-h3:font-bold
+                  prose-p:text-slate-900 prose-p:leading-[1.65] prose-p:mb-5 prose-p:text-[16px] prose-p:font-normal
+                  prose-p:first-of-type:text-[16px] prose-p:first-of-type:leading-[1.65] prose-p:first-of-type:font-normal prose-p:first-of-type:text-slate-900 prose-p:first-of-type:mb-5
+                  prose-a:text-orange-600 prose-a:no-underline hover:prose-a:underline prose-a:font-medium prose-a:transition-all
+                  prose-strong:text-slate-900 prose-strong:font-semibold
+                  prose-ul:my-5 prose-ul:space-y-2 prose-li:text-slate-900 prose-li:leading-[1.65] prose-li:pl-2 prose-li:text-[16px]
+                  prose-ol:my-5 prose-ol:space-y-2 prose-ol:li:text-slate-900 prose-ol:li:leading-[1.65] prose-ol:li:pl-2 prose-ol:li:text-[16px]
+                  prose-blockquote:border-l-4 prose-blockquote:border-orange-500 prose-blockquote:pl-6 prose-blockquote:pr-4 prose-blockquote:py-3 prose-blockquote:my-5 prose-blockquote:italic prose-blockquote:text-slate-900 prose-blockquote:bg-slate-50 prose-blockquote:rounded-r-lg prose-blockquote:text-[16px] prose-blockquote:leading-[1.65]
+                  prose-img:rounded-lg prose-img:shadow-md prose-img:my-6 prose-img:w-full
+                  prose-code:text-orange-600 prose-code:bg-orange-50 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm
+                  [&>p+p]:mt-5 [&>h2+p]:mt-4 [&>h3+p]:mt-3"
+                style={{ fontSize: '16px', lineHeight: '1.65' }}
+                dangerouslySetInnerHTML={{ __html: sanitizeRichText(contentParts.top) }}
+              />
+            )}
+
+            {/* Banner AdSense no meio do conteúdo */}
+            {adsenseConfig?.is_active && adsenseConfig?.article_mid_banner && contentParts.mid && (
+              <div className="my-8">
+                <AdSenseBanner 
+                  code={adsenseConfig.article_mid_banner}
+                  className="w-full"
+                />
+              </div>
+            )}
+
+            {/* Parte do meio do conteúdo (se houver divisão) */}
+            {contentParts.mid && (
+              <div 
+                className="prose prose-sm max-w-none 
+                  prose-slate 
+                  prose-headings:font-sans prose-headings:font-bold prose-headings:text-slate-900 
+                  prose-h2:text-xl sm:text-2xl prose-h2:mt-16 prose-h2:mb-4 prose-h2:leading-tight prose-h2:font-bold
+                  prose-h3:text-lg sm:text-xl prose-h3:mt-12 prose-h3:mb-3 prose-h3:leading-tight prose-h3:font-bold
+                  prose-p:text-slate-900 prose-p:leading-[1.65] prose-p:mb-5 prose-p:text-[16px] prose-p:font-normal
+                  prose-a:text-orange-600 prose-a:no-underline hover:prose-a:underline prose-a:font-medium prose-a:transition-all
+                  prose-strong:text-slate-900 prose-strong:font-semibold
+                  prose-ul:my-5 prose-ul:space-y-2 prose-li:text-slate-900 prose-li:leading-[1.65] prose-li:pl-2 prose-li:text-[16px]
+                  prose-ol:my-5 prose-ol:space-y-2 prose-ol:li:text-slate-900 prose-ol:li:leading-[1.65] prose-ol:li:pl-2 prose-ol:li:text-[16px]
+                  prose-blockquote:border-l-4 prose-blockquote:border-orange-500 prose-blockquote:pl-6 prose-blockquote:pr-4 prose-blockquote:py-3 prose-blockquote:my-5 prose-blockquote:italic prose-blockquote:text-slate-900 prose-blockquote:bg-slate-50 prose-blockquote:rounded-r-lg prose-blockquote:text-[16px] prose-blockquote:leading-[1.65]
+                  prose-img:rounded-lg prose-img:shadow-md prose-img:my-6 prose-img:w-full
+                  prose-code:text-orange-600 prose-code:bg-orange-50 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm
+                  [&>p+p]:mt-5 [&>h2+p]:mt-4 [&>h3+p]:mt-3"
+                style={{ fontSize: '16px', lineHeight: '1.65' }}
+                dangerouslySetInnerHTML={{ __html: sanitizeRichText(contentParts.mid) }}
+              />
+            )}
+
+            {/* Parte inferior do conteúdo (se não houver divisão, mostrar conteúdo completo) */}
+            {contentParts.bottom && (
+              <div 
+                className="prose prose-sm max-w-none 
+                  prose-slate 
+                  prose-headings:font-sans prose-headings:font-bold prose-headings:text-slate-900 
+                  prose-h2:text-xl sm:text-2xl prose-h2:mt-16 prose-h2:mb-4 prose-h2:leading-tight prose-h2:font-bold
+                  prose-h3:text-lg sm:text-xl prose-h3:mt-12 prose-h3:mb-3 prose-h3:leading-tight prose-h3:font-bold
+                  prose-p:text-slate-900 prose-p:leading-[1.65] prose-p:mb-5 prose-p:text-[16px] prose-p:font-normal
+                  prose-a:text-orange-600 prose-a:no-underline hover:prose-a:underline prose-a:font-medium prose-a:transition-all
+                  prose-strong:text-slate-900 prose-strong:font-semibold
+                  prose-ul:my-5 prose-ul:space-y-2 prose-li:text-slate-900 prose-li:leading-[1.65] prose-li:pl-2 prose-li:text-[16px]
+                  prose-ol:my-5 prose-ol:space-y-2 prose-ol:li:text-slate-900 prose-ol:li:leading-[1.65] prose-ol:li:pl-2 prose-ol:li:text-[16px]
+                  prose-blockquote:border-l-4 prose-blockquote:border-orange-500 prose-blockquote:pl-6 prose-blockquote:pr-4 prose-blockquote:py-3 prose-blockquote:my-5 prose-blockquote:italic prose-blockquote:text-slate-900 prose-blockquote:bg-slate-50 prose-blockquote:rounded-r-lg prose-blockquote:text-[16px] prose-blockquote:leading-[1.65]
+                  prose-img:rounded-lg prose-img:shadow-md prose-img:my-6 prose-img:w-full
+                  prose-code:text-orange-600 prose-code:bg-orange-50 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm
+                  [&>p+p]:mt-5 [&>h2+p]:mt-4 [&>h3+p]:mt-3"
+                style={{ fontSize: '16px', lineHeight: '1.65' }}
+                dangerouslySetInnerHTML={{ __html: sanitizeRichText(contentParts.bottom) }}
+              />
+            )}
+
+            {/* Se não houve divisão, mostrar conteúdo completo */}
+            {!contentParts.mid && !contentParts.bottom && (
+              <div 
+                className="prose prose-sm max-w-none 
+                  prose-slate 
+                  prose-headings:font-sans prose-headings:font-bold prose-headings:text-slate-900 
+                  prose-h2:text-xl sm:text-2xl prose-h2:mt-16 prose-h2:mb-4 prose-h2:leading-tight prose-h2:font-bold
+                  prose-h3:text-lg sm:text-xl prose-h3:mt-12 prose-h3:mb-3 prose-h3:leading-tight prose-h3:font-bold
+                  prose-p:text-slate-900 prose-p:leading-[1.65] prose-p:mb-5 prose-p:text-[16px] prose-p:font-normal
+                  prose-p:first-of-type:text-[16px] prose-p:first-of-type:leading-[1.65] prose-p:first-of-type:font-normal prose-p:first-of-type:text-slate-900 prose-p:first-of-type:mb-5
+                  prose-a:text-orange-600 prose-a:no-underline hover:prose-a:underline prose-a:font-medium prose-a:transition-all
+                  prose-strong:text-slate-900 prose-strong:font-semibold
+                  prose-ul:my-5 prose-ul:space-y-2 prose-li:text-slate-900 prose-li:leading-[1.65] prose-li:pl-2 prose-li:text-[16px]
+                  prose-ol:my-5 prose-ol:space-y-2 prose-ol:li:text-slate-900 prose-ol:li:leading-[1.65] prose-ol:li:pl-2 prose-ol:li:text-[16px]
+                  prose-blockquote:border-l-4 prose-blockquote:border-orange-500 prose-blockquote:pl-6 prose-blockquote:pr-4 prose-blockquote:py-3 prose-blockquote:my-5 prose-blockquote:italic prose-blockquote:text-slate-900 prose-blockquote:bg-slate-50 prose-blockquote:rounded-r-lg prose-blockquote:text-[16px] prose-blockquote:leading-[1.65]
+                  prose-img:rounded-lg prose-img:shadow-md prose-img:my-6 prose-img:w-full
+                  prose-code:text-orange-600 prose-code:bg-orange-50 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm
+                  [&>p+p]:mt-5 [&>h2+p]:mt-4 [&>h3+p]:mt-3"
+                style={{ fontSize: '16px', lineHeight: '1.65' }}
+                dangerouslySetInnerHTML={{ __html: sanitizeRichText(article.content) }}
+              />
+            )}
           </div>
+
+          {/* Banner AdSense no final do conteúdo */}
+          {adsenseConfig?.is_active && adsenseConfig?.article_bottom_banner && (
+            <div className="mb-8">
+              <AdSenseBanner 
+                code={adsenseConfig.article_bottom_banner}
+                className="w-full"
+              />
+            </div>
+          )}
 
           {/* Tags Section */}
           {article.tags && article.tags.length > 0 && (

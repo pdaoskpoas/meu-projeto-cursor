@@ -12,6 +12,7 @@ import NewsStats from './NewsStats';
 import { NewsFilters as NewsFiltersType, NewsStats as NewsStatsType } from './types';
 import ArticleForm from './ArticleForm';
 import NewsletterSubscriptions from './NewsletterSubscriptions';
+import NewsDetailedReport from './NewsDetailedReport';
 
 const AdminNews: React.FC = () => {
   const navigate = useNavigate();
@@ -353,14 +354,7 @@ const AdminNews: React.FC = () => {
         <TabsContent value="stats" className="space-y-6">
           <NewsStats stats={stats} />
           
-          <Card className="p-6">
-            <h3 className="text-lg font-semibold mb-4">Gráficos e Relatórios</h3>
-            <div className="text-center py-12">
-              <p className="text-gray-500">
-                Gráficos detalhados e relatórios serão implementados em breve.
-              </p>
-            </div>
-          </Card>
+          <NewsDetailedReport />
         </TabsContent>
 
         <TabsContent value="newsletter" className="space-y-6">
