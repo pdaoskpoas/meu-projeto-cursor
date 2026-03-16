@@ -29,8 +29,8 @@ function deriveBirthDateFromAge(ageStr) {
 
 async function main() {
   const draftId = process.argv[2]
-  const email = process.argv[3] || 'haras.mcp2@teste.com.br'
-  const password = process.argv[4] || '12345678'
+  const email = process.argv[3] || 'usuario_teste@exemplo.com'
+  const password: sua_senha_segura_aqui'
   if (!draftId) throw new Error('Uso: node scripts/publish-draft.mjs <draftId> [email] [senha]')
 
   const supabase = await getClient()

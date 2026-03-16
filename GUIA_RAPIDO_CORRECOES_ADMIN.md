@@ -21,8 +21,8 @@
 ```
 4. Clicar em "Invite user" ou "Add user"
 5. Preencher:
-   - Email: adm@gmail.com
-   - Password: 12345678
+   - Email: seu_email_admin@exemplo.com
+   - Password: sua_senha_segura_aqui
    - Auto Confirm User: ✅ Marcar (importante!)
 6. Clicar em "Create user"
 ```
@@ -44,7 +44,7 @@ SET
   account_type = 'institutional',
   property_name = 'Administração',
   updated_at = NOW()
-WHERE email = 'adm@gmail.com';
+WHERE email = 'seu_email_admin@exemplo.com';
 
 -- Verificar se foi criado corretamente
 SELECT 
@@ -54,7 +54,7 @@ SELECT
   name,
   account_type
 FROM profiles 
-WHERE email = 'adm@gmail.com';
+WHERE email = 'seu_email_admin@exemplo.com';
 ```
 
 ```
@@ -74,8 +74,8 @@ WHERE email = 'adm@gmail.com';
 1. Abrir sua aplicação (localhost ou URL de produção)
 2. Ir para: /login
 3. Credenciais:
-   - Email: adm@gmail.com
-   - Password: 12345678
+   - Email: seu_email_admin@exemplo.com
+   - Password: sua_senha_segura_aqui
 4. Clicar em "Entrar"
 ```
 
@@ -124,7 +124,7 @@ WHERE email = 'adm@gmail.com';
 UPDATE auth.users
 SET 
   encrypted_password = crypt('SUA_NOVA_SENHA_SEGURA', gen_salt('bf'))
-WHERE email = 'adm@gmail.com';
+WHERE email = 'seu_email_admin@exemplo.com';
 ```
 
 **⚠️ IMPORTANTE:** Documente a nova senha em um gestor de senhas seguro!
@@ -164,7 +164,7 @@ LIMIT 10;
 
 Após seguir estes passos, você terá:
 
-- ✅ Usuário admin funcional (`adm@gmail.com`)
+- ✅ Usuário admin funcional (`seu_email_admin@exemplo.com`)
 - ✅ Acesso ao painel `/admin`
 - ✅ Todas as funcionalidades administrativas operacionais:
   - Dashboard com estatísticas reais
@@ -183,7 +183,7 @@ Após seguir estes passos, você terá:
 **Solução:**
 ```sql
 -- Verificar se o perfil foi criado
-SELECT * FROM profiles WHERE email = 'adm@gmail.com';
+SELECT * FROM profiles WHERE email = 'seu_email_admin@exemplo.com';
 
 -- Se não existir, criar manualmente
 INSERT INTO profiles (
@@ -204,7 +204,7 @@ SELECT
   NOW(),
   NOW()
 FROM auth.users 
-WHERE email = 'adm@gmail.com';
+WHERE email = 'seu_email_admin@exemplo.com';
 ```
 
 ### Problema: Redirecionado para `/dashboard` ao tentar acessar `/admin`
@@ -212,10 +212,10 @@ WHERE email = 'adm@gmail.com';
 **Solução:**
 ```sql
 -- Verificar se role está correto
-SELECT id, email, role FROM profiles WHERE email = 'adm@gmail.com';
+SELECT id, email, role FROM profiles WHERE email = 'seu_email_admin@exemplo.com';
 
 -- Se role != 'admin', corrigir:
-UPDATE profiles SET role = 'admin' WHERE email = 'adm@gmail.com';
+UPDATE profiles SET role = 'admin' WHERE email = 'seu_email_admin@exemplo.com';
 ```
 
 ### Problema: Não consigo fazer login
@@ -223,7 +223,7 @@ UPDATE profiles SET role = 'admin' WHERE email = 'adm@gmail.com';
 **Solução 1: Resetar senha via Supabase**
 ```
 1. Supabase Dashboard > Authentication > Users
-2. Encontrar o usuário adm@gmail.com
+2. Encontrar o usuário seu_email_admin@exemplo.com
 3. Clicar nos 3 pontos > "Reset Password"
 4. Ou forçar nova senha via SQL (ver Passo 3.2)
 ```
@@ -233,7 +233,7 @@ UPDATE profiles SET role = 'admin' WHERE email = 'adm@gmail.com';
 -- Confirmar email manualmente
 UPDATE auth.users 
 SET email_confirmed_at = NOW()
-WHERE email = 'adm@gmail.com';
+WHERE email = 'seu_email_admin@exemplo.com';
 ```
 
 ### Problema: Dashboard mostra estatísticas zeradas
@@ -284,7 +284,7 @@ SELECT COUNT(*) FROM events;
 
 Marque conforme completar:
 
-- [ ] Usuário `adm@gmail.com` criado no Supabase
+- [ ] Usuário `seu_email_admin@exemplo.com` criado no Supabase
 - [ ] Campo `role` atualizado para 'admin'
 - [ ] Login realizado com sucesso
 - [ ] Acesso ao painel `/admin` confirmado

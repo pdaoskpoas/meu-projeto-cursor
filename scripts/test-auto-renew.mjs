@@ -27,8 +27,8 @@ async function getClient() {
 
 async function main() {
   const supabase = await getClient();
-  const email = 'haras.mcp2@teste.com.br';
-  const password = '12345678';
+  const email = process.argv[2] || 'usuario_teste@exemplo.com';
+  const password: sua_senha_segura_aqui';
 
   console.log('=== TESTE DO SISTEMA DE RENOVAÇÃO AUTOMÁTICA ===');
 

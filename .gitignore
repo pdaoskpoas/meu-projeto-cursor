@@ -19,6 +19,9 @@ dist-ssr
 .env.production
 .env.development
 
+# 🔒 Supabase config (contém project_id)
+supabase/config.toml
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

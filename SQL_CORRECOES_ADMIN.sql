@@ -17,7 +17,7 @@ SET
   account_type = 'institutional',
   property_name = 'Administração',
   updated_at = NOW()
-WHERE email = 'adm@gmail.com';
+WHERE email = 'seu_email_admin@exemplo.com';
 
 -- 1.2 Verificar se o usuário foi criado corretamente
 SELECT 
@@ -28,7 +28,7 @@ SELECT
   account_type,
   created_at
 FROM profiles 
-WHERE email = 'adm@gmail.com';
+WHERE email = 'seu_email_admin@exemplo.com';
 -- Resultado esperado: 1 linha com role = 'admin'
 
 -- 1.3 Confirmar email do usuário (se necessário)
@@ -36,7 +36,7 @@ UPDATE auth.users
 SET 
   email_confirmed_at = NOW(),
   updated_at = NOW()
-WHERE email = 'adm@gmail.com';
+WHERE email = 'seu_email_admin@exemplo.com';
 
 -- =====================================================
 -- PARTE 2: VALIDAÇÕES E VERIFICAÇÕES

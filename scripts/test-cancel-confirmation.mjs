@@ -7,7 +7,7 @@ console.log(`
 Para testar o modal de confirmação de cancelamento:
 
 1. Abra o projeto: npm run dev
-2. Faça login com haras.mcp2@teste.com.br
+2. Faça login com usuario_teste@exemplo.com
 3. Vá para "Meus Animais" 
 4. Clique em "Adicionar Animal"
 5. Preencha pelo menos um campo (nome, raça, etc.)

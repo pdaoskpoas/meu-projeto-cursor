@@ -433,7 +433,7 @@ const EventsPage = () => {
                   </div>
 
                   {/* Métricas - Apenas para Admin */}
-                  {user?.email === 'adm@gmail.com' && (
+                  {user?.role === 'admin' && (
                     <div className="flex items-center gap-4 mb-4 text-sm bg-slate-50 p-2 rounded-md">
                       <div className="flex items-center gap-1">
                         <Eye className="h-4 w-4 text-gray-400" />

@@ -115,7 +115,7 @@ async function seedEvents(supabase, organizerId, count = 2) {
 
 async function main() {
   const supabase = await getClient()
-  const email = 'haras@teste.com.br'
+  const email = 'usuario_teste@exemplo.com'
   const password = '123456'
   const user = await ensureAuthUser(supabase, email, password)
   if (!user) throw new Error('Falha ao criar/autenticar usuário')

@@ -16,7 +16,7 @@ BEGIN;
 -- EXECUTE ESTA QUERY PRIMEIRO PARA CONFIRMAR O ID DO ADMIN:
 SELECT id, email, name, role 
 FROM profiles 
-WHERE email = 'adm@gmail.com';
+WHERE email = 'seu_email_admin@exemplo.com';
 
 -- ❗ ANOTE O ID ACIMA ANTES DE CONTINUAR!
 
@@ -35,7 +35,7 @@ WHERE email = 'adm@gmail.com';
 -- - Tudo relacionado!
 
 DELETE FROM profiles
-WHERE email != 'adm@gmail.com'
+WHERE email != 'seu_email_admin@exemplo.com'
   AND email != 'admin@gmail.com'; -- Por segurança, proteger variações
 
 -- =====================================================
@@ -46,7 +46,7 @@ WHERE email != 'adm@gmail.com'
 -- ATENÇÃO: Isso vai forçar logout de todos os usuários de teste
 
 DELETE FROM auth.users
-WHERE email NOT IN ('adm@gmail.com', 'admin@gmail.com');
+WHERE email NOT IN ('seu_email_admin@exemplo.com', 'admin@gmail.com');
 
 -- =====================================================
 -- PASSO 4: Limpar tabelas auxiliares órfãs (se houver)
@@ -106,7 +106,7 @@ FROM favorites;
 -- RESULTADO ESPERADO
 -- =====================================================
 
--- ✅ Apenas 1 usuário: adm@gmail.com
+-- ✅ Apenas 1 usuário: seu_email_admin@exemplo.com
 -- ✅ 0 animais (incluindo os 2 que você viu em "buscar")
 -- ✅ 0 conversas
 -- ✅ 0 mensagens
@@ -118,7 +118,7 @@ FROM favorites;
 -- =====================================================
 
 -- ANTES DE EXECUTAR:
--- 1. Confirme que 'adm@gmail.com' é o email correto do admin
+-- 1. Confirme que 'seu_email_admin@exemplo.com' é o email correto do admin
 -- 2. Faça backup se tiver dúvidas
 -- 3. Execute linha por linha se preferir mais controle
 -- 4. Use ROLLBACK se algo der errado

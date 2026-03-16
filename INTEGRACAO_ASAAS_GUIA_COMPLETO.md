@@ -359,7 +359,7 @@ WHERE id = 'user-uuid';
 Se CPF estiver vazio, adicione:
 ```sql
 UPDATE profiles 
-SET cpf = '12345678900' 
+SET cpf = 'sua_senha_segura_aqui900' 
 WHERE id = 'user-uuid';
 ```
 

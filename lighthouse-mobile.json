@@ -1150,7 +1150,7 @@
             "entity": "127.0.0.1"
           },
           {
-            "url": "https://wyufgltprapazpxmtaff.supabase.co/rest/v1/active_sponsors?select=*&display_locations=cs.%7Bhome%7D",
+            "url": "https://your-project-ref.supabase.co/rest/v1/active_sponsors?select=*&display_locations=cs.%7Bhome%7D",
             "sessionTargetType": "page",
             "protocol": "h3",
             "rendererStartTime": 8016.100999832153,
@@ -1167,7 +1167,7 @@
             "entity": "supabase.co"
           },
           {
-            "url": "https://wyufgltprapazpxmtaff.supabase.co/rest/v1/active_sponsors?select=*&display_locations=cs.%7Bhome%7D",
+            "url": "https://your-project-ref.supabase.co/rest/v1/active_sponsors?select=*&display_locations=cs.%7Bhome%7D",
             "sessionTargetType": "page",
             "protocol": "h3",
             "rendererStartTime": 8028.382999897003,
@@ -1183,7 +1183,7 @@
             "entity": "supabase.co"
           },
           {
-            "url": "https://wyufgltprapazpxmtaff.supabase.co/rest/v1/rpc/increment_sponsor_impression",
+            "url": "https://your-project-ref.supabase.co/rest/v1/rpc/increment_sponsor_impression",
             "sessionTargetType": "page",
             "protocol": "h3",
             "rendererStartTime": 8861.884000062943,
@@ -1200,7 +1200,7 @@
             "entity": "supabase.co"
           },
           {
-            "url": "https://wyufgltprapazpxmtaff.supabase.co/rest/v1/rpc/increment_sponsor_impression",
+            "url": "https://your-project-ref.supabase.co/rest/v1/rpc/increment_sponsor_impression",
             "sessionTargetType": "page",
             "protocol": "h3",
             "rendererStartTime": 8869.078000068665,
@@ -1216,7 +1216,7 @@
             "entity": "supabase.co"
           },
           {
-            "url": "https://wyufgltprapazpxmtaff.supabase.co/rest/v1/rpc/increment_sponsor_impression",
+            "url": "https://your-project-ref.supabase.co/rest/v1/rpc/increment_sponsor_impression",
             "sessionTargetType": "page",
             "protocol": "h3",
             "rendererStartTime": 8893.613999843597,
@@ -1233,7 +1233,7 @@
             "entity": "supabase.co"
           },
           {
-            "url": "https://wyufgltprapazpxmtaff.supabase.co/rest/v1/rpc/increment_sponsor_impression",
+            "url": "https://your-project-ref.supabase.co/rest/v1/rpc/increment_sponsor_impression",
             "sessionTargetType": "page",
             "protocol": "h3",
             "rendererStartTime": 8898.552000045776,
@@ -1249,7 +1249,7 @@
             "entity": "supabase.co"
           },
           {
-            "url": "https://wyufgltprapazpxmtaff.supabase.co/storage/v1/object/public/sponsor-logos/2f8955ce-c051-405f-8aff-9c057623aba5/logo.png",
+            "url": "https://your-project-ref.supabase.co/storage/v1/object/public/sponsor-logos/2f8955ce-c051-405f-8aff-9c057623aba5/logo.png",
             "sessionTargetType": "page",
             "protocol": "h3",
             "rendererStartTime": 9332.40099978447,
@@ -1266,7 +1266,7 @@
             "entity": "supabase.co"
           },
           {
-            "url": "https://wyufgltprapazpxmtaff.supabase.co/storage/v1/object/public/sponsor-logos/57facfaf-3083-4de8-9af3-2d731fa70bad/logo.png",
+            "url": "https://your-project-ref.supabase.co/storage/v1/object/public/sponsor-logos/57facfaf-3083-4de8-9af3-2d731fa70bad/logo.png",
             "sessionTargetType": "page",
             "protocol": "h3",
             "rendererStartTime": 9332.59299993515,
@@ -1283,7 +1283,7 @@
             "entity": "supabase.co"
           },
           {
-            "url": "https://wyufgltprapazpxmtaff.supabase.co/storage/v1/object/public/sponsor-logos/b48e9066-3856-4238-8474-eb7bbb4ae6e3/logo.png",
+            "url": "https://your-project-ref.supabase.co/storage/v1/object/public/sponsor-logos/b48e9066-3856-4238-8474-eb7bbb4ae6e3/logo.png",
             "sessionTargetType": "page",
             "protocol": "h3",
             "rendererStartTime": 9332.677999973297,
@@ -1300,7 +1300,7 @@
             "entity": "supabase.co"
           },
           {
-            "url": "https://wyufgltprapazpxmtaff.supabase.co/rest/v1/rpc/increment_sponsor_impression",
+            "url": "https://your-project-ref.supabase.co/rest/v1/rpc/increment_sponsor_impression",
             "sessionTargetType": "page",
             "protocol": "h3",
             "rendererStartTime": 9496.392999887466,
@@ -1317,7 +1317,7 @@
             "entity": "supabase.co"
           },
           {
-            "url": "https://wyufgltprapazpxmtaff.supabase.co/rest/v1/rpc/get_featured_animals_rotated_fast",
+            "url": "https://your-project-ref.supabase.co/rest/v1/rpc/get_featured_animals_rotated_fast",
             "sessionTargetType": "page",
             "protocol": "h3",
             "rendererStartTime": 10148.65399980545,
@@ -1333,7 +1333,7 @@
             "entity": "supabase.co"
           },
           {
-            "url": "https://wyufgltprapazpxmtaff.supabase.co/rest/v1/rpc/get_featured_animals_rotated_fast",
+            "url": "https://your-project-ref.supabase.co/rest/v1/rpc/get_featured_animals_rotated_fast",
             "sessionTargetType": "page",
             "protocol": "h3",
             "rendererStartTime": 10146.200999975204,
@@ -1378,19 +1378,19 @@
             },
             {
               "type": "preflight",
-              "url": "https://wyufgltprapazpxmtaff.supabase.co/rest/v1/active_sponsors?select=*&display_locations=cs.%7Bhome%7D"
+              "url": "https://your-project-ref.supabase.co/rest/v1/active_sponsors?select=*&display_locations=cs.%7Bhome%7D"
             },
             {
               "type": "preflight",
-              "url": "https://wyufgltprapazpxmtaff.supabase.co/rest/v1/rpc/increment_sponsor_impression"
+              "url": "https://your-project-ref.supabase.co/rest/v1/rpc/increment_sponsor_impression"
             },
             {
               "type": "preflight",
-              "url": "https://wyufgltprapazpxmtaff.supabase.co/rest/v1/rpc/increment_sponsor_impression"
+              "url": "https://your-project-ref.supabase.co/rest/v1/rpc/increment_sponsor_impression"
             },
             {
               "type": "preflight",
-              "url": "https://wyufgltprapazpxmtaff.supabase.co/rest/v1/rpc/get_featured_animals_rotated_fast"
+              "url": "https://your-project-ref.supabase.co/rest/v1/rpc/get_featured_animals_rotated_fast"
             }
           ]
         }
@@ -1426,7 +1426,7 @@
             "rtt": 45.123
           },
           {
-            "origin": "https://wyufgltprapazpxmtaff.supabase.co",
+            "origin": "https://your-project-ref.supabase.co",
             "rtt": 17.754689999999982
           },
           {
@@ -1477,7 +1477,7 @@
             "serverResponseTime": 577.927
           },
           {
-            "origin": "https://wyufgltprapazpxmtaff.supabase.co",
+            "origin": "https://your-project-ref.supabase.co",
             "serverResponseTime": 567.82981
           },
           {
@@ -6348,42 +6348,42 @@
               "type": "subitems",
               "items": [
                 {
-                  "url": "https://wyufgltprapazpxmtaff.supabase.co/storage/v1/object/public/sponsor-logos/b48e9066-3856-4238-8474-eb7bbb4ae6e3/logo.png",
+                  "url": "https://your-project-ref.supabase.co/storage/v1/object/public/sponsor-logos/b48e9066-3856-4238-8474-eb7bbb4ae6e3/logo.png",
                   "mainThreadTime": 0,
                   "blockingTime": 0,
                   "transferSize": 51814,
                   "tbtImpact": 0
                 },
                 {
-                  "url": "https://wyufgltprapazpxmtaff.supabase.co/storage/v1/object/public/sponsor-logos/2f8955ce-c051-405f-8aff-9c057623aba5/logo.png",
+                  "url": "https://your-project-ref.supabase.co/storage/v1/object/public/sponsor-logos/2f8955ce-c051-405f-8aff-9c057623aba5/logo.png",
                   "mainThreadTime": 0,
                   "blockingTime": 0,
                   "transferSize": 51569,
                   "tbtImpact": 0
                 },
                 {
-                  "url": "https://wyufgltprapazpxmtaff.supabase.co/storage/v1/object/public/sponsor-logos/57facfaf-3083-4de8-9af3-2d731fa70bad/logo.png",
+                  "url": "https://your-project-ref.supabase.co/storage/v1/object/public/sponsor-logos/57facfaf-3083-4de8-9af3-2d731fa70bad/logo.png",
                   "mainThreadTime": 0,
                   "blockingTime": 0,
                   "transferSize": 11969,
                   "tbtImpact": 0
                 },
                 {
-                  "url": "https://wyufgltprapazpxmtaff.supabase.co/rest/v1/rpc/increment_sponsor_impression",
+                  "url": "https://your-project-ref.supabase.co/rest/v1/rpc/increment_sponsor_impression",
                   "mainThreadTime": 0,
                   "blockingTime": 0,
                   "transferSize": 1954,
                   "tbtImpact": 0
                 },
                 {
-                  "url": "https://wyufgltprapazpxmtaff.supabase.co/rest/v1/active_sponsors?select=*&display_locations=cs.%7Bhome%7D",
+                  "url": "https://your-project-ref.supabase.co/rest/v1/active_sponsors?select=*&display_locations=cs.%7Bhome%7D",
                   "mainThreadTime": 0,
                   "blockingTime": 0,
                   "transferSize": 1151,
                   "tbtImpact": 0
                 },
                 {
-                  "url": "https://wyufgltprapazpxmtaff.supabase.co/rest/v1/rpc/get_featured_animals_rotated_fast",
+                  "url": "https://your-project-ref.supabase.co/rest/v1/rpc/get_featured_animals_rotated_fast",
                   "mainThreadTime": 0,
                   "blockingTime": 0,
                   "transferSize": 699,
@@ -7076,7 +7076,7 @@
             "wastedBytes": 120517.6
           },
           {
-            "url": "https://wyufgltprapazpxmtaff.supabase.co/storage/v1/object/public/sponsor-logos/b48e9066-3856-4238-8474-eb7bbb4ae6e3/logo.png",
+            "url": "https://your-project-ref.supabase.co/storage/v1/object/public/sponsor-logos/b48e9066-3856-4238-8474-eb7bbb4ae6e3/logo.png",
             "debugData": {
               "type": "debugdata",
               "public": true,
@@ -7088,7 +7088,7 @@
             "wastedBytes": 41451.200000000004
           },
           {
-            "url": "https://wyufgltprapazpxmtaff.supabase.co/storage/v1/object/public/sponsor-logos/2f8955ce-c051-405f-8aff-9c057623aba5/logo.png",
+            "url": "https://your-project-ref.supabase.co/storage/v1/object/public/sponsor-logos/2f8955ce-c051-405f-8aff-9c057623aba5/logo.png",
             "debugData": {
               "type": "debugdata",
               "public": true,
@@ -7144,7 +7144,7 @@
             "wastedBytes": 10465.6
           },
           {
-            "url": "https://wyufgltprapazpxmtaff.supabase.co/storage/v1/object/public/sponsor-logos/57facfaf-3083-4de8-9af3-2d731fa70bad/logo.png",
+            "url": "https://your-project-ref.supabase.co/storage/v1/object/public/sponsor-logos/57facfaf-3083-4de8-9af3-2d731fa70bad/logo.png",
             "debugData": {
               "type": "debugdata",
               "public": true,
@@ -7333,11 +7333,11 @@
             "totalBytes": 150647
           },
           {
-            "url": "https://wyufgltprapazpxmtaff.supabase.co/storage/v1/object/public/sponsor-logos/b48e9066-3856-4238-8474-eb7bbb4ae6e3/logo.png",
+            "url": "https://your-project-ref.supabase.co/storage/v1/object/public/sponsor-logos/b48e9066-3856-4238-8474-eb7bbb4ae6e3/logo.png",
             "totalBytes": 51814
           },
           {
-            "url": "https://wyufgltprapazpxmtaff.supabase.co/storage/v1/object/public/sponsor-logos/2f8955ce-c051-405f-8aff-9c057623aba5/logo.png",
+            "url": "https://your-project-ref.supabase.co/storage/v1/object/public/sponsor-logos/2f8955ce-c051-405f-8aff-9c057623aba5/logo.png",
             "totalBytes": 51569
           },
           {
@@ -7361,7 +7361,7 @@
             "totalBytes": 13082
           },
           {
-            "url": "https://wyufgltprapazpxmtaff.supabase.co/storage/v1/object/public/sponsor-logos/57facfaf-3083-4de8-9af3-2d731fa70bad/logo.png",
+            "url": "https://your-project-ref.supabase.co/storage/v1/object/public/sponsor-logos/57facfaf-3083-4de8-9af3-2d731fa70bad/logo.png",
             "totalBytes": 11969
           }
         ],
@@ -7696,10 +7696,10 @@
                 "width": 160,
                 "height": 80
               },
-              "snippet": "<img src=\"https://wyufgltprapazpxmtaff.supabase.co/storage/v1/object/public/sponsor-…\" alt=\"dd\" loading=\"lazy\" decoding=\"async\" class=\"w-full h-full object-contain opacity-70 hover:opacity-100 transition-opaci…\">",
+              "snippet": "<img src=\"https://your-project-ref.supabase.co/storage/v1/object/public/sponsor-…\" alt=\"dd\" loading=\"lazy\" decoding=\"async\" class=\"w-full h-full object-contain opacity-70 hover:opacity-100 transition-opaci…\">",
               "nodeLabel": "dd"
             },
-            "url": "https://wyufgltprapazpxmtaff.supabase.co/storage/v1/object/public/sponsor-logos/2f8955ce-c051-405f-8aff-9c057623aba5/logo.png",
+            "url": "https://your-project-ref.supabase.co/storage/v1/object/public/sponsor-logos/2f8955ce-c051-405f-8aff-9c057623aba5/logo.png",
             "fromProtocol": true,
             "isCrossOrigin": true,
             "totalBytes": 50869,
@@ -7744,10 +7744,10 @@
                 "width": 160,
                 "height": 80
               },
-              "snippet": "<img src=\"https://wyufgltprapazpxmtaff.supabase.co/storage/v1/object/public/sponsor-…\" alt=\"Sponsor PNG\" loading=\"lazy\" decoding=\"async\" class=\"w-full h-full object-contain opacity-70 hover:opacity-100 transition-opaci…\">",
+              "snippet": "<img src=\"https://your-project-ref.supabase.co/storage/v1/object/public/sponsor-…\" alt=\"Sponsor PNG\" loading=\"lazy\" decoding=\"async\" class=\"w-full h-full object-contain opacity-70 hover:opacity-100 transition-opaci…\">",
               "nodeLabel": "Sponsor PNG"
             },
-            "url": "https://wyufgltprapazpxmtaff.supabase.co/storage/v1/object/public/sponsor-logos/b48e9066-3856-4238-8474-eb7bbb4ae6e3/logo.png",
+            "url": "https://your-project-ref.supabase.co/storage/v1/object/public/sponsor-logos/b48e9066-3856-4238-8474-eb7bbb4ae6e3/logo.png",
             "fromProtocol": true,
             "isCrossOrigin": true,
             "totalBytes": 51165,
@@ -7768,10 +7768,10 @@
                 "width": 160,
                 "height": 80
               },
-              "snippet": "<img src=\"https://wyufgltprapazpxmtaff.supabase.co/storage/v1/object/public/sponsor-…\" alt=\"Marcha em Foco\" loading=\"lazy\" decoding=\"async\" class=\"w-full h-full object-contain opacity-70 hover:opacity-100 transition-opaci…\">",
+              "snippet": "<img src=\"https://your-project-ref.supabase.co/storage/v1/object/public/sponsor-…\" alt=\"Marcha em Foco\" loading=\"lazy\" decoding=\"async\" class=\"w-full h-full object-contain opacity-70 hover:opacity-100 transition-opaci…\">",
               "nodeLabel": "Marcha em Foco"
             },
-            "url": "https://wyufgltprapazpxmtaff.supabase.co/storage/v1/object/public/sponsor-logos/57facfaf-3083-4de8-9af3-2d731fa70bad/logo.png",
+            "url": "https://your-project-ref.supabase.co/storage/v1/object/public/sponsor-logos/57facfaf-3083-4de8-9af3-2d731fa70bad/logo.png",
             "fromProtocol": true,
             "isCrossOrigin": true,
             "totalBytes": 11335,
@@ -7973,10 +7973,10 @@
                 "width": 160,
                 "height": 80
               },
-              "snippet": "<img src=\"https://wyufgltprapazpxmtaff.supabase.co/storage/v1/object/public/sponsor-…\" alt=\"Sponsor PNG\" loading=\"lazy\" decoding=\"async\" class=\"w-full h-full object-contain opacity-70 hover:opacity-100 transition-opaci…\">",
+              "snippet": "<img src=\"https://your-project-ref.supabase.co/storage/v1/object/public/sponsor-…\" alt=\"Sponsor PNG\" loading=\"lazy\" decoding=\"async\" class=\"w-full h-full object-contain opacity-70 hover:opacity-100 transition-opaci…\">",
               "nodeLabel": "Sponsor PNG"
             },
-            "url": "https://wyufgltprapazpxmtaff.supabase.co/storage/v1/object/public/sponsor-logos/b48e9066-3856-4238-8474-eb7bbb4ae6e3/logo.png",
+            "url": "https://your-project-ref.supabase.co/storage/v1/object/public/sponsor-logos/b48e9066-3856-4238-8474-eb7bbb4ae6e3/logo.png",
             "totalBytes": 51165,
             "wastedBytes": 49445,
             "wastedPercent": 96.63923182441701
@@ -7995,10 +7995,10 @@
                 "width": 160,
                 "height": 80
               },
-              "snippet": "<img src=\"https://wyufgltprapazpxmtaff.supabase.co/storage/v1/object/public/sponsor-…\" alt=\"dd\" loading=\"lazy\" decoding=\"async\" class=\"w-full h-full object-contain opacity-70 hover:opacity-100 transition-opaci…\">",
+              "snippet": "<img src=\"https://your-project-ref.supabase.co/storage/v1/object/public/sponsor-…\" alt=\"dd\" loading=\"lazy\" decoding=\"async\" class=\"w-full h-full object-contain opacity-70 hover:opacity-100 transition-opaci…\">",
               "nodeLabel": "dd"
             },
-            "url": "https://wyufgltprapazpxmtaff.supabase.co/storage/v1/object/public/sponsor-logos/2f8955ce-c051-405f-8aff-9c057623aba5/logo.png",
+            "url": "https://your-project-ref.supabase.co/storage/v1/object/public/sponsor-logos/2f8955ce-c051-405f-8aff-9c057623aba5/logo.png",
             "totalBytes": 50869,
             "wastedBytes": 49159,
             "wastedPercent": 96.63923182441701
@@ -8017,10 +8017,10 @@
                 "width": 160,
                 "height": 80
               },
-              "snippet": "<img src=\"https://wyufgltprapazpxmtaff.supabase.co/storage/v1/object/public/sponsor-…\" alt=\"Marcha em Foco\" loading=\"lazy\" decoding=\"async\" class=\"w-full h-full object-contain opacity-70 hover:opacity-100 transition-opaci…\">",
+              "snippet": "<img src=\"https://your-project-ref.supabase.co/storage/v1/object/public/sponsor-…\" alt=\"Marcha em Foco\" loading=\"lazy\" decoding=\"async\" class=\"w-full h-full object-contain opacity-70 hover:opacity-100 transition-opaci…\">",
               "nodeLabel": "Marcha em Foco"
             },
-            "url": "https://wyufgltprapazpxmtaff.supabase.co/storage/v1/object/public/sponsor-logos/57facfaf-3083-4de8-9af3-2d731fa70bad/logo.png",
+            "url": "https://your-project-ref.supabase.co/storage/v1/object/public/sponsor-logos/57facfaf-3083-4de8-9af3-2d731fa70bad/logo.png",
             "totalBytes": 11335,
             "wastedBytes": 9558,
             "wastedPercent": 84.32
@@ -8422,13 +8422,13 @@
             "wastedBytes": 120517.6
           },
           {
-            "url": "https://wyufgltprapazpxmtaff.supabase.co/storage/v1/object/public/sponsor-logos/b48e9066-3856-4238-8474-eb7bbb4ae6e3/logo.png",
+            "url": "https://your-project-ref.supabase.co/storage/v1/object/public/sponsor-logos/b48e9066-3856-4238-8474-eb7bbb4ae6e3/logo.png",
             "cacheLifetimeMs": 3600000,
             "totalBytes": 51814,
             "wastedBytes": 41451.200000000004
           },
           {
-            "url": "https://wyufgltprapazpxmtaff.supabase.co/storage/v1/object/public/sponsor-logos/2f8955ce-c051-405f-8aff-9c057623aba5/logo.png",
+            "url": "https://your-project-ref.supabase.co/storage/v1/object/public/sponsor-logos/2f8955ce-c051-405f-8aff-9c057623aba5/logo.png",
             "cacheLifetimeMs": 3600000,
             "totalBytes": 51569,
             "wastedBytes": 41255.200000000004
@@ -8458,7 +8458,7 @@
             "wastedBytes": 10465.6
           },
           {
-            "url": "https://wyufgltprapazpxmtaff.supabase.co/storage/v1/object/public/sponsor-logos/57facfaf-3083-4de8-9af3-2d731fa70bad/logo.png",
+            "url": "https://your-project-ref.supabase.co/storage/v1/object/public/sponsor-logos/57facfaf-3083-4de8-9af3-2d731fa70bad/logo.png",
             "cacheLifetimeMs": 3600000,
             "totalBytes": 11969,
             "wastedBytes": 9575.2
@@ -8978,7 +8978,7 @@
             }
           },
           {
-            "url": "https://wyufgltprapazpxmtaff.supabase.co/storage/v1/object/public/sponsor-logos/b48e9066-3856-4238-8474-eb7bbb4ae6e3/logo.png",
+            "url": "https://your-project-ref.supabase.co/storage/v1/object/public/sponsor-logos/b48e9066-3856-4238-8474-eb7bbb4ae6e3/logo.png",
             "totalBytes": 51165,
             "wastedBytes": 50884,
             "subItems": {
@@ -8992,7 +8992,7 @@
             }
           },
           {
-            "url": "https://wyufgltprapazpxmtaff.supabase.co/storage/v1/object/public/sponsor-logos/2f8955ce-c051-405f-8aff-9c057623aba5/logo.png",
+            "url": "https://your-project-ref.supabase.co/storage/v1/object/public/sponsor-logos/2f8955ce-c051-405f-8aff-9c057623aba5/logo.png",
             "totalBytes": 50869,
             "wastedBytes": 50590,
             "subItems": {
@@ -9006,7 +9006,7 @@
             }
           },
           {
-            "url": "https://wyufgltprapazpxmtaff.supabase.co/storage/v1/object/public/sponsor-logos/57facfaf-3083-4de8-9af3-2d731fa70bad/logo.png",
+            "url": "https://your-project-ref.supabase.co/storage/v1/object/public/sponsor-logos/57facfaf-3083-4de8-9af3-2d731fa70bad/logo.png",
             "totalBytes": 11335,
             "wastedBytes": 11045,
             "subItems": {
@@ -9220,14 +9220,14 @@
                       "isLongest": true,
                       "children": {
                         "66488.114": {
-                          "url": "https://wyufgltprapazpxmtaff.supabase.co/rest/v1/rpc/get_featured_animals_rotated_fast",
+                          "url": "https://your-project-ref.supabase.co/rest/v1/rpc/get_featured_animals_rotated_fast",
                           "navStartToEndTime": 10849,
                           "transferSize": 699,
                           "isLongest": true,
                           "children": {}
                         },
                         "66488.112": {
-                          "url": "https://wyufgltprapazpxmtaff.supabase.co/rest/v1/rpc/increment_sponsor_impression",
+                          "url": "https://your-project-ref.supabase.co/rest/v1/rpc/increment_sponsor_impression",
                           "navStartToEndTime": 10151,
                           "transferSize": 650,
                           "children": {}
@@ -9239,13 +9239,13 @@
                           "children": {}
                         },
                         "66488.102": {
-                          "url": "https://wyufgltprapazpxmtaff.supabase.co/rest/v1/rpc/increment_sponsor_impression",
+                          "url": "https://your-project-ref.supabase.co/rest/v1/rpc/increment_sponsor_impression",
                           "navStartToEndTime": 9566,
                           "transferSize": 652,
                           "children": {}
                         },
                         "66488.101": {
-                          "url": "https://wyufgltprapazpxmtaff.supabase.co/rest/v1/rpc/increment_sponsor_impression",
+                          "url": "https://your-project-ref.supabase.co/rest/v1/rpc/increment_sponsor_impression",
                           "navStartToEndTime": 9536,
                           "transferSize": 652,
                           "children": {}
@@ -9293,7 +9293,7 @@
                           "children": {}
                         },
                         "66488.82": {
-                          "url": "https://wyufgltprapazpxmtaff.supabase.co/rest/v1/active_sponsors?select=*&display_locations=cs.%7Bhome%7D",
+                          "url": "https://your-project-ref.supabase.co/rest/v1/active_sponsors?select=*&display_locations=cs.%7Bhome%7D",
                           "navStartToEndTime": 8808,
                           "transferSize": 1151,
                           "children": {}
@@ -9571,32 +9571,32 @@
               "type": "subitems",
               "items": [
                 {
-                  "url": "https://wyufgltprapazpxmtaff.supabase.co/storage/v1/object/public/sponsor-logos/b48e9066-3856-4238-8474-eb7bbb4ae6e3/logo.png",
+                  "url": "https://your-project-ref.supabase.co/storage/v1/object/public/sponsor-logos/b48e9066-3856-4238-8474-eb7bbb4ae6e3/logo.png",
                   "mainThreadTime": 0,
                   "transferSize": 51814
                 },
                 {
-                  "url": "https://wyufgltprapazpxmtaff.supabase.co/storage/v1/object/public/sponsor-logos/2f8955ce-c051-405f-8aff-9c057623aba5/logo.png",
+                  "url": "https://your-project-ref.supabase.co/storage/v1/object/public/sponsor-logos/2f8955ce-c051-405f-8aff-9c057623aba5/logo.png",
                   "mainThreadTime": 0,
                   "transferSize": 51569
                 },
                 {
-                  "url": "https://wyufgltprapazpxmtaff.supabase.co/storage/v1/object/public/sponsor-logos/57facfaf-3083-4de8-9af3-2d731fa70bad/logo.png",
+                  "url": "https://your-project-ref.supabase.co/storage/v1/object/public/sponsor-logos/57facfaf-3083-4de8-9af3-2d731fa70bad/logo.png",
                   "mainThreadTime": 0,
                   "transferSize": 11969
                 },
                 {
-                  "url": "https://wyufgltprapazpxmtaff.supabase.co/rest/v1/rpc/increment_sponsor_impression",
+                  "url": "https://your-project-ref.supabase.co/rest/v1/rpc/increment_sponsor_impression",
                   "mainThreadTime": 0,
                   "transferSize": 1954
                 },
                 {
-                  "url": "https://wyufgltprapazpxmtaff.supabase.co/rest/v1/active_sponsors?select=*&display_locations=cs.%7Bhome%7D",
+                  "url": "https://your-project-ref.supabase.co/rest/v1/active_sponsors?select=*&display_locations=cs.%7Bhome%7D",
                   "mainThreadTime": 0,
                   "transferSize": 1151
                 },
                 {
-                  "url": "https://wyufgltprapazpxmtaff.supabase.co/rest/v1/rpc/get_featured_animals_rotated_fast",
+                  "url": "https://your-project-ref.supabase.co/rest/v1/rpc/get_featured_animals_rotated_fast",
                   "mainThreadTime": 0,
                   "transferSize": 699
                 }
@@ -10191,7 +10191,7 @@
     {
       "name": "supabase.co",
       "origins": [
-        "https://wyufgltprapazpxmtaff.supabase.co"
+        "https://your-project-ref.supabase.co"
       ],
       "isUnrecognized": true
     }

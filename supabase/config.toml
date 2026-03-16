@@ -1,4 +1,4 @@
-project_id = "wyufgltprapazpxmtaff"
+project_id = "your-project-ref-here"
 
 [functions.asaas-webhook]
 verify_jwt = false

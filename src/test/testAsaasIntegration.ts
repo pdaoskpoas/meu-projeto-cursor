@@ -25,7 +25,7 @@ import { supabase } from '@/lib/supabase';
 // =================================================================
 
 // Use um ID de usuário real do seu banco
-const TEST_USER_ID = 'addb892b-e6f8-456a-a32a-11529510cafb'; // Haras Tonho
+const TEST_USER_ID = 'YOUR_USER_ID_HERE'; // Substitua pelo ID de um usuário real do seu banco
 const TEST_ANIMAL_ID = ''; // Preencher com um animal real se testar anúncio individual
 const TEST_EVENT_ID = ''; // Preencher com um evento real se testar evento individual
 

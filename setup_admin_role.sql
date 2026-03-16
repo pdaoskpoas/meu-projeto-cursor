@@ -1,8 +1,8 @@
 -- =====================================================
 -- CONFIGURAÇÃO DO ROLE ADMINISTRATIVO
 -- Data: 08 de Novembro de 2025
--- Usuário: adm@gmail.com
--- UID: dc8881a5-3f19-4476-9b8e-e91cf1815360
+-- Usuário: seu_email_admin@exemplo.com
+-- UID: ADMIN_UUID_EXAMPLE
 -- =====================================================
 
 -- PASSO 1: Verificar o estado atual do usuário
@@ -18,7 +18,7 @@ SELECT
   is_suspended,
   created_at
 FROM profiles 
-WHERE email = 'adm@gmail.com';
+WHERE email = 'seu_email_admin@exemplo.com';
 
 -- =====================================================
 -- Se o SELECT acima retornar 0 linhas:
@@ -42,8 +42,8 @@ INSERT INTO profiles (
   created_at,
   updated_at
 ) VALUES (
-  'dc8881a5-3f19-4476-9b8e-e91cf1815360',
-  'adm@gmail.com',
+  'ADMIN_UUID_EXAMPLE',
+  'seu_email_admin@exemplo.com',
   'Administrador do Sistema',
   'admin',
   'institutional',
@@ -70,7 +70,7 @@ SET
   is_active = true,
   is_suspended = false,
   updated_at = NOW()
-WHERE email = 'adm@gmail.com';
+WHERE email = 'seu_email_admin@exemplo.com';
 
 -- =====================================================
 -- PASSO 2: Verificar se a atualização funcionou
@@ -90,7 +90,7 @@ SELECT
   created_at,
   updated_at
 FROM profiles 
-WHERE email = 'adm@gmail.com';
+WHERE email = 'seu_email_admin@exemplo.com';
 
 -- =====================================================
 -- RESULTADO ESPERADO:

@@ -1,7 +1,7 @@
 -- =====================================================
 -- ALTERAÇÃO DE SENHA DO ADMINISTRADOR
 -- Data: 08 de Novembro de 2025
--- Usuário: adm@gmail.com
+-- Usuário: seu_email_admin@exemplo.com
 -- =====================================================
 
 -- ⚠️ IMPORTANTE: Execute este script apenas se você quiser
@@ -19,13 +19,13 @@
 /*
 UPDATE auth.users
 SET encrypted_password = crypt('SUA_NOVA_SENHA_FORTE', gen_salt('bf'))
-WHERE email = 'adm@gmail.com';
+WHERE email = 'seu_email_admin@exemplo.com';
 */
 
 -- Exemplo com senha forte (NÃO use esta, crie a sua):
 -- UPDATE auth.users
 -- SET encrypted_password = crypt('Admin@2025!Secure#Pltfrm', gen_salt('bf'))
--- WHERE email = 'adm@gmail.com';
+-- WHERE email = 'seu_email_admin@exemplo.com';
 
 -- =====================================================
 -- OPÇÃO 2: Verificar se a senha foi alterada
@@ -39,7 +39,7 @@ SELECT
   updated_at,
   last_sign_in_at
 FROM auth.users
-WHERE email = 'adm@gmail.com';
+WHERE email = 'seu_email_admin@exemplo.com';
 
 -- =====================================================
 -- OPÇÃO 3: Forçar reset de senha por email
@@ -49,7 +49,7 @@ WHERE email = 'adm@gmail.com';
 -- com link para redefinir a senha
 
 -- Executar via Supabase Dashboard:
--- Authentication > Users > adm@gmail.com > 
+-- Authentication > Users > seu_email_admin@exemplo.com > 
 -- três pontos (...) > "Send password reset email"
 
 -- =====================================================
@@ -72,7 +72,7 @@ WHERE email = 'adm@gmail.com';
 -- - Eq3str!@n2025#AdmSecure
 
 -- ❌ Exemplos de senhas FRACAS (NUNCA use):
--- - 12345678
+-- - sua_senha_segura_aqui
 -- - admin123
 -- - password
 -- - cavalaria123

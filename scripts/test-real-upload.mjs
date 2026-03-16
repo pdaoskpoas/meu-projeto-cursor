@@ -25,8 +25,8 @@ async function main() {
   
   // Autenticar
   const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-    email: 'haras.mcp2@teste.com.br',
-    password: '12345678'
+    email: 'usuario_teste@exemplo.com',
+    password: sua_senha_segura_aqui'
   });
   if (authError) throw authError;
   console.log('[OK] Usuário autenticado');

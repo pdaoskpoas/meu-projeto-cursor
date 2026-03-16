@@ -1,6 +1,6 @@
 # ⚡ EXECUTE AGORA - CONFIGURAÇÃO DO ADMINISTRADOR
 
-**Status:** ✅ Usuário `adm@gmail.com` existe no Supabase Auth  
+**Status:** ✅ Usuário `seu_email_admin@exemplo.com` existe no Supabase Auth  
 **Próximo Passo:** Configurar o role como 'admin'
 
 ---
@@ -30,7 +30,7 @@ SELECT
   is_active,
   is_suspended
 FROM profiles 
-WHERE email = 'adm@gmail.com';
+WHERE email = 'seu_email_admin@exemplo.com';
 ```
 
 **Clique em "Run" (ou Ctrl+Enter)**
@@ -44,8 +44,8 @@ WHERE email = 'adm@gmail.com';
 #### ✅ **Situação A: Retornou 1 linha**
 ```
 Exemplo de resultado:
-id: dc8881a5-3f19-4476-9b8e-e91cf1815360
-email: adm@gmail.com
+id: ADMIN_UUID_EXAMPLE
+email: seu_email_admin@exemplo.com
 name: Administrador
 role: user  ← AQUI ESTÁ O PROBLEMA!
 ```
@@ -89,7 +89,7 @@ SET
   is_active = true,
   is_suspended = false,
   updated_at = NOW()
-WHERE email = 'adm@gmail.com';
+WHERE email = 'seu_email_admin@exemplo.com';
 ```
 
 **Resultado esperado:** `UPDATE 1`
@@ -102,7 +102,7 @@ SELECT
   email,
   role
 FROM profiles 
-WHERE email = 'adm@gmail.com';
+WHERE email = 'seu_email_admin@exemplo.com';
 ```
 
 **Você deve ver:** `role: admin` ✅
@@ -131,8 +131,8 @@ INSERT INTO profiles (
   created_at,
   updated_at
 ) VALUES (
-  'dc8881a5-3f19-4476-9b8e-e91cf1815360',
-  'adm@gmail.com',
+  'seu-uuid-aqui',
+  'seu_email_admin@exemplo.com',
   'Administrador do Sistema',
   'admin',
   'institutional',
@@ -150,7 +150,7 @@ INSERT INTO profiles (
 **Verificar criação:**
 
 ```sql
-SELECT * FROM profiles WHERE email = 'adm@gmail.com';
+SELECT * FROM profiles WHERE email = 'seu_email_admin@exemplo.com';
 ```
 
 **Você deve ver o perfil completo com `role: admin`** ✅
@@ -164,8 +164,8 @@ SELECT * FROM profiles WHERE email = 'adm@gmail.com';
 2. **Ir para a página de login:** `/login`
 
 3. **Fazer login com:**
-   - **Email:** `adm@gmail.com`
-   - **Senha:** `12345678`
+   - **Email:** `seu_email_admin@exemplo.com`
+   - **Senha:** `sua_senha_segura_aqui`
 
 4. **Após login, ir para:** `/admin`
 
@@ -200,8 +200,8 @@ Marque conforme completar:
 ```sql
 -- No SQL Editor do Supabase
 UPDATE auth.users
-SET encrypted_password = crypt('12345678', gen_salt('bf'))
-WHERE email = 'adm@gmail.com';
+SET encrypted_password = crypt('sua_senha_segura_aqui', gen_salt('bf'))
+WHERE email = 'seu_email_admin@exemplo.com';
 ```
 
 ---
@@ -276,7 +276,7 @@ Para testar com dados, você pode:
 ---
 
 **Criado em:** 08 de Novembro de 2025  
-**Para:** Configuração do administrador adm@gmail.com  
+**Para:** Configuração do administrador seu_email_admin@exemplo.com  
 **Tempo estimado:** 5 minutos  
 **Status:** ⚡ Pronto para execução imediata
 

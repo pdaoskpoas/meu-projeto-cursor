@@ -16,11 +16,11 @@ const DemoCredentials: React.FC<DemoCredentialsProps> = ({ className = '' }) => 
       <div className="space-y-2">
         <div className="flex items-center space-x-2">
           <span className="text-xs font-semibold text-slate-600 bg-white px-2 py-1 rounded-lg">Email:</span>
-          <span className="text-sm font-mono text-slate-700 bg-white/80 px-2 py-1 rounded-lg">haras@teste.com.br</span>
+          <span className="text-sm font-mono text-slate-700 bg-white/80 px-2 py-1 rounded-lg">usuario_teste@exemplo.com</span>
         </div>
         <div className="flex items-center space-x-2">
           <span className="text-xs font-semibold text-slate-600 bg-white px-2 py-1 rounded-lg">Senha:</span>
-          <span className="text-sm font-mono text-slate-700 bg-white/80 px-2 py-1 rounded-lg">123456</span>
+          <span className="text-sm font-mono text-slate-700 bg-white/80 px-2 py-1 rounded-lg">sua_senha_aqui</span>
         </div>
       </div>
     </div>

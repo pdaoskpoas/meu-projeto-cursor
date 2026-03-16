@@ -9,8 +9,8 @@ import { chromium } from 'playwright';
 
 const BASE_URL = 'http://localhost:8083';
 const TEST_USER = {
-  email: 'haras.mcp2@teste.com.br',
-  password: '12345678'
+  email: process.argv[2] || 'usuario_teste@exemplo.com',
+  password: sua_senha_segura_aqui'
 };
 
 const TEST_ANIMAL = {

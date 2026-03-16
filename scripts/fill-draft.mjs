@@ -22,8 +22,8 @@ async function getClient() {
 }
 
 async function main() {
-  const email = process.argv[2] || 'haras.mcp2@teste.com.br'
-  const password = process.argv[3] || '12345678'
+  const email = process.argv[2] || 'usuario_teste@exemplo.com'
+  const password: sua_senha_segura_aqui'
   const supabase = await getClient()
 
   // login

@@ -1,0 +1,27 @@
+# =====================================================
+# CONFIGURAÇÃO DO SUPABASE - ARQUIVO DE EXEMPLO
+# =====================================================
+#
+# INSTRUÇÕES:
+# 1. Copie este arquivo para config.toml
+# 2. Substitua "your-project-ref-here" pelo seu Project ID real
+# 3. O arquivo config.toml NÃO será commitado no Git
+#
+# =====================================================
+
+project_id = "your-project-ref-here"
+
+[functions.asaas-webhook]
+verify_jwt = false
+
+[functions.process-payment]
+verify_jwt = true
+
+[functions.check-payment-status]
+verify_jwt = true
+
+[functions.process-boost-payment]
+verify_jwt = true
+
+[functions.process-individual-payment]
+verify_jwt = true
