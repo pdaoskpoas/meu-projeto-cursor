@@ -1,6 +1,7 @@
-// Hook para buscar animais mais visualizados (dados REAIS do Supabase)
-import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
+// Hook para buscar animais mais visualizados (com React Query + sessão resiliente)
+import { useQuery } from '@tanstack/react-query';
+import { animalService } from '@/services/animalService';
+import { queryWithSession } from '@/lib/queryWithSession';
 
 export interface AnimalWithStats {
   id: string;
@@ -17,49 +18,20 @@ export interface AnimalWithStats {
   impression_count: number;
 }
 
-export const useMostViewedAnimals = (limit: number = 10, period: 'all' | 'month' = 'all') => {
-  const [animals, setAnimals] = useState<AnimalWithStats[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+export const useMostViewedAnimals = (limit: number = 10, _period: 'all' | 'month' = 'all') => {
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['most-viewed-animals', limit],
+    queryFn: () => queryWithSession(() => animalService.getMostViewedAnimals(limit)),
+    staleTime: 60_000,
+    gcTime: 5 * 60_000,
+    refetchOnWindowFocus: false,
+    retry: 2,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 5000),
+  });
 
-  useEffect(() => {
-    const fetchMostViewedAnimals = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-
-        // Buscar da view que já calcula impressões
-        let query = supabase
-          .from('animals_with_stats')
-          .select('*')
-          .eq('ad_status', 'active')
-          .order('impression_count', { ascending: false })
-          .limit(limit);
-
-        // Se período é 'month', filtrar últimos 30 dias
-        if (period === 'month') {
-          const thirtyDaysAgo = new Date();
-          thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-          query = query.gte('published_at', thirtyDaysAgo.toISOString());
-        }
-
-        const { data, error: fetchError } = await query;
-
-        if (fetchError) throw fetchError;
-
-        setAnimals(data || []);
-      } catch (err) {
-        console.error('Error fetching most viewed animals:', err);
-        setError(err as Error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchMostViewedAnimals();
-  }, [limit, period]);
-
-  return { animals, isLoading, error };
+  return {
+    animals: (data ?? []) as AnimalWithStats[],
+    isLoading,
+    error: error as Error | null,
+  };
 };
-
-

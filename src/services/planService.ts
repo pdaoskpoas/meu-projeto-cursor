@@ -262,15 +262,19 @@ export async function getUserPlanQuota(
   } catch (error: unknown) {
     captureError(error, { context: 'getUserPlanQuota', userId });
 
-    const fallbackQuota = getCachedPlanForUser(userId);
-    if (fallbackQuota) {
-      log('[PlanService] Falha na verificação do plano. Usando cache como fallback.');
-      return fallbackQuota;
+    // Usar cache como fallback apenas se não expirou e não é erro de auth
+    if (!isAuthError(error)) {
+      const fallbackQuota = getCachedPlanForUser(userId);
+      if (fallbackQuota) {
+        log('[PlanService] Falha na verificação do plano. Usando cache como fallback.');
+        return fallbackQuota;
+      }
     }
 
     if (isAuthError(error)) {
       throw new Error('Sua sessão expirou. Faça login novamente para continuar.');
     }
+    // Propagar erro real em vez de fallback silencioso com plano free
     throw new Error(mapPlanErrorMessage(error));
   }
 }

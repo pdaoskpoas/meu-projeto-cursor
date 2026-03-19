@@ -334,8 +334,13 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         }
       )
-      .subscribe();
-    
+      .subscribe((status, err) => {
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          console.warn('[Chat] Subscription de mensagens falhou, tentando reconectar:', status, err);
+          setTimeout(() => subscription.subscribe(), 2000);
+        }
+      });
+
     return () => {
       subscription.unsubscribe();
     };
@@ -386,8 +391,13 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         }
       )
-      .subscribe();
-    
+      .subscribe((status, err) => {
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          console.warn('[Chat] Subscription de conversas falhou, tentando reconectar:', status, err);
+          setTimeout(() => subscription.subscribe(), 2000);
+        }
+      });
+
     return () => {
       subscription.unsubscribe();
     };

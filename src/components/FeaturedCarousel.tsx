@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Crown, Heart, MapPin, Calendar, Users, ArrowRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFavorites } from '@/contexts/FavoritesContext';
 import { analyticsService } from '@/services/analyticsService';
-import { animalService } from '@/services/animalService';
 import { getAge } from '@/utils/animalAge';
 import {
   Carousel,
@@ -19,41 +18,35 @@ import PhotoGallery from '@/components/PhotoGallery';
 import { supabase } from '@/lib/supabase';
 import { AnimalCardData, getPlaceholderGallery, mapAnimalRecordToCard } from '@/utils/animalCard';
 import AnimalImpressionTracker from '@/components/tracking/AnimalImpressionTracker';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { animalService } from '@/services/animalService';
+import { queryWithSession } from '@/lib/queryWithSession';
 
 const FeaturedCarousel = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toggleFavorite, isFavorite } = useFavorites();
-  const [featuredAnimals, setFeaturedAnimals] = useState<AnimalCardData[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
 
-  const fetchFeaturedAnimals = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      
-      // ✅ Buscar apenas animais impulsionados ativos (limite 10)
-      // Sistema de rotação garante que todos apareçam igualmente
-      const boosted = await animalService.getFeaturedAnimals(10);
+  const { data: rawData, isLoading, error: queryError } = useQuery({
+    queryKey: ['featured-animals', 10],
+    queryFn: () => queryWithSession(() => animalService.getFeaturedAnimals(10)),
+    staleTime: 60_000,
+    gcTime: 5 * 60_000,
+    refetchOnWindowFocus: false,
+    retry: 2,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 5000),
+  });
 
-      // ✅ NÃO FAZ SHUFFLE - a rotação já é feita no servidor
-      // Ordem retornada pelo banco já garante distribuição equitativa
-      setFeaturedAnimals((boosted || []).map(mapAnimalRecordToCard));
-    } catch (err) {
-      console.error('Error fetching featured animals:', err);
-      setError('Não conseguimos carregar os turbinados agora. Tente novamente em instantes.');
-      setFeaturedAnimals([]);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  const featuredAnimals = useMemo(
+    () => (rawData || []).map(mapAnimalRecordToCard),
+    [rawData]
+  );
+  const error = queryError ? 'Não conseguimos carregar os turbinados agora. Tente novamente em instantes.' : null;
 
+  // Realtime: invalidar cache quando animais mudam (boost)
   useEffect(() => {
-    fetchFeaturedAnimals();
-  }, [fetchFeaturedAnimals]);
-
-  useEffect(() => {
+    let debounceTimer: ReturnType<typeof setTimeout>;
     const channel = supabase
       .channel('home-featured-animals')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'animals' }, (payload) => {
@@ -64,15 +57,24 @@ const FeaturedCarousel = () => {
           payload.eventType === 'DELETE';
 
         if (affectedBoost) {
-          fetchFeaturedAnimals();
+          clearTimeout(debounceTimer);
+          debounceTimer = setTimeout(() => {
+            queryClient.invalidateQueries({ queryKey: ['featured-animals'] });
+          }, 500);
         }
       })
-      .subscribe();
+      .subscribe((status, err) => {
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          console.warn('[FeaturedCarousel] Subscription falhou:', status, err);
+          setTimeout(() => channel.subscribe(), 2000);
+        }
+      });
 
     return () => {
+      clearTimeout(debounceTimer);
       supabase.removeChannel(channel);
     };
-  }, [fetchFeaturedAnimals]);
+  }, [queryClient]);
 
   // Função para lidar com favoritos
   const handleFavoriteClick = async (e: React.MouseEvent, horseId: string) => {

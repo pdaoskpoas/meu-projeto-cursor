@@ -15,6 +15,17 @@ if ('scrollRestoration' in window.history) {
 applySecurityMetaTags();
 initWebVitals();
 
+// Captura global de promises não tratadas — evita falhas silenciosas
+window.addEventListener('unhandledrejection', (event) => {
+  const reason = event.reason;
+  const message = reason instanceof Error ? reason.message : String(reason);
+
+  // Ignorar erros de stale request (são intencionais)
+  if (message === 'Stale request ignored') return;
+
+  console.error('[Unhandled Promise Rejection]', message, reason);
+});
+
 createRoot(document.getElementById("root")!).render(
   <HelmetProvider>
     <App />

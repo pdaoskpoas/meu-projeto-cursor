@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Clock, Heart, MapPin, Calendar, Users, ArrowRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -18,14 +18,16 @@ import PhotoGallery from '@/components/PhotoGallery';
 import { getAge } from '@/utils/animalAge';
 import { supabase } from '@/lib/supabase';
 import { AnimalCardData, getPlaceholderGallery, mapAnimalRecordToCard, normalizeSupabaseImages } from '@/utils/animalCard';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { queryWithSession } from '@/lib/queryWithSession';
 
 // Componente para rastrear impressões via Supabase Analytics
-const AnimalImpressionTracker: React.FC<{ 
-  animalId: string; 
+const AnimalImpressionTracker: React.FC<{
+  animalId: string;
   children: React.ReactNode;
   onAnimalClick: () => void;
   carouselIndex: number;
-}> = ({ animalId, children, onAnimalClick, carouselIndex }) => {
+}> = React.memo(({ animalId, children, onAnimalClick, carouselIndex }) => {
   const elementRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -45,61 +47,66 @@ const AnimalImpressionTracker: React.FC<{
       {children}
     </div>
   );
-};
+});
+AnimalImpressionTracker.displayName = 'AnimalImpressionTracker';
 
 const RecentlyPublishedCarousel = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toggleFavorite, isFavorite } = useFavorites();
-  const [recentAnimals, setRecentAnimals] = useState<AnimalCardData[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
 
-  const fetchRecentAnimals = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      let list = await animalService.getRecentAnimals(10);
-
+  const { data: rawData, isLoading, error: queryError } = useQuery({
+    queryKey: ['recent-animals', 10],
+    queryFn: async () => {
+      let list = await queryWithSession(() => animalService.getRecentAnimals(10));
       if (!list || list.length === 0) {
         list = await animalService.getMostViewedAnimals(10);
       }
-
       if (!list || list.length === 0) {
         list = await animalService.getFeaturedAnimals(10);
       }
+      return list;
+    },
+    staleTime: 60_000,
+    gcTime: 5 * 60_000,
+    refetchOnWindowFocus: false,
+    retry: 2,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 5000),
+  });
 
-      const mapped = list.map((animal: Record<string, unknown>) => {
-        const card = mapAnimalRecordToCard(animal);
-        return {
-          ...card,
-          images: normalizeSupabaseImages(animal),
-        };
-      });
-      setRecentAnimals(mapped);
-    } catch (err) {
-      console.error('Error fetching recent animals:', err);
-      setError('Não conseguimos carregar as últimas postagens.');
-      setRecentAnimals([]);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  const recentAnimals = useMemo(
+    () => (rawData || []).map((animal: Record<string, unknown>) => {
+      const card = mapAnimalRecordToCard(animal);
+      return { ...card, images: normalizeSupabaseImages(animal) };
+    }),
+    [rawData]
+  );
+  const error = queryError ? 'Não conseguimos carregar as últimas postagens.' : null;
 
+  // Realtime: invalidar cache quando animais mudam
   useEffect(() => {
-    fetchRecentAnimals();
-  }, [fetchRecentAnimals]);
-
-  useEffect(() => {
+    let debounceTimer: ReturnType<typeof setTimeout>;
     const channel = supabase
       .channel('home-recent-animals')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'animals' }, () => fetchRecentAnimals())
-      .subscribe();
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'animals' }, () => {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+          queryClient.invalidateQueries({ queryKey: ['recent-animals'] });
+        }, 500);
+      })
+      .subscribe((status, err) => {
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          console.warn('[RecentCarousel] Subscription falhou:', status, err);
+          setTimeout(() => channel.subscribe(), 2000);
+        }
+      });
 
     return () => {
+      clearTimeout(debounceTimer);
       supabase.removeChannel(channel);
     };
-  }, [fetchRecentAnimals]);
+  }, [queryClient]);
 
   // Função para lidar com favoritos
   const handleFavoriteClick = async (e: React.MouseEvent, horseId: string) => {
@@ -117,8 +124,6 @@ const RecentlyPublishedCarousel = () => {
   
   const resolveGalleryImages = (horse: AnimalCardData) =>
     horse.images.length > 0 ? horse.images : getPlaceholderGallery();
-
-  const displayHorses = recentAnimals;
 
   return (
     <section className="bg-white py-16">
@@ -139,9 +144,9 @@ const RecentlyPublishedCarousel = () => {
 
         <div className="relative">
           {error && <p className="text-sm text-red-600 mb-6">{error}</p>}
-          {isLoading && displayHorses.length === 0 ? (
+          {isLoading && recentAnimals.length === 0 ? (
             <p className="text-sm text-slate-500">Carregando últimas publicações...</p>
-          ) : displayHorses.length === 0 ? (
+          ) : recentAnimals.length === 0 ? (
             <p className="text-sm text-slate-500">Nenhum anúncio publicado recentemente.</p>
           ) : (
             <Carousel
@@ -157,7 +162,7 @@ const RecentlyPublishedCarousel = () => {
             className="w-full"
           >
             <CarouselContent className="-ml-2 md:-ml-4">
-              {displayHorses.map((horse, index) => (
+              {recentAnimals.map((horse, index) => (
                 <CarouselItem key={horse.id} className="pl-2 md:pl-4 basis-full sm:basis-1/2 lg:basis-1/3 xl:basis-1/4 h-full flex">
                   <AnimalImpressionTracker 
                     animalId={horse.id}

@@ -1,8 +1,11 @@
+import { useSessionKeepAlive } from '@/hooks/useSessionKeepAlive';
+
 /**
- * Componente preservado por compatibilidade de import.
- * A manutenção de sessão fica a cargo do Supabase + requests resilientes.
+ * Gerencia a sessão do usuário: mantém o token JWT ativo proativamente,
+ * evitando "congelamentos" após períodos de inatividade.
  */
 const SessionTimeoutManager = () => {
+  useSessionKeepAlive();
   return null;
 };
 

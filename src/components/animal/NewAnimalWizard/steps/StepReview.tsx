@@ -241,58 +241,52 @@ export const StepReview: React.FC<StepReviewProps> = ({
         globalTimeout = null;
       }, TOTAL_OPERATION_TIMEOUT_MS);
       
-      // ✅ Sessão sempre revalidada no mesmo client usado pelos serviços
-      console.log('🔐 Validando sessão ativa antes da publicação...');
-      try {
-        await ensureActiveSession({ forceRefresh: true, timeoutMs: 6000 });
-        console.log('✅ Sessão válida para publicar.');
-      } catch (sessionError) {
-        console.warn('⚠️ Falha ao validar sessão antes da publicação:', sessionError);
-        toast({
-          title: 'Sessão expirada',
-          description: 'Faça login novamente para publicar seu anúncio.',
-          variant: 'destructive'
-        });
-        return;
-      }
-
-      console.log('📊 Quota:', effectiveQuota);
-      console.log('👤 User:', effectiveUserId);
-      
       log('Iniciando publicação com plano...');
       logEvent('animal_publish_started', { userId: effectiveUserId, plan: effectiveQuota.plan });
 
-      // ✅ Buscar dados do perfil do usuário (com timeout)
-      console.log('👤 Buscando perfil do usuário...');
+      // ✅ OTIMIZAÇÃO: Sessão + Perfil em PARALELO (economiza ~3-5s)
+      console.log('🔐 Validando sessão e buscando perfil em paralelo...');
       let userProfile: { property_name: string | null; account_type: string } | null = null;
-      try {
+
+      // ensureActiveSession agora verifica se sessão é fresca antes de forçar refresh
+      // e usa mutex para evitar refreshes simultâneos — normalmente retorna instantâneo
+      const sessionPromise = ensureActiveSession({ forceRefresh: true, timeoutMs: 15000 });
+
+      const profilePromise = (async () => {
         if (actingProfile) {
-          userProfile = {
+          return {
             property_name: actingProfile.property_name ?? null,
             account_type: actingProfile.account_type || 'institutional'
           };
-        } else {
-          const profilePromise = supabase
-            .from('profiles')
-            .select('property_name, account_type')
-            .eq('id', effectiveUserId)
-            .single();
-        
-          const profileResult = await Promise.race([
-            profilePromise,
-            new Promise((_, reject) => 
-              setTimeout(() => reject(new Error('Timeout ao buscar perfil')), 5000)
-            )
-          ]);
-          const result = profileResult as { data: { property_name: string | null; account_type: string } | null; error: Error | null };
-          
-          userProfile = result.data;
-          console.log('📋 Perfil do usuário:', userProfile);
         }
-      } catch (profileError) {
-        console.warn('⚠️ Erro ao buscar perfil, continuando sem dados de haras...', profileError);
-        // Continuar sem dados de haras não é crítico
+        try {
+          const { data } = await Promise.race([
+            supabase.from('profiles').select('property_name, account_type').eq('id', effectiveUserId).single(),
+            new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Timeout perfil')), 5000))
+          ]);
+          return data;
+        } catch {
+          return null;
+        }
+      })();
+
+      const [sessionResult, profileResult] = await Promise.allSettled([sessionPromise, profilePromise]);
+
+      if (sessionResult.status === 'rejected') {
+        console.error('❌ Falha definitiva ao validar sessão:', sessionResult.reason);
+        toast({
+          title: 'Sessão expirada',
+          description: 'Não foi possível renovar sua sessão. Faça login novamente para publicar seu anúncio.',
+          variant: 'destructive'
+        });
+        safeDispatch({ type: 'SET_SUBMITTING', payload: false });
+        clearGlobalTimeout();
+        return;
       }
+      console.log('✅ Sessão válida para publicar.');
+
+      userProfile = profileResult.status === 'fulfilled' ? profileResult.value : null;
+      console.log('📋 Perfil do usuário:', userProfile);
 
       // Preparar dados
       interface AnimalInsertData {
@@ -375,7 +369,8 @@ export const StepReview: React.FC<StepReviewProps> = ({
         owner_id: effectiveUserId,
         haras_id: userProfile?.account_type === 'institutional' ? effectiveUserId : null,
         haras_name: userProfile?.property_name || null,
-        ad_status: 'paused', // ✅ Criar pausado para evitar timeout na verificação de plano
+        // Se não tem fotos, criar já ativo direto (evita round-trip extra do updateAnimal)
+        ad_status: formData.photos.files.length > 0 ? 'paused' : 'active',
         is_individual_paid: false
       };
 
@@ -411,22 +406,42 @@ export const StepReview: React.FC<StepReviewProps> = ({
         
         // ✅ Chamar createAnimal SEM Promise.race
         // Deixar a operação natural sem timeout artificial
-        if (useTransactionalRpc) {
+        // Função auxiliar para criar animal com retry automático
+        const createAnimalWithRetry = async (): Promise<{ id: string; share_code: string }> => {
+          const doCreate = async () => {
+            if (useTransactionalRpc) {
+              try {
+                const result = await animalService.createAnimalWithTitlesTx(animalData, titlesData);
+                titlesHandledByTx = result.titlesSaved;
+                console.log('✅ [TX] Animal criado via RPC transacional');
+                return result.animal;
+              } catch (txError) {
+                console.warn('⚠️ [TX] Falha na RPC transacional, fallback para fluxo atual:', txError);
+                return await animalService.createAnimal(animalData);
+              }
+            } else {
+              return await animalService.createAnimal(animalData);
+            }
+          };
+
           try {
-            const result = await animalService.createAnimalWithTitlesTx(
-              animalData,
-              titlesData
-            );
-            newAnimal = result.animal;
-            titlesHandledByTx = result.titlesSaved;
-            console.log('✅ [TX] Animal criado via RPC transacional');
-          } catch (txError) {
-            console.warn('⚠️ [TX] Falha na RPC transacional, fallback para fluxo atual:', txError);
-            newAnimal = await animalService.createAnimal(animalData);
+            return await doCreate();
+          } catch (firstError: unknown) {
+            const msg = firstError instanceof Error ? firstError.message.toLowerCase() : '';
+            const isRecoverable = msg.includes('timeout') || msg.includes('jwt') || msg.includes('token') || msg.includes('session') || msg.includes('fetch') || msg.includes('network');
+
+            if (!isRecoverable) throw firstError;
+
+            console.warn('⚠️ Primeira tentativa de criação falhou, renovando sessão e tentando novamente...');
+            try {
+              await ensureActiveSession({ forceRefresh: true, timeoutMs: 10000 });
+            } catch { /* ignorar erro de sessão no retry */ }
+
+            return await doCreate();
           }
-        } else {
-          newAnimal = await animalService.createAnimal(animalData);
-        }
+        };
+
+        newAnimal = await createAnimalWithRetry();
         if (timingInterval) clearInterval(timingInterval); // Parar logs
         
         const elapsed = Date.now() - startTime;
@@ -586,19 +601,28 @@ export const StepReview: React.FC<StepReviewProps> = ({
           console.log('🔄 Atualizando animal com imagens e ativando...');
           try {
             await animalService.updateAnimal(newAnimal.id, {
-              images: uploadedUrls, // Array simples de strings
+              images: uploadedUrls,
               ad_status: 'active'
             });
             log('Animal ativado com fotos');
             console.log('✅ Animal atualizado com sucesso');
           } catch (updateError) {
-            console.error('⚠️ Erro ao ativar animal com fotos:', updateError);
-            // Fotos foram enviadas, mas pode ter problema ao ativar
-            toast({
-              title: '⚠️ Aviso',
-              description: 'Fotos enviadas, mas houve problema ao ativar o anúncio. Tente ativar manualmente.',
-              variant: 'default'
-            });
+            console.warn('⚠️ Primeira tentativa de ativação falhou, tentando novamente...');
+            try {
+              await ensureActiveSession({ forceRefresh: true, timeoutMs: 10000 });
+              await animalService.updateAnimal(newAnimal.id, {
+                images: uploadedUrls,
+                ad_status: 'active'
+              });
+              console.log('✅ Animal ativado na segunda tentativa');
+            } catch (retryUpdateError) {
+              console.error('⚠️ Erro definitivo ao ativar animal com fotos:', retryUpdateError);
+              toast({
+                title: '⚠️ Aviso',
+                description: 'Fotos enviadas, mas houve problema ao ativar o anúncio. Tente ativar manualmente na lista de animais.',
+                variant: 'default'
+              });
+            }
           }
           
         } catch (timeoutError: unknown) {
@@ -628,15 +652,8 @@ export const StepReview: React.FC<StepReviewProps> = ({
           abortControllerRef.current = null;
         }
       } else {
-        // Se não há fotos, ativar o animal diretamente
-        console.log('📷 Nenhuma foto para processar, ativando animal diretamente...');
-        try {
-          await animalService.updateAnimal(newAnimal.id, { ad_status: 'active' });
-          console.log('✅ Animal ativado sem fotos');
-        } catch (updateError) {
-          console.error('⚠️ Erro ao ativar animal, mas prosseguindo:', updateError);
-          // Não bloquear o fluxo se falhar ao ativar
-        }
+        // Sem fotos — animal já foi criado como 'active', nada mais a fazer
+        console.log('📷 Nenhuma foto — animal já criado como ativo.');
       }
 
       // ✅ REMOVIDO: Não há mais step de sociedades no wizard
@@ -762,6 +779,19 @@ export const StepReview: React.FC<StepReviewProps> = ({
     publishLockRef.current = true;
 
     try {
+      // Se já temos quota em cache e é válida, usar direto sem refetch
+      // Isso evita o round-trip mais lento (verificação de plano)
+      const cachedQuota = quota;
+      const cachedScenario = cachedQuota ? getScenarioFromQuota(cachedQuota) : null;
+
+      if (cachedQuota && cachedScenario === 'within_quota') {
+        // Plano já verificado e com vagas — publicar imediatamente
+        // A sessão será validada dentro do handlePublishWithPlan
+        await handlePublishWithPlan(cachedQuota);
+        return;
+      }
+
+      // Se não tem cache ou cenário não é claro, buscar fresh
       const latestQuota = await refetchPlan({ forceFresh: true });
       const quotaToUse = latestQuota || quota;
 
@@ -782,8 +812,7 @@ export const StepReview: React.FC<StepReviewProps> = ({
       }
 
       const latestScenario = getScenarioFromQuota(quotaToUse);
-      
-      // Se o usuário tem vaga disponível, publicar direto
+
       if (latestScenario === 'within_quota') {
         await handlePublishWithPlan(quotaToUse);
         return;
@@ -850,7 +879,7 @@ export const StepReview: React.FC<StepReviewProps> = ({
     safeDispatch({ type: 'SET_SUBMITTING', payload: true });
 
     try {
-      await ensureActiveSession({ forceRefresh: true, timeoutMs: 6000 });
+      await ensureActiveSession({ forceRefresh: true, timeoutMs: 12000 });
 
       const shareCode = `${Math.random().toString(36).substring(2, 8).toUpperCase()}-${new Date().getFullYear().toString().slice(-2)}`;
       const { data: profileResult } = await supabase

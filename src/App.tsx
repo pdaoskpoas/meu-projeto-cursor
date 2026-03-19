@@ -56,7 +56,21 @@ const HelpPage = lazy(() => import("./pages/dashboard/HelpPage"));
 const SocietyPage = lazy(() => import("./pages/dashboard/SocietyPage"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 60_000,              // 60s antes de considerar stale
+      gcTime: 5 * 60_000,             // 5 min de garbage collection
+      retry: 1,                        // apenas 1 retry (evita avalanche)
+      retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 10_000),
+      refetchOnWindowFocus: false,     // NÃO refazer ao voltar à aba
+      refetchOnReconnect: 'always',    // refazer quando reconectar rede
+    },
+    mutations: {
+      retry: 0,                        // mutations não devem ser retentadas automaticamente
+    },
+  },
+});
 
 const App = () => (
   <ErrorBoundary>

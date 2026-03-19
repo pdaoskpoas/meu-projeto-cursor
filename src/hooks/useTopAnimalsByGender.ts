@@ -131,23 +131,41 @@ export const useTopAnimalsByGender = (
   }, [fetchTopAnimals]);
 
   useEffect(() => {
-    const clicksChannel = supabase
+    let debounceTimer: ReturnType<typeof setTimeout>;
+    const debouncedFetch = () => {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(fetchTopAnimals, 500);
+    };
+
+    const makeErrorHandler = (label: string, channelRef: { current: ReturnType<typeof supabase.channel> | null }) =>
+      (status: string, err?: Error) => {
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          console.warn(`[TopAnimals-${gender}] ${label} subscription falhou:`, status, err);
+          setTimeout(() => channelRef.current?.subscribe(), 2000);
+        }
+      };
+
+    const clicksRef: { current: ReturnType<typeof supabase.channel> | null } = { current: null };
+    const animalsRef: { current: ReturnType<typeof supabase.channel> | null } = { current: null };
+
+    clicksRef.current = supabase
       .channel(`top-${gender}-${period}-clicks`)
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'clicks', filter: 'content_type=eq.animal' },
-        () => fetchTopAnimals()
+        debouncedFetch
       )
-      .subscribe();
+      .subscribe(makeErrorHandler('clicks', clicksRef));
 
-    const animalsChannel = supabase
+    animalsRef.current = supabase
       .channel(`top-${gender}-${period}-animals`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'animals' }, () => fetchTopAnimals())
-      .subscribe();
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'animals' }, debouncedFetch)
+      .subscribe(makeErrorHandler('animals', animalsRef));
 
     return () => {
-      supabase.removeChannel(clicksChannel);
-      supabase.removeChannel(animalsChannel);
+      clearTimeout(debounceTimer);
+      if (clicksRef.current) supabase.removeChannel(clicksRef.current);
+      if (animalsRef.current) supabase.removeChannel(animalsRef.current);
     };
   }, [fetchTopAnimals, gender, period]);
 

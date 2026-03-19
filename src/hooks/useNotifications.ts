@@ -118,7 +118,12 @@ export const useNotifications = (): UseNotificationsReturn => {
           fetchNotifications();
         }
       )
-      .subscribe();
+      .subscribe((status, err) => {
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          console.warn('[Notifications] Subscription falhou, tentando reconectar:', status, err);
+          setTimeout(() => channel.subscribe(), 2000);
+        }
+      });
 
     return () => {
       supabase.removeChannel(channel);

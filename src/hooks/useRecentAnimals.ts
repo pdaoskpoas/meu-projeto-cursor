@@ -1,6 +1,7 @@
-// Hook para buscar animais recém-publicados (dados REAIS do Supabase)
-import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
+// Hook para buscar animais recém-publicados (com React Query + sessão resiliente)
+import { useQuery } from '@tanstack/react-query';
+import { animalService } from '@/services/animalService';
+import { queryWithSession } from '@/lib/queryWithSession';
 
 export interface Animal {
   id: string;
@@ -19,38 +20,19 @@ export interface Animal {
 }
 
 export const useRecentAnimals = (limit: number = 10) => {
-  const [animals, setAnimals] = useState<Animal[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['recent-animals', limit],
+    queryFn: () => queryWithSession(() => animalService.getRecentAnimals(limit)),
+    staleTime: 60_000,
+    gcTime: 5 * 60_000,
+    refetchOnWindowFocus: false,
+    retry: 2,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 5000),
+  });
 
-  useEffect(() => {
-    const fetchRecentAnimals = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-
-        const { data, error: fetchError } = await supabase
-          .from('animals')
-          .select('*')
-          .eq('ad_status', 'active')
-          .order('published_at', { ascending: false })
-          .limit(limit);
-
-        if (fetchError) throw fetchError;
-
-        setAnimals(data || []);
-      } catch (err) {
-        console.error('Error fetching recent animals:', err);
-        setError(err as Error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchRecentAnimals();
-  }, [limit]);
-
-  return { animals, isLoading, error };
+  return {
+    animals: (data ?? []) as Animal[],
+    isLoading,
+    error: error as Error | null,
+  };
 };
-
-

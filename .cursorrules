@@ -1,0 +1,44 @@
+# Configuração do Cursor para o Projeto Cavalaria Digital
+
+## Estrutura do Projeto Supabase
+
+### Pastas Importantes:
+- `supabase/` - Configuração e Edge Functions do Supabase
+  - `supabase/functions/` - Edge Functions (Deno runtime)
+  - `supabase/config.toml` - Configuração do projeto (não commitar!)
+- `supabase_migrations/` - Migrations SQL do banco de dados
+- `scripts/` - Scripts Node.js que usam SERVICE_ROLE_KEY
+
+### Variáveis de Ambiente:
+
+#### Frontend (navegador) - Prefixo VITE_:
+- `VITE_SUPABASE_URL` - URL do projeto Supabase
+- `VITE_SUPABASE_ANON_KEY` - Chave pública (anon key)
+
+#### Backend/Scripts - SEM prefixo VITE_:
+- `SUPABASE_SERVICE_ROLE_KEY` - Chave secreta (service_role key)
+  - Usada apenas em scripts Node.js
+  - Usada em Edge Functions via Deno.env.get()
+  - NUNCA deve ter prefixo VITE_ (seria exposta no navegador)
+
+### Edge Functions (supabase/functions):
+- Usam `Deno.env.get()` para acessar variáveis
+- Variáveis são configuradas no dashboard Supabase → Settings → Edge Functions → Secrets
+- Ou via CLI: `supabase secrets set KEY=value`
+
+### Scripts Node.js (scripts/*.mjs):
+- Carregam variáveis de `.env.local` manualmente
+- Usam `SUPABASE_SERVICE_ROLE_KEY` (sem prefixo VITE_)
+- Exemplo: `scripts/remove-test-events.mjs`
+
+### Regras de Segurança:
+1. ✅ ANON_KEY pode ser exposta no navegador (é segura)
+2. ❌ SERVICE_ROLE_KEY NUNCA deve ter prefixo VITE_
+3. ❌ SERVICE_ROLE_KEY NUNCA deve ser usada no frontend
+4. ✅ SERVICE_ROLE_KEY pode ser usada em scripts e Edge Functions
+
+### Como o Cursor deve ajudar:
+- Ao criar scripts, usar `SUPABASE_SERVICE_ROLE_KEY` (sem VITE_)
+- Ao criar componentes React, usar `VITE_SUPABASE_ANON_KEY`
+- Sempre verificar se SERVICE_ROLE_KEY não está sendo exposta no navegador
+- Entender que Edge Functions usam Deno.env.get(), não import.meta.env

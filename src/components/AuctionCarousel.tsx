@@ -204,6 +204,10 @@ const AuctionCarousel = () => {
                             <img
                               src={event.cover_image_url}
                               alt={event.title}
+                              width={400}
+                              height={192}
+                              loading="lazy"
+                              decoding="async"
                               className="w-full h-48 object-cover hover:scale-105 transition-transform duration-300"
                             />
                           ) : (

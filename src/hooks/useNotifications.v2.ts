@@ -271,7 +271,12 @@ export const useNotificationsV2 = (options: UseNotificationsOptions = {}) => {
           }, 500);
         }
       )
-      .subscribe();
+      .subscribe((status, err) => {
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          console.warn('[NotificationsV2] Subscription falhou, tentando reconectar:', status, err);
+          setTimeout(() => channel.subscribe(), 2000);
+        }
+      });
 
     return () => {
       clearTimeout(debounceTimer);

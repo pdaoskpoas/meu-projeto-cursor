@@ -144,7 +144,7 @@ const WizardContent: React.FC<{
   return (
     <>
       <DialogContent 
-        className="max-w-3xl w-[calc(100vw-1rem)] sm:w-full max-h-[90dvh] overflow-y-auto p-4 sm:p-6"
+        className="max-w-5xl w-[calc(100vw-1rem)] sm:w-[calc(100vw-2rem)] md:w-[calc(100vw-4rem)] lg:w-full max-h-[95dvh] overflow-y-auto p-4 sm:p-6 lg:p-8"
         onInteractOutside={(e) => {
           e.preventDefault();
           handleCloseAttempt();
@@ -217,37 +217,35 @@ export const NewAnimalWizard: React.FC<NewAnimalWizardProps> = ({
       console.log('📂 [Wizard] Modal aberto - preparando sessão e plano...');
       clearPlanCache();
 
-      const warmUpWizardSession = async (forceRefresh = false) => {
+      // Apenas verifica/garante sessão (sem forçar refresh se ainda válida)
+      // O sessionService já tem mutex e verifica se sessão é fresca
+      const warmUpWizardSession = async () => {
         try {
-          await ensureActiveSession({ forceRefresh, timeoutMs: 8000 });
-          await prefetchUserPlanQuota(effectiveUserId, { forceFresh: forceRefresh });
+          await ensureActiveSession({ timeoutMs: 10000 });
+          await prefetchUserPlanQuota(effectiveUserId);
         } catch (error) {
-          console.error('Erro ao manter sessão do wizard ativa:', error);
+          console.warn('[Wizard] Erro ao manter sessão ativa (não crítico):', error);
         }
       };
 
       void warmUpWizardSession();
 
+      // Checar sessão a cada 3 minutos (não força refresh — sessionService decide)
       const sessionInterval = window.setInterval(() => {
         void warmUpWizardSession();
-      }, 5 * 60 * 1000);
+      }, 3 * 60 * 1000);
 
-      const handleWindowFocus = () => {
-        void warmUpWizardSession();
-      };
-
+      // Ao voltar à aba/foco, apenas verificar sessão
       const handleVisibilityChange = () => {
         if (document.visibilityState === 'visible') {
           void warmUpWizardSession();
         }
       };
 
-      window.addEventListener('focus', handleWindowFocus);
       document.addEventListener('visibilitychange', handleVisibilityChange);
 
       return () => {
         window.clearInterval(sessionInterval);
-        window.removeEventListener('focus', handleWindowFocus);
         document.removeEventListener('visibilitychange', handleVisibilityChange);
       };
     }

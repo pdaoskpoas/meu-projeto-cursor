@@ -31,7 +31,7 @@ interface StatsChartsCacheEntry {
 }
 
 const chartsCache = new Map<string, StatsChartsCacheEntry>();
-const CHARTS_CACHE_TTL_MS = 30 * 1000;
+const CHARTS_CACHE_TTL_MS = 3 * 60 * 1000; // 3 minutos - gráficos mudam pouco
 
 const dayNames = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
@@ -99,9 +99,9 @@ export const useStatsCharts = (activePeriod: 'all' | 'month' | 'year') => {
         const fetchStart = weeklyStart < periodicStart ? weeklyStart : periodicStart;
 
         const [
-          { data: impressionsData, error: impressionsError },
-          { data: clicksData, error: clicksError }
-        ] = await Promise.all([
+          _resImpressions,
+          _resClicks
+        ] = await Promise.allSettled([
           supabase
             .from('impressions')
             .select('content_id, created_at')
@@ -115,6 +115,11 @@ export const useStatsCharts = (activePeriod: 'all' | 'month' | 'year') => {
             .in('content_id', animalIds)
             .gte('created_at', fetchStart.toISOString())
         ]);
+
+        const { data: impressionsData, error: impressionsError } = _resImpressions.status === 'fulfilled' ? _resImpressions.value : { data: null, error: null };
+        const { data: clicksData, error: clicksError } = _resClicks.status === 'fulfilled' ? _resClicks.value : { data: null, error: null };
+        if (_resImpressions.status === 'rejected') console.warn('[useStatsCharts] impressions query failed:', _resImpressions.reason);
+        if (_resClicks.status === 'rejected') console.warn('[useStatsCharts] clicks query failed:', _resClicks.reason);
 
         if (impressionsError) throw impressionsError;
         if (clicksError) throw clicksError;

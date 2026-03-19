@@ -116,9 +116,9 @@ export const useAdminStats = () => {
         firstDayOfMonth.setHours(0, 0, 0, 0);
 
         const [
-          siteVisitsResult,
-          homeVisitsResult,
-        ] = await Promise.all([
+          _resSiteVisits,
+          _resHomeVisits,
+        ] = await Promise.allSettled([
           supabase
             .from('page_visits')
             .select('*', { count: 'exact', head: true })
@@ -130,6 +130,11 @@ export const useAdminStats = () => {
             .eq('page_key', 'home')
             .gte('created_at', firstDayOfMonth.toISOString()),
         ]);
+
+        const siteVisitsResult = _resSiteVisits.status === 'fulfilled' ? _resSiteVisits.value : { count: 0, error: null };
+        const homeVisitsResult = _resHomeVisits.status === 'fulfilled' ? _resHomeVisits.value : { count: 0, error: null };
+        if (_resSiteVisits.status === 'rejected') console.warn('[useAdminStats] site visits query failed:', _resSiteVisits.reason);
+        if (_resHomeVisits.status === 'rejected') console.warn('[useAdminStats] home visits query failed:', _resHomeVisits.reason);
 
         if (siteVisitsResult.error && !isMissingPageVisitsTable(siteVisitsResult.error)) {
           throw siteVisitsResult.error;

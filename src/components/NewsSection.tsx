@@ -88,6 +88,8 @@ const ArticleCard = ({ article }: { article: Article }) => {
           <img
             src={article.coverImageUrl || 'https://images.unsplash.com/photo-1544966503-7cc5ac882d5f?w=400&h=250&fit=crop'}
             alt={article.title}
+            width={400}
+            height={192}
             loading="lazy"
             decoding="async"
             className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-700"

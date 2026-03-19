@@ -41,7 +41,7 @@ interface DashboardStatsCacheEntry {
 }
 
 const dashboardStatsCache = new Map<string, DashboardStatsCacheEntry>();
-const DASHBOARD_STATS_CACHE_TTL_MS = 30 * 1000;
+const DASHBOARD_STATS_CACHE_TTL_MS = 2 * 60 * 1000; // 2 minutos - dados do dashboard mudam pouco
 
 export const useDashboardStats = () => {
   const { user } = useAuth();
@@ -91,10 +91,10 @@ export const useDashboardStats = () => {
 
         // ✅ OTIMIZAÇÃO 1: Executar queries de animais e conversas em paralelo
         const [
-          userAnimals,
-          { data: userConversations, error: conversationsError },
-          { data: profileData, error: profileError }
-        ] = await Promise.all([
+          _resUserAnimals,
+          _resConversations,
+          _resProfile
+        ] = await Promise.allSettled([
           partnershipService.getUserAnimalsWithPartnerships(user.id),
           supabase
             .from('conversations')
@@ -106,6 +106,13 @@ export const useDashboardStats = () => {
             .eq('id', user.id)
             .single()
         ]);
+
+        const userAnimals = _resUserAnimals.status === 'fulfilled' ? _resUserAnimals.value : [];
+        const { data: userConversations, error: conversationsError } = _resConversations.status === 'fulfilled' ? _resConversations.value : { data: null, error: null };
+        const { data: profileData, error: profileError } = _resProfile.status === 'fulfilled' ? _resProfile.value : { data: null, error: null };
+        if (_resUserAnimals.status === 'rejected') console.warn('[useDashboardStats] getUserAnimalsWithPartnerships failed:', _resUserAnimals.reason);
+        if (_resConversations.status === 'rejected') console.warn('[useDashboardStats] conversations query failed:', _resConversations.reason);
+        if (_resProfile.status === 'rejected') console.warn('[useDashboardStats] profile query failed:', _resProfile.reason);
 
         if (conversationsError) throw conversationsError;
         if (profileError) throw profileError;
@@ -172,12 +179,21 @@ export const useDashboardStats = () => {
             metricsPromises.push(Promise.resolve({ count: 0, error: null }));
           }
 
-          const [
-            { count: impressionsCount, error: impressionsError },
-            { count: clicksCount, error: clicksError },
-            { count: favoritesCount, error: favoritesError },
-            { count: messagesCount, error: messagesError }
-          ] = await Promise.all(metricsPromises);
+          const _metricsResults = await Promise.allSettled(metricsPromises);
+
+          const _resImpressions = _metricsResults[0];
+          const _resClicks = _metricsResults[1];
+          const _resFavorites = _metricsResults[2];
+          const _resMessages = _metricsResults[3];
+
+          const { count: impressionsCount, error: impressionsError } = _resImpressions?.status === 'fulfilled' ? _resImpressions.value : { count: 0, error: null };
+          const { count: clicksCount, error: clicksError } = _resClicks?.status === 'fulfilled' ? _resClicks.value : { count: 0, error: null };
+          const { count: favoritesCount, error: favoritesError } = _resFavorites?.status === 'fulfilled' ? _resFavorites.value : { count: 0, error: null };
+          const { count: messagesCount, error: messagesError } = _resMessages?.status === 'fulfilled' ? _resMessages.value : { count: 0, error: null };
+          if (_resImpressions?.status === 'rejected') console.warn('[useDashboardStats] impressions query failed:', _resImpressions.reason);
+          if (_resClicks?.status === 'rejected') console.warn('[useDashboardStats] clicks query failed:', _resClicks.reason);
+          if (_resFavorites?.status === 'rejected') console.warn('[useDashboardStats] favorites query failed:', _resFavorites.reason);
+          if (_resMessages?.status === 'rejected') console.warn('[useDashboardStats] messages query failed:', _resMessages.reason);
 
           if (impressionsError) throw impressionsError;
           if (clicksError) throw clicksError;
@@ -190,7 +206,9 @@ export const useDashboardStats = () => {
           monthlyMessages = messagesCount || 0;
         }
 
-        const recentActivities = await fetchRecentActivities(user.id, animalIds);
+        // Passa os animais já carregados para evitar query extra
+        const animalNamesMap = new Map(userAnimals?.map(a => [a.id, a.name]) || []);
+        const recentActivities = await fetchRecentActivities(user.id, animalIds, animalNamesMap);
 
         const nextStats: DashboardStats = {
           monthlyImpressions: monthlyImpressions || 0,
@@ -237,31 +255,26 @@ export const useDashboardStats = () => {
     }
   }, [user?.id]);
 
-  const fetchRecentActivities = async (userId: string, existingAnimalIds: string[]): Promise<RecentActivity[]> => {
+  const fetchRecentActivities = async (userId: string, existingAnimalIds: string[], existingNamesMap?: Map<string, string>): Promise<RecentActivity[]> => {
     const activities: RecentActivity[] = [];
 
     try {
       // Últimas atividades (últimos 7 dias)
       const sevenDaysAgo = new Date();
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-      
-      // ✅ OTIMIZAÇÃO: Reutilizar IDs já buscados e buscar apenas os nomes
-      const { data: userAnimals } = await supabase
-        .from('animals')
-        .select('id, name')
-        .eq('owner_id', userId);
 
-      const animalIds = existingAnimalIds.length > 0 ? existingAnimalIds : (userAnimals?.map(animal => animal.id) || []);
-      const animalNamesMap = new Map(userAnimals?.map(animal => [animal.id, animal.name]) || []);
+      // Reutilizar dados já carregados (evita query extra)
+      const animalIds = existingAnimalIds;
+      const animalNamesMap = existingNamesMap || new Map<string, string>();
 
       // ✅ OTIMIZAÇÃO: Executar todas as queries de atividades em paralelo
       const [
-        recentImpressionsResult,
-        recentFavoritesResult,
-        userConversationsResult,
-        recentAnimalsResult,
-        ticketNotificationsResult
-      ] = await Promise.all([
+        _resRecentImpressions,
+        _resRecentFavorites,
+        _resUserConversations,
+        _resRecentAnimals,
+        _resTicketNotifications
+      ] = await Promise.allSettled([
         // Impressões (apenas se houver animais)
         animalIds.length > 0
           ? supabase
@@ -273,7 +286,7 @@ export const useDashboardStats = () => {
               .order('created_at', { ascending: false })
               .limit(10)
           : Promise.resolve({ data: null }),
-        
+
         // Favoritos (apenas se houver animais)
         animalIds.length > 0
           ? supabase
@@ -284,13 +297,13 @@ export const useDashboardStats = () => {
               .order('created_at', { ascending: false })
               .limit(5)
           : Promise.resolve({ data: null }),
-        
+
         // Conversas
         supabase
           .from('conversations')
           .select('id, animal_id')
           .eq('animal_owner_id', userId),
-        
+
         // Animais recém-criados
         supabase
           .from('animals')
@@ -299,7 +312,7 @@ export const useDashboardStats = () => {
           .gte('created_at', sevenDaysAgo.toISOString())
           .order('created_at', { ascending: false })
           .limit(3),
-        
+
         // Notificações de tickets
         supabase
           .from('notifications')
@@ -310,6 +323,17 @@ export const useDashboardStats = () => {
           .order('created_at', { ascending: false })
           .limit(5)
       ]);
+
+      const recentImpressionsResult = _resRecentImpressions.status === 'fulfilled' ? _resRecentImpressions.value : { data: null };
+      const recentFavoritesResult = _resRecentFavorites.status === 'fulfilled' ? _resRecentFavorites.value : { data: null };
+      const userConversationsResult = _resUserConversations.status === 'fulfilled' ? _resUserConversations.value : { data: null };
+      const recentAnimalsResult = _resRecentAnimals.status === 'fulfilled' ? _resRecentAnimals.value : { data: null };
+      const ticketNotificationsResult = _resTicketNotifications.status === 'fulfilled' ? _resTicketNotifications.value : { data: null };
+      if (_resRecentImpressions.status === 'rejected') console.warn('[useDashboardStats] recent impressions query failed:', _resRecentImpressions.reason);
+      if (_resRecentFavorites.status === 'rejected') console.warn('[useDashboardStats] recent favorites query failed:', _resRecentFavorites.reason);
+      if (_resUserConversations.status === 'rejected') console.warn('[useDashboardStats] user conversations query failed:', _resUserConversations.reason);
+      if (_resRecentAnimals.status === 'rejected') console.warn('[useDashboardStats] recent animals query failed:', _resRecentAnimals.reason);
+      if (_resTicketNotifications.status === 'rejected') console.warn('[useDashboardStats] ticket notifications query failed:', _resTicketNotifications.reason);
 
       const { data: recentImpressions } = recentImpressionsResult;
       const { data: recentFavorites } = recentFavoritesResult;

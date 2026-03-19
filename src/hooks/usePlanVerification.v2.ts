@@ -161,9 +161,14 @@ export const usePlanVerification = (options: UsePlanVerificationOptions): UsePla
         return;
       }
 
-      // 2️⃣ Buscar do servidor
+      // 2️⃣ Buscar do servidor (com timeout de 20s contra loading infinito)
       logger.log('🌐 Buscando do servidor...');
-      const result = await animalService.canPublishByPlan(userId);
+      const result = await Promise.race([
+        animalService.canPublishByPlan(userId),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('Tempo limite ao verificar plano. Tente novamente.')), 20000)
+        )
+      ]);
 
       if (!isMountedRef.current) return;
 
@@ -190,7 +195,7 @@ export const usePlanVerification = (options: UsePlanVerificationOptions): UsePla
       logger.error('❌ Erro:', err);
 
       if (isMountedRef.current && !prefetch) {
-        setError(err.message || 'Erro ao verificar plano');
+        setError(err instanceof Error ? err.message : 'Erro ao verificar plano');
         setLoading(false);
         setFromCache(undefined);
       }

@@ -90,21 +90,21 @@ export const StepBasicInfo: React.FC = () => {
   };
 
   return (
-    <Card className="p-6">
-      <div className="space-y-6">
+    <Card className="p-4 sm:p-6">
+      <div className="space-y-5">
         {/* Cabeçalho */}
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
             Informações Básicas
           </h2>
           <p className="text-sm text-gray-600 mt-1">
-            Dados principais do animal para identificação
+            Preencha os dados principais do seu animal
           </p>
         </div>
 
-        {/* Nome */}
+        {/* Nome - largura total */}
         <div className="space-y-2">
-          <Label htmlFor="name">
+          <Label htmlFor="name" className="text-sm font-semibold">
             Nome do Animal <span className="text-red-500">*</span>
           </Label>
           <Input
@@ -112,168 +112,174 @@ export const StepBasicInfo: React.FC = () => {
             placeholder="Ex: Estrela da Manhã"
             value={basicInfo.name}
             onChange={(e) => updateField('name', e.target.value)}
-            className={errors.name ? 'border-red-500' : ''}
+            className={`h-11 text-base ${errors.name ? 'border-red-500' : ''}`}
           />
           {errors.name && (
             <p className="text-sm text-red-500">{errors.name}</p>
           )}
         </div>
 
-        {/* Raça */}
-        <div className="space-y-2">
-          <Label htmlFor="breed">
-            Raça <span className="text-red-500">*</span>
-          </Label>
-          <Select
-            value={basicInfo.breed}
-            onValueChange={(value) => updateField('breed', value)}
-          >
-            <SelectTrigger className={errors.breed ? 'border-red-500' : ''}>
-              <SelectValue placeholder="Selecione a raça" />
-            </SelectTrigger>
-            <SelectContent side="bottom" align="start" avoidCollisions={false}>
-              {HORSE_BREEDS.map((breed) => (
-                <SelectItem key={breed} value={breed}>
-                  {breed}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {errors.breed && (
-            <p className="text-sm text-red-500">{errors.breed}</p>
-          )}
+        {/* Grid 2 colunas para campos curtos */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Raça */}
+          <div className="space-y-2">
+            <Label htmlFor="breed" className="text-sm font-semibold">
+              Raça <span className="text-red-500">*</span>
+            </Label>
+            <Select
+              value={basicInfo.breed}
+              onValueChange={(value) => updateField('breed', value)}
+            >
+              <SelectTrigger className={`h-11 text-base ${errors.breed ? 'border-red-500' : ''}`}>
+                <SelectValue placeholder="Selecione a raça" />
+              </SelectTrigger>
+              <SelectContent side="bottom" align="start" avoidCollisions={false}>
+                {HORSE_BREEDS.map((breed) => (
+                  <SelectItem key={breed} value={breed}>
+                    {breed}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {errors.breed && (
+              <p className="text-sm text-red-500">{errors.breed}</p>
+            )}
+          </div>
+
+          {/* Pelagem */}
+          <div className="space-y-2">
+            <Label htmlFor="coat" className="text-sm font-semibold">
+              Pelagem <span className="text-red-500">*</span>
+            </Label>
+            <Select
+              value={basicInfo.coat || ''}
+              onValueChange={(value) => updateField('coat', value)}
+            >
+              <SelectTrigger className={`h-11 text-base ${errors.coat ? 'border-red-500' : ''}`}>
+                <SelectValue placeholder="Selecione a pelagem" />
+              </SelectTrigger>
+              <SelectContent side="bottom" align="start" avoidCollisions={false}>
+                <SelectItem value="Alazã">Alazã</SelectItem>
+                <SelectItem value="Castanha">Castanha</SelectItem>
+                <SelectItem value="Preta">Preta</SelectItem>
+                <SelectItem value="Tordilha">Tordilha</SelectItem>
+                <SelectItem value="Pampa">Pampa</SelectItem>
+                <SelectItem value="Rosilha">Rosilha</SelectItem>
+                <SelectItem value="Baía">Baía</SelectItem>
+                <SelectItem value="Palomina">Palomina</SelectItem>
+                <SelectItem value="Lobuna">Lobuna</SelectItem>
+                <SelectItem value="Ruça">Ruça</SelectItem>
+                <SelectItem value="Baia Amarilha">Baia Amarilha</SelectItem>
+                <SelectItem value="Pêlo de Rato">Pêlo de Rato</SelectItem>
+              </SelectContent>
+            </Select>
+            {errors.coat && (
+              <p className="text-sm text-red-500">{errors.coat}</p>
+            )}
+          </div>
         </div>
 
-        {/* Gênero */}
-        <div className="space-y-2">
-          <Label>
-            Gênero <span className="text-red-500">*</span>
-          </Label>
-          <RadioGroup
-            value={basicInfo.gender}
-            onValueChange={(value) => updateField('gender', value)}
-            className="flex gap-4"
-          >
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="Macho" id="macho" />
-              <Label htmlFor="macho" className="font-normal cursor-pointer">
-                Macho
-              </Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="Fêmea" id="femea" />
-              <Label htmlFor="femea" className="font-normal cursor-pointer">
-                Fêmea
-              </Label>
-            </div>
-          </RadioGroup>
+        {/* Grid 2 colunas - Gênero e Data */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Gênero */}
+          <div className="space-y-2">
+            <Label className="text-sm font-semibold">
+              Gênero <span className="text-red-500">*</span>
+            </Label>
+            <RadioGroup
+              value={basicInfo.gender}
+              onValueChange={(value) => updateField('gender', value)}
+              className="flex gap-4 pt-2"
+            >
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="Macho" id="macho" />
+                <Label htmlFor="macho" className="font-normal cursor-pointer text-base">
+                  Macho
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="Fêmea" id="femea" />
+                <Label htmlFor="femea" className="font-normal cursor-pointer text-base">
+                  Fêmea
+                </Label>
+              </div>
+            </RadioGroup>
+          </div>
+
+          {/* Data de Nascimento */}
+          <div className="space-y-2">
+            <Label htmlFor="birth_date" className="text-sm font-semibold">
+              Data de Nascimento <span className="text-red-500">*</span>
+            </Label>
+            <Input
+              id="birth_date"
+              type="date"
+              value={basicInfo.birth_date}
+              onChange={(e) => updateField('birth_date', e.target.value)}
+              max={new Date().toISOString().split('T')[0]}
+              className={`h-11 text-base ${errors.birth_date ? 'border-red-500' : ''}`}
+            />
+            {errors.birth_date && (
+              <p className="text-sm text-red-500">{errors.birth_date}</p>
+            )}
+          </div>
         </div>
 
-        {/* Data de Nascimento */}
-        <div className="space-y-2">
-          <Label htmlFor="birth_date">
-            Data de Nascimento <span className="text-red-500">*</span>
-          </Label>
-          <Input
-            id="birth_date"
-            type="date"
-            value={basicInfo.birth_date}
-            onChange={(e) => updateField('birth_date', e.target.value)}
-            max={new Date().toISOString().split('T')[0]}
-            className={errors.birth_date ? 'border-red-500' : ''}
-          />
-          {errors.birth_date && (
-            <p className="text-sm text-red-500">{errors.birth_date}</p>
-          )}
-        </div>
+        {/* Grid 2 colunas - Categoria e Registro */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Categoria */}
+          <div className="space-y-2">
+            <Label htmlFor="category" className="text-sm font-semibold">
+              Categoria <span className="text-red-500">*</span>
+            </Label>
+            <Select
+              value={basicInfo.category}
+              onValueChange={(value) => updateField('category', value)}
+            >
+              <SelectTrigger className="h-11 text-base">
+                <SelectValue placeholder="Selecione a categoria" />
+              </SelectTrigger>
+              <SelectContent side="bottom" align="start" avoidCollisions={false}>
+                {CATEGORIES.map((category) => (
+                  <SelectItem key={category} value={category}>
+                    {category}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-        {/* Pelagem (obrigatória, sempre no feminino) */}
-        <div className="space-y-2">
-          <Label htmlFor="coat">
-            Pelagem <span className="text-red-500">*</span>
-          </Label>
-          <Select
-            value={basicInfo.coat || ''}
-            onValueChange={(value) => updateField('coat', value)}
-          >
-            <SelectTrigger className={errors.coat ? 'border-red-500' : ''}>
-              <SelectValue placeholder="Selecione a pelagem" />
-            </SelectTrigger>
-            <SelectContent side="bottom" align="start" avoidCollisions={false}>
-              <SelectItem value="Alazã">Alazã</SelectItem>
-              <SelectItem value="Castanha">Castanha</SelectItem>
-              <SelectItem value="Preta">Preta</SelectItem>
-              <SelectItem value="Tordilha">Tordilha</SelectItem>
-              <SelectItem value="Pampa">Pampa</SelectItem>
-              <SelectItem value="Rosilha">Rosilha</SelectItem>
-              <SelectItem value="Baía">Baía</SelectItem>
-              <SelectItem value="Palomina">Palomina</SelectItem>
-              <SelectItem value="Lobuna">Lobuna</SelectItem>
-              <SelectItem value="Ruça">Ruça</SelectItem>
-              <SelectItem value="Baia Amarilha">Baia Amarilha</SelectItem>
-              <SelectItem value="Pêlo de Rato">Pêlo de Rato</SelectItem>
-            </SelectContent>
-          </Select>
-          {errors.coat && (
-            <p className="text-sm text-red-500">{errors.coat}</p>
-          )}
-          <p className="text-xs text-gray-500">
-            💡 Pelagens sempre no feminino (concorda com "pelagem")
-          </p>
-        </div>
-
-        {/* Categoria */}
-        <div className="space-y-2">
-          <Label htmlFor="category">
-            Categoria <span className="text-red-500">*</span>
-          </Label>
-          <Select
-            value={basicInfo.category}
-            onValueChange={(value) => updateField('category', value)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Selecione a categoria" />
-            </SelectTrigger>
-            <SelectContent side="bottom" align="start" avoidCollisions={false}>
-              {CATEGORIES.map((category) => (
-                <SelectItem key={category} value={category}>
-                  {category}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Registro */}
-        <div className="space-y-2">
-          <Label>
-            Possui registro? <span className="text-red-500">*</span>
-          </Label>
-          <RadioGroup
-            value={basicInfo.is_registered ? 'Sim' : 'Não'}
-            onValueChange={(value) => updateField('is_registered', value === 'Sim')}
-            className="flex gap-4"
-          >
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="Sim" id="registro-sim" />
-              <Label htmlFor="registro-sim" className="font-normal cursor-pointer">
-                Sim
-              </Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="Não" id="registro-nao" />
-              <Label htmlFor="registro-nao" className="font-normal cursor-pointer">
-                Não
-              </Label>
-            </div>
-          </RadioGroup>
+          {/* Registro */}
+          <div className="space-y-2">
+            <Label className="text-sm font-semibold">
+              Possui registro? <span className="text-red-500">*</span>
+            </Label>
+            <RadioGroup
+              value={basicInfo.is_registered ? 'Sim' : 'Não'}
+              onValueChange={(value) => updateField('is_registered', value === 'Sim')}
+              className="flex gap-4 pt-2"
+            >
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="Sim" id="registro-sim" />
+                <Label htmlFor="registro-sim" className="font-normal cursor-pointer text-base">
+                  Sim
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="Não" id="registro-nao" />
+                <Label htmlFor="registro-nao" className="font-normal cursor-pointer text-base">
+                  Não
+                </Label>
+              </div>
+            </RadioGroup>
+          </div>
         </div>
 
         {/* Botões */}
-        <div className="flex justify-end pt-4">
-          <Button onClick={handleNext}>
+        <div className="flex justify-end pt-4 border-t">
+          <Button onClick={handleNext} size="lg" className="h-12 px-8 text-base">
             Próximo
-            <ArrowRight className="ml-2 h-4 w-4" />
+            <ArrowRight className="ml-2 h-5 w-5" />
           </Button>
         </div>
       </div>

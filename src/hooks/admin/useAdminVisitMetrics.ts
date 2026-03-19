@@ -171,13 +171,13 @@ export const useAdminVisitMetrics = (period: VisitPeriod, periodRange: PeriodRan
         const animalNameMap = new Map(eligibleAnimals.map((animal) => [animal.id, animal.name]));
 
         const [
-          animalImpressionsResult,
-          animalClicksResult,
-          eventImpressionsResult,
-          eventClicksResult,
-          articleImpressionsResult,
-          articleClicksResult,
-        ] = await Promise.all([
+          _resAnimalImpressions,
+          _resAnimalClicks,
+          _resEventImpressions,
+          _resEventClicks,
+          _resArticleImpressions,
+          _resArticleClicks,
+        ] = await Promise.allSettled([
           eligibleAnimalIds.length > 0
             ? supabase
                 .from('impressions')
@@ -221,6 +221,19 @@ export const useAdminVisitMetrics = (period: VisitPeriod, periodRange: PeriodRan
             .gte('created_at', periodRange.start)
             .lt('created_at', periodRange.end),
         ]);
+
+        const animalImpressionsResult = _resAnimalImpressions.status === 'fulfilled' ? _resAnimalImpressions.value : { data: [], error: null, count: 0 };
+        const animalClicksResult = _resAnimalClicks.status === 'fulfilled' ? _resAnimalClicks.value : { data: [], error: null, count: 0 };
+        const eventImpressionsResult = _resEventImpressions.status === 'fulfilled' ? _resEventImpressions.value : { data: [], error: null, count: 0 };
+        const eventClicksResult = _resEventClicks.status === 'fulfilled' ? _resEventClicks.value : { data: [], error: null, count: 0 };
+        const articleImpressionsResult = _resArticleImpressions.status === 'fulfilled' ? _resArticleImpressions.value : { data: [], error: null, count: 0 };
+        const articleClicksResult = _resArticleClicks.status === 'fulfilled' ? _resArticleClicks.value : { data: [], error: null, count: 0 };
+        if (_resAnimalImpressions.status === 'rejected') console.warn('[useAdminVisitMetrics] animal impressions query failed:', _resAnimalImpressions.reason);
+        if (_resAnimalClicks.status === 'rejected') console.warn('[useAdminVisitMetrics] animal clicks query failed:', _resAnimalClicks.reason);
+        if (_resEventImpressions.status === 'rejected') console.warn('[useAdminVisitMetrics] event impressions query failed:', _resEventImpressions.reason);
+        if (_resEventClicks.status === 'rejected') console.warn('[useAdminVisitMetrics] event clicks query failed:', _resEventClicks.reason);
+        if (_resArticleImpressions.status === 'rejected') console.warn('[useAdminVisitMetrics] article impressions query failed:', _resArticleImpressions.reason);
+        if (_resArticleClicks.status === 'rejected') console.warn('[useAdminVisitMetrics] article clicks query failed:', _resArticleClicks.reason);
 
         if (animalImpressionsResult.error) throw animalImpressionsResult.error;
         if (animalClicksResult.error) throw animalClicksResult.error;

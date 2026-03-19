@@ -156,7 +156,12 @@ export const useUnreadCounts = () => {
           fetchUnreadCounts();
         }
       )
-      .subscribe();
+      .subscribe((status, err) => {
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          console.warn('[UnreadCounts] Subscription falhou, tentando reconectar:', status, err);
+          setTimeout(() => notificationsSubscription.subscribe(), 2000);
+        }
+      });
 
     return () => {
       clearInterval(interval);

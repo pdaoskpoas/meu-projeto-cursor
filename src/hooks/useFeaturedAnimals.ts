@@ -1,6 +1,7 @@
-// Hook para buscar animais em destaque (dados REAIS do Supabase)
-import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
+// Hook para buscar animais em destaque (com React Query + sessão resiliente)
+import { useQuery } from '@tanstack/react-query';
+import { animalService } from '@/services/animalService';
+import { queryWithSession } from '@/lib/queryWithSession';
 
 export interface Animal {
   id: string;
@@ -23,39 +24,19 @@ export interface Animal {
 }
 
 export const useFeaturedAnimals = (limit: number = 10) => {
-  const [animals, setAnimals] = useState<Animal[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['featured-animals', limit],
+    queryFn: () => queryWithSession(() => animalService.getFeaturedAnimals(limit)),
+    staleTime: 60_000,       // 1 min — dados de destaque não mudam a cada segundo
+    gcTime: 5 * 60_000,      // 5 min em cache
+    refetchOnWindowFocus: false,
+    retry: 2,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 5000),
+  });
 
-  useEffect(() => {
-    const fetchFeaturedAnimals = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-
-        const { data, error: fetchError } = await supabase
-          .from('animals')
-          .select('*')
-          .eq('ad_status', 'active')
-          .eq('featured', true)
-          .order('published_at', { ascending: false })
-          .limit(limit);
-
-        if (fetchError) throw fetchError;
-
-        setAnimals(data || []);
-      } catch (err) {
-        console.error('Error fetching featured animals:', err);
-        setError(err as Error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchFeaturedAnimals();
-  }, [limit]);
-
-  return { animals, isLoading, error };
+  return {
+    animals: (data ?? []) as Animal[],
+    isLoading,
+    error: error as Error | null,
+  };
 };
-
-

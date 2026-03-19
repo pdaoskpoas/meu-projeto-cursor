@@ -27,9 +27,19 @@ export class StaleRequestError extends Error {
 
 const latestRequestIds = new Map<string, number>();
 let globalRequestSequence = 0;
+const MAX_REQUEST_MAP_SIZE = 200;
 
 const createRequestToken = (requestKey?: string) => {
   if (!requestKey) return null;
+
+  // Prevenir memory leak: limpar Map quando cresce demais
+  if (latestRequestIds.size > MAX_REQUEST_MAP_SIZE) {
+    const keysToKeep = Array.from(latestRequestIds.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 50);
+    latestRequestIds.clear();
+    keysToKeep.forEach(([k, v]) => latestRequestIds.set(k, v));
+  }
 
   const requestId = ++globalRequestSequence;
   latestRequestIds.set(requestKey, requestId);
