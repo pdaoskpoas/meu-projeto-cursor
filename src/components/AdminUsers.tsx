@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { MoreHorizontal, Search, UserCog, Ban, CheckCircle, Edit, Crown, Calendar, ShieldX, Loader2 } from 'lucide-react';
 import { useAdminUsers, AdminUser } from '@/hooks/admin/useAdminUsers';
+import { PLAN_NAMES, normalizePlanId, PlanType } from '@/constants/plans';
 import { useToast } from '@/hooks/use-toast';
 import { EditUserModal } from '@/components/EditUserModal';
 import { SuspensionModal } from '@/components/SuspensionModal';
@@ -150,9 +151,10 @@ export function AdminUsers() {
     const plan = planType.toLowerCase();
     switch (plan) {
       case 'vip': return 'default';
-      case 'ultra': return 'secondary';
-      case 'pro': return 'outline';
-      case 'basic': return 'outline';
+      case 'elite': return 'default';
+      case 'haras': return 'secondary';
+      case 'criador': return 'secondary';
+      case 'essencial': return 'outline';
       case 'free': return 'outline';
       default: return 'outline';
     }
@@ -218,11 +220,12 @@ export function AdminUsers() {
               </SelectTrigger>
               <SelectContent side="bottom" align="start" avoidCollisions={false}>
                 <SelectItem value="all">Todos os planos</SelectItem>
-                <SelectItem value="free">Free</SelectItem>
-                <SelectItem value="basic">Basic</SelectItem>
-                <SelectItem value="pro">Pro</SelectItem>
-                <SelectItem value="ultra">Ultra</SelectItem>
-                <SelectItem value="vip">VIP</SelectItem>
+                <SelectItem value="free">Sem Plano</SelectItem>
+                <SelectItem value="essencial">Essencial</SelectItem>
+                <SelectItem value="criador">Criador</SelectItem>
+                <SelectItem value="haras">Haras Destaque</SelectItem>
+                <SelectItem value="elite">Elite</SelectItem>
+                <SelectItem value="vip">VIP (Cortesia)</SelectItem>
               </SelectContent>
             </Select>
 
@@ -261,8 +264,8 @@ export function AdminUsers() {
                   <TableHead>Plano</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Criado em</TableHead>
-                  <TableHead>Início VIP</TableHead>
-                  <TableHead>Término VIP</TableHead>
+                  <TableHead>Início Plano</TableHead>
+                  <TableHead>Término Plano</TableHead>
                   <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
@@ -280,8 +283,8 @@ export function AdminUsers() {
                     <TableCell>{user.propertyName || '-'}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <Badge variant={getPlanBadgeVariant(getEffectivePlan(user).toUpperCase())}>
-                          {getEffectivePlan(user).toUpperCase()}
+                        <Badge variant={getPlanBadgeVariant(getEffectivePlan(user))}>
+                          {PLAN_NAMES[normalizePlanId(getEffectivePlan(user)) || 'free']}
                         </Badge>
                         {isPlanExpired(user) && (
                           <Badge variant="outline" className="bg-red-100 text-red-700 border-red-200">

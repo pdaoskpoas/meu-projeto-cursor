@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Eye, EyeOff, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import AccountTypeSelector from '../AccountTypeSelector';
 import PropertyTypeSelector from '../PropertyTypeSelector';
 import TermsAcceptance from '../TermsAcceptance';
@@ -19,6 +19,7 @@ interface RegisterFormData {
   password: string;
   confirmPassword: string;
   accountType: 'personal' | 'institutional';
+  marketingConsent: boolean;
 }
 
 interface RegisterFormProps {
@@ -42,6 +43,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSubmit, isSubmitting, cla
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [marketingConsent, setMarketingConsent] = useState(false);
 
   const validationRules = {
     name: { required: true, minLength: 2 },
@@ -79,7 +81,8 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSubmit, isSubmitting, cla
     try {
       await onSubmit({
         ...formData,
-        accountType
+        accountType,
+        marketingConsent
       });
     } catch (error) {
       console.error('Erro no registro:', error);
@@ -301,6 +304,20 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSubmit, isSubmitting, cla
           accepted={acceptedTerms}
           onAcceptanceChange={setAcceptedTerms}
         />
+
+        {/* Marketing Consent (separado, opcional) */}
+        <div className="flex items-start space-x-3">
+          <Checkbox
+            id="marketing"
+            checked={marketingConsent}
+            onCheckedChange={(checked) => setMarketingConsent(checked === true)}
+            className="mt-1"
+          />
+          <label htmlFor="marketing" className="text-sm text-slate-600 leading-relaxed">
+            Aceito receber novidades, dicas e ofertas por e-mail.
+            <span className="text-slate-400"> (opcional)</span>
+          </label>
+        </div>
 
         {/* Submit Button */}
         <div className="pt-4">

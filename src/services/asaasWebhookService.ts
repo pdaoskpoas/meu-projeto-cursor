@@ -2,10 +2,10 @@
  * =================================================================
  * ASAAS WEBHOOK SERVICE - Processamento de Webhooks
  * =================================================================
- * 
+ *
  * Serviço responsável por processar notificações do Asaas via webhooks
  * Garante sincronização automática de status de pagamentos e assinaturas
- * 
+ *
  * Eventos suportados:
  * - PAYMENT_CREATED
  * - PAYMENT_UPDATED
@@ -14,18 +14,39 @@
  * - PAYMENT_OVERDUE
  * - PAYMENT_REFUNDED
  * - PAYMENT_DELETED
- * 
+ *
  * @author Cavalaria Digital
- * @date 2025-11-27
  */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { supabase } from '@/lib/supabase';
-import { AsaasWebhookEvent } from './asaasService';
 
 // =================================================================
 // TIPOS E INTERFACES
 // =================================================================
+
+export interface AsaasWebhookEvent {
+  event: string;
+  payment?: {
+    id: string;
+    customer: string;
+    value: number;
+    netValue: number;
+    billingType: string;
+    status: string;
+    dueDate: string;
+    paymentDate?: string;
+    description?: string;
+    externalReference?: string;
+  };
+  subscription?: {
+    id: string;
+    customer: string;
+    value: number;
+    cycle: string;
+    status: string;
+  };
+}
 
 interface WebhookProcessResult {
   success: boolean;
@@ -38,7 +59,7 @@ interface WebhookProcessResult {
 // =================================================================
 
 class AsaasWebhookService {
-  
+
   /**
    * Processa um webhook recebido do Asaas
    */
@@ -48,10 +69,8 @@ class AsaasWebhookService {
     ipAddress?: string
   ): Promise<WebhookProcessResult> {
     try {
-      // 1. Registrar webhook no log
       const webhookLogId = await this.logWebhook(event, signature, ipAddress);
 
-      // 2. Processar baseado no tipo de evento
       let result: WebhookProcessResult;
 
       if (event.payment) {
@@ -65,12 +84,11 @@ class AsaasWebhookService {
         };
       }
 
-      // 3. Atualizar log de processamento
       await this.updateWebhookLog(webhookLogId, result.success, result.error);
 
       return result;
     } catch (error) {
-      console.error('❌ Erro ao processar webhook:', error);
+      console.error('Erro ao processar webhook:', error);
       return {
         success: false,
         message: 'Erro ao processar webhook',
@@ -79,17 +97,11 @@ class AsaasWebhookService {
     }
   }
 
-  /**
-   * Processa webhooks relacionados a pagamentos
-   */
   private async processPaymentWebhook(event: AsaasWebhookEvent): Promise<WebhookProcessResult> {
     const payment = event.payment!;
     const eventType = event.event;
 
     try {
-      console.log(`📥 Processando webhook de pagamento: ${eventType} - ${payment.id}`);
-
-      // 1. Buscar pagamento no banco
       const { data: existingPayment, error: fetchError } = await supabase
         .from('asaas_payments')
         .select('*')
@@ -100,36 +112,34 @@ class AsaasWebhookService {
         throw fetchError;
       }
 
-      // 2. Processar baseado no tipo de evento
       switch (eventType) {
         case 'PAYMENT_CREATED':
           return await this.handlePaymentCreated(payment);
-        
+
         case 'PAYMENT_UPDATED':
           return await this.handlePaymentUpdated(payment, existingPayment);
-        
+
         case 'PAYMENT_CONFIRMED':
         case 'PAYMENT_RECEIVED':
           return await this.handlePaymentConfirmed(payment, existingPayment);
-        
+
         case 'PAYMENT_OVERDUE':
           return await this.handlePaymentOverdue(payment, existingPayment);
-        
+
         case 'PAYMENT_REFUNDED':
           return await this.handlePaymentRefunded(payment, existingPayment);
-        
+
         case 'PAYMENT_DELETED':
           return await this.handlePaymentDeleted(payment, existingPayment);
-        
+
         default:
-          console.log(`⚠️ Evento de pagamento não tratado: ${eventType}`);
           return {
             success: true,
             message: `Evento ${eventType} registrado mas não processado`
           };
       }
     } catch (error) {
-      console.error('❌ Erro ao processar webhook de pagamento:', error);
+      console.error('Erro ao processar webhook de pagamento:', error);
       return {
         success: false,
         message: 'Erro ao processar webhook de pagamento',
@@ -138,17 +148,11 @@ class AsaasWebhookService {
     }
   }
 
-  /**
-   * Processa webhooks relacionados a assinaturas
-   */
   private async processSubscriptionWebhook(event: AsaasWebhookEvent): Promise<WebhookProcessResult> {
     const subscription = event.subscription!;
     const eventType = event.event;
 
     try {
-      console.log(`📥 Processando webhook de assinatura: ${eventType} - ${subscription.id}`);
-
-      // Buscar assinatura no banco
       const { data: existingSubscription } = await supabase
         .from('asaas_subscriptions')
         .select('*')
@@ -156,14 +160,12 @@ class AsaasWebhookService {
         .single();
 
       if (!existingSubscription) {
-        console.log('⚠️ Assinatura não encontrada no banco');
         return {
           success: false,
           message: 'Assinatura não encontrada'
         };
       }
 
-      // Atualizar status da assinatura
       const { error: updateError } = await supabase
         .from('asaas_subscriptions')
         .update({
@@ -178,10 +180,10 @@ class AsaasWebhookService {
 
       return {
         success: true,
-        message: 'Webhook de assinatura processado com sucesso'
+        message: `Webhook de assinatura processado: ${eventType}`
       };
     } catch (error) {
-      console.error('❌ Erro ao processar webhook de assinatura:', error);
+      console.error('Erro ao processar webhook de assinatura:', error);
       return {
         success: false,
         message: 'Erro ao processar webhook de assinatura',
@@ -195,7 +197,6 @@ class AsaasWebhookService {
   // =================================================================
 
   private async handlePaymentCreated(payment: any): Promise<WebhookProcessResult> {
-    // Pagamento criado - geralmente já está no banco, apenas atualiza
     const { error } = await supabase
       .from('asaas_payments')
       .update({
@@ -206,18 +207,12 @@ class AsaasWebhookService {
 
     if (error) throw error;
 
-    return {
-      success: true,
-      message: 'Pagamento criado processado'
-    };
+    return { success: true, message: 'Pagamento criado processado' };
   }
 
   private async handlePaymentUpdated(payment: any, existingPayment: any): Promise<WebhookProcessResult> {
     if (!existingPayment) {
-      return {
-        success: false,
-        message: 'Pagamento não encontrado no banco'
-      };
+      return { success: false, message: 'Pagamento não encontrado no banco' };
     }
 
     const { error } = await supabase
@@ -232,22 +227,15 @@ class AsaasWebhookService {
 
     if (error) throw error;
 
-    return {
-      success: true,
-      message: 'Pagamento atualizado'
-    };
+    return { success: true, message: 'Pagamento atualizado' };
   }
 
   private async handlePaymentConfirmed(payment: any, existingPayment: any): Promise<WebhookProcessResult> {
     if (!existingPayment) {
-      return {
-        success: false,
-        message: 'Pagamento não encontrado no banco'
-      };
+      return { success: false, message: 'Pagamento não encontrado no banco' };
     }
 
     try {
-      // 1. Atualizar status do pagamento
       const { error: paymentError } = await supabase
         .from('asaas_payments')
         .update({
@@ -261,53 +249,39 @@ class AsaasWebhookService {
 
       if (paymentError) throw paymentError;
 
-      // 2. Se for pagamento de assinatura, ativar assinatura
       if (existingPayment.subscription_id) {
         await this.activateSubscription(existingPayment.subscription_id);
       }
 
-      // 3. Se for pagamento de anúncio individual, ativar anúncio
       if (existingPayment.payment_type === 'individual_ad' && existingPayment.related_content_id) {
         await this.activateIndividualAd(
-          existingPayment.related_content_id, 
+          existingPayment.related_content_id,
           existingPayment.related_content_type
         );
       }
 
-      // 4. Se for pagamento de evento, ativar evento
       if (existingPayment.payment_type === 'individual_event' && existingPayment.related_content_id) {
         await this.activateIndividualEvent(existingPayment.related_content_id);
       }
 
-      // 5. Se for compra de boost, adicionar créditos
       if (existingPayment.payment_type === 'boost_purchase') {
         await this.addBoostCredits(existingPayment.user_id, existingPayment.metadata);
       }
 
-      // 6. Criar transação no histórico
       await this.createTransaction(existingPayment, payment);
 
-      console.log('✅ Pagamento confirmado e processado:', payment.id);
-
-      return {
-        success: true,
-        message: 'Pagamento confirmado e benefícios aplicados'
-      };
+      return { success: true, message: 'Pagamento confirmado e benefícios aplicados' };
     } catch (error) {
-      console.error('❌ Erro ao confirmar pagamento:', error);
+      console.error('Erro ao confirmar pagamento:', error);
       throw error;
     }
   }
 
   private async handlePaymentOverdue(payment: any, existingPayment: any): Promise<WebhookProcessResult> {
     if (!existingPayment) {
-      return {
-        success: false,
-        message: 'Pagamento não encontrado no banco'
-      };
+      return { success: false, message: 'Pagamento não encontrado no banco' };
     }
 
-    // Atualizar status para vencido
     const { error } = await supabase
       .from('asaas_payments')
       .update({
@@ -318,26 +292,18 @@ class AsaasWebhookService {
 
     if (error) throw error;
 
-    // Se for assinatura, suspender
     if (existingPayment.subscription_id) {
       await this.suspendSubscription(existingPayment.subscription_id);
     }
 
-    return {
-      success: true,
-      message: 'Pagamento marcado como vencido'
-    };
+    return { success: true, message: 'Pagamento marcado como vencido' };
   }
 
   private async handlePaymentRefunded(payment: any, existingPayment: any): Promise<WebhookProcessResult> {
     if (!existingPayment) {
-      return {
-        success: false,
-        message: 'Pagamento não encontrado no banco'
-      };
+      return { success: false, message: 'Pagamento não encontrado no banco' };
     }
 
-    // Atualizar status para reembolsado
     const { error } = await supabase
       .from('asaas_payments')
       .update({
@@ -348,26 +314,18 @@ class AsaasWebhookService {
 
     if (error) throw error;
 
-    // Reverter benefícios
     if (existingPayment.subscription_id) {
-      await this.cancelSubscription(existingPayment.subscription_id, 'refunded');
+      await this.cancelSubscriptionInternal(existingPayment.subscription_id, 'refunded');
     }
 
-    return {
-      success: true,
-      message: 'Reembolso processado'
-    };
+    return { success: true, message: 'Reembolso processado' };
   }
 
   private async handlePaymentDeleted(payment: any, existingPayment: any): Promise<WebhookProcessResult> {
     if (!existingPayment) {
-      return {
-        success: false,
-        message: 'Pagamento não encontrado no banco'
-      };
+      return { success: false, message: 'Pagamento não encontrado no banco' };
     }
 
-    // Apenas atualizar status, não deletar do banco (auditoria)
     const { error } = await supabase
       .from('asaas_payments')
       .update({
@@ -378,19 +336,13 @@ class AsaasWebhookService {
 
     if (error) throw error;
 
-    return {
-      success: true,
-      message: 'Pagamento deletado'
-    };
+    return { success: true, message: 'Pagamento deletado' };
   }
 
   // =================================================================
   // FUNÇÕES AUXILIARES
   // =================================================================
 
-  /**
-   * Ativa uma assinatura
-   */
   private async activateSubscription(subscriptionId: string): Promise<void> {
     const { data: subscription } = await supabase
       .from('asaas_subscriptions')
@@ -400,11 +352,9 @@ class AsaasWebhookService {
 
     if (!subscription) return;
 
-    // Calcular deadline de reembolso (7 dias)
     const refundDeadline = new Date();
     refundDeadline.setDate(refundDeadline.getDate() + 7);
 
-    // Atualizar assinatura
     await supabase
       .from('asaas_subscriptions')
       .update({
@@ -416,13 +366,8 @@ class AsaasWebhookService {
         updated_at: new Date().toISOString()
       })
       .eq('id', subscriptionId);
-
-    console.log('✅ Assinatura ativada:', subscriptionId);
   }
 
-  /**
-   * Suspende uma assinatura
-   */
   private async suspendSubscription(subscriptionId: string): Promise<void> {
     await supabase
       .from('asaas_subscriptions')
@@ -433,10 +378,7 @@ class AsaasWebhookService {
       .eq('id', subscriptionId);
   }
 
-  /**
-   * Cancela uma assinatura
-   */
-  private async cancelSubscription(subscriptionId: string, reason: string): Promise<void> {
+  private async cancelSubscriptionInternal(subscriptionId: string, reason: string): Promise<void> {
     await supabase
       .from('asaas_subscriptions')
       .update({
@@ -448,14 +390,11 @@ class AsaasWebhookService {
       .eq('id', subscriptionId);
   }
 
-  /**
-   * Ativa um anúncio individual pago
-   */
   private async activateIndividualAd(contentId: string, contentType: string): Promise<void> {
     if (contentType !== 'animal') return;
 
     const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 30); // 30 dias
+    expiresAt.setDate(expiresAt.getDate() + 30);
 
     await supabase
       .from('animals')
@@ -466,16 +405,11 @@ class AsaasWebhookService {
         published_at: new Date().toISOString()
       })
       .eq('id', contentId);
-
-    console.log('✅ Anúncio individual ativado:', contentId);
   }
 
-  /**
-   * Ativa um evento individual pago
-   */
   private async activateIndividualEvent(eventId: string): Promise<void> {
     const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 30); // 30 dias
+    expiresAt.setDate(expiresAt.getDate() + 30);
 
     await supabase
       .from('events')
@@ -486,13 +420,8 @@ class AsaasWebhookService {
         published_at: new Date().toISOString()
       })
       .eq('id', eventId);
-
-    console.log('✅ Evento individual ativado:', eventId);
   }
 
-  /**
-   * Adiciona créditos de boost
-   */
   private async addBoostCredits(userId: string, metadata: any): Promise<void> {
     const boostQuantity = metadata?.boost_quantity || 1;
 
@@ -500,13 +429,8 @@ class AsaasWebhookService {
       p_user_id: userId,
       p_amount: boostQuantity
     });
-
-    console.log(`✅ ${boostQuantity} boost(s) adicionado(s) para o usuário:`, userId);
   }
 
-  /**
-   * Cria registro na tabela transactions
-   */
   private async createTransaction(payment: any, asaasPayment: any): Promise<void> {
     await supabase
       .from('transactions')
@@ -527,24 +451,38 @@ class AsaasWebhookService {
       });
   }
 
-  /**
-   * Registra webhook no log
-   */
   private async logWebhook(
     event: AsaasWebhookEvent,
     signature?: string,
     ipAddress?: string
   ): Promise<string> {
+    // LGPD: armazena apenas campos essenciais, nunca o payload completo
+    const sanitizedPayload = {
+      event: event.event,
+      payment: event.payment ? {
+        id: event.payment.id,
+        status: event.payment.status,
+        value: event.payment.value,
+        billingType: event.payment.billingType,
+        paymentDate: event.payment.paymentDate,
+      } : undefined,
+      subscription: event.subscription ? {
+        id: event.subscription.id,
+        status: event.subscription.status,
+        cycle: event.subscription.cycle,
+      } : undefined,
+    };
+
     const { data, error } = await supabase
       .from('asaas_webhooks_log')
       .insert({
         event_type: event.event,
         asaas_payment_id: event.payment?.id,
         asaas_subscription_id: event.subscription?.id,
-        payload: event as any,
+        payload: sanitizedPayload as any,
         signature: signature,
         ip_address: ipAddress,
-        is_valid_signature: false, // Implementar validação de assinatura
+        is_valid_signature: false,
         processed: false
       })
       .select('id')
@@ -558,9 +496,6 @@ class AsaasWebhookService {
     return data.id;
   }
 
-  /**
-   * Atualiza log do webhook após processamento
-   */
   private async updateWebhookLog(
     webhookId: string,
     success: boolean,
@@ -577,8 +512,5 @@ class AsaasWebhookService {
   }
 }
 
-// Exportar instância singleton
 export const asaasWebhookService = new AsaasWebhookService();
 export default asaasWebhookService;
-
-

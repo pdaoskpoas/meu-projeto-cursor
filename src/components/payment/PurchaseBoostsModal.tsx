@@ -1,13 +1,17 @@
 /**
  * =================================================================
- * MODAL DE COMPRA DE BOOSTS
+ * MODAL DE COMPRA DE TURBINARES
  * =================================================================
- * 
- * Modal para compra de boosts avulsos (destaques)
- * Permite escolher quantidade e forma de pagamento
- * 
+ *
+ * Turbinares baseados em duração:
+ * - 24 horas → R$ 19,90
+ * - 3 dias   → R$ 49,90
+ * - 7 dias   → R$ 89,90
+ *
+ * O usuário pode usar turbinares inclusos no plano primeiro.
+ * Quando esgotados, pode comprar avulso aqui.
+ *
  * @author Cavalaria Digital
- * @date 2025-11-27
  */
 
 import React, { useState } from 'react';
@@ -18,17 +22,14 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
-import { Zap } from 'lucide-react';
-import {
-  BOOST_PLANS,
-  BOOST_PRICE,
-  getBoostDiscount,
-  getBoostTotal,
-} from '@/components/payment/boostPricing';
-import { BoostPlanSelector } from '@/components/payment/BoostPlanSelector';
-import { BoostCheckoutStep } from '@/components/payment/BoostCheckoutStep';
+import { Button } from '@/components/ui/button';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Zap, Clock } from 'lucide-react';
 import { storeCheckoutContext } from '@/utils/checkoutContext';
 import { useNavigate } from 'react-router-dom';
+import { BOOST_TIERS, type BoostDuration } from '@/constants/checkoutPlans';
 
 // =================================================================
 // INTERFACES
@@ -38,9 +39,9 @@ interface PurchaseBoostsModalProps {
   isOpen: boolean;
   onClose: () => void;
   userId: string;
+  animalId?: string;
+  animalName?: string;
   onSuccess?: () => void;
-  initialQuantity?: number;
-  lockQuantity?: boolean;
 }
 
 // =================================================================
@@ -50,97 +51,119 @@ interface PurchaseBoostsModalProps {
 export function PurchaseBoostsModal({
   isOpen,
   onClose,
-  initialQuantity,
-  lockQuantity = false
+  animalId,
+  animalName,
 }: PurchaseBoostsModalProps) {
   const navigate = useNavigate();
 
-  // Estados
-  const [quantity, setQuantity] = useState(initialQuantity ?? 5);
-  const [loading, setLoading] = useState(false);
-  const [step, setStep] = useState<'select' | 'checkout'>('select');
+  const [selectedDuration, setSelectedDuration] = useState<BoostDuration>('24h');
 
   React.useEffect(() => {
-    if (!isOpen) return;
-
-    if (typeof initialQuantity === 'number') {
-      setQuantity(initialQuantity);
+    if (isOpen) {
+      setSelectedDuration('24h');
     }
+  }, [isOpen]);
 
-    setLoading(false);
-    setStep(lockQuantity || typeof initialQuantity === 'number' ? 'checkout' : 'select');
-  }, [isOpen, initialQuantity, lockQuantity]);
+  const selectedTier = BOOST_TIERS.find(t => t.duration === selectedDuration)!;
 
-  const totalPrice = quantity * BOOST_PRICE;
-  const finalPrice = getBoostTotal(quantity);
-  const discount = getBoostDiscount(quantity);
+  const formatPrice = (v: number) =>
+    v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-  /**
-   * Processa a compra
-   */
-  const handlePurchase = async () => {
+  const handlePurchase = () => {
     storeCheckoutContext({
       purchaseType: 'boost',
-      quantity,
+      boostDuration: selectedDuration,
+      animalId,
     });
     onClose();
     navigate('/checkout');
   };
 
-  // =================================================================
-  // RENDERIZAÇÃO
-  // =================================================================
-
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle className="text-2xl flex items-center gap-2">
             <Zap className="h-6 w-6 text-yellow-500" />
-            {step === 'select' ? 'Escolha seu pacote de Boosts' : 'Finalizar compra'}
+            Turbinar Animal
           </DialogTitle>
           <DialogDescription>
-            {step === 'select'
-              ? 'Selecione o pacote ideal e siga para o checkout'
-              : 'Revise o pedido e conclua o pagamento'}
+            {animalName
+              ? `Destaque "${animalName}" por um período escolhido`
+              : 'Escolha a duração do destaque para seu animal'}
           </DialogDescription>
         </DialogHeader>
 
-        {step === 'select' ? (
-          <BoostPlanSelector
-            plans={BOOST_PLANS}
-            selectedQuantity={quantity}
-            onSelect={(qty) => {
-              setQuantity(qty);
-              setStep('checkout');
-            }}
-          />
-        ) : (
-          <div className="space-y-6">
-            <BoostCheckoutStep
-              quantity={quantity}
-              totalPrice={totalPrice}
-              finalPrice={finalPrice}
-              discount={discount}
-              billingType="CREDIT_CARD"
-              isProcessing={loading}
-              isPolling={false}
-              canGoBack={!lockQuantity}
-              showBillingOptions={false}
-              confirmLabel="Ir para checkout"
-              showConfirmArrow
-              onBillingTypeChange={() => {}}
-              onBack={() => {
-                if (!lockQuantity) setStep('select');
-              }}
-              onConfirm={handlePurchase}
-            />
+        <div className="space-y-6">
+          {/* Seleção de Duração */}
+          <RadioGroup
+            value={selectedDuration}
+            onValueChange={(v) => setSelectedDuration(v as BoostDuration)}
+          >
+            <div className="space-y-3">
+              {BOOST_TIERS.map((tier) => (
+                <Label
+                  key={tier.duration}
+                  htmlFor={`boost-${tier.duration}`}
+                  className={`
+                    flex items-center gap-4 p-4 border-2 rounded-lg cursor-pointer
+                    transition-all hover:border-primary/50
+                    ${selectedDuration === tier.duration ? 'border-primary bg-primary/5' : 'border-gray-200'}
+                  `}
+                >
+                  <RadioGroupItem value={tier.duration} id={`boost-${tier.duration}`} />
+                  <Clock className="h-5 w-5 text-gray-500" />
+                  <div className="flex-1">
+                    <div className="font-semibold">{tier.label}</div>
+                    <div className="text-sm text-gray-500">
+                      Destaque por {tier.label.toLowerCase()}
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-bold text-lg">R$ {formatPrice(tier.price)}</div>
+                  </div>
+                  {tier.duration === '7d' && (
+                    <Badge variant="secondary" className="ml-2">Melhor custo</Badge>
+                  )}
+                </Label>
+              ))}
+            </div>
+          </RadioGroup>
+
+          {/* Resumo */}
+          <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+            <h3 className="font-semibold mb-2">Resumo</h3>
+            <div className="space-y-1 text-sm">
+              <div className="flex justify-between">
+                <span>Turbinar por {selectedTier.label}</span>
+                <span className="font-semibold">R$ {formatPrice(selectedTier.price)}</span>
+              </div>
+              {animalName && (
+                <div className="flex justify-between text-gray-500">
+                  <span>Animal:</span>
+                  <span>{animalName}</span>
+                </div>
+              )}
+            </div>
           </div>
-        )}
+
+          {/* Botões */}
+          <div className="flex gap-3">
+            <Button variant="outline" onClick={onClose} className="flex-1">
+              Cancelar
+            </Button>
+            <Button onClick={handlePurchase} className="flex-1">
+              Ir para checkout
+            </Button>
+          </div>
+
+          <p className="text-xs text-gray-500 text-center">
+            O destaque expira automaticamente ao final do período escolhido.
+          </p>
+        </div>
       </DialogContent>
     </Dialog>
   );
 }
 
 export default PurchaseBoostsModal;
-

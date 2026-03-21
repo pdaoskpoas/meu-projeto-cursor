@@ -4,24 +4,22 @@ import { Menu, X, Globe2, Users2, Building2, Home, Heart, Award, MapPinned } fro
 import MapboxMap from '@/components/MapboxMap';
 import UserMapPopup from '@/components/UserMapPopup';
 import { supabase } from '@/lib/supabase';
-import { Profile } from '@/types/supabase';
+import { PublicProfile } from '@/types/supabase';
 
 const MapPage = () => {
   const navigate = useNavigate();
-  const [selectedUser, setSelectedUser] = useState<Profile | null>(null);
-  const [users, setUsers] = useState<Profile[]>([]);
+  const [selectedUser, setSelectedUser] = useState<PublicProfile | null>(null);
+  const [users, setUsers] = useState<PublicProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // Buscar usuários do Supabase
+  // Buscar usuários da view pública (sem dados sensíveis)
   useEffect(() => {
     const fetchUsers = async () => {
       try {
         const { data, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('is_active', true)
-          .eq('is_suspended', false);
+          .from('public_profiles')
+          .select('*');
 
         if (error) {
           console.error('Erro ao buscar usuários:', error);

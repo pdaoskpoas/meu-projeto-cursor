@@ -1,14 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import type { CheckoutBillingCycle, CheckoutPlanId } from '@/constants/checkoutPlans';
 
-export interface CardPayload {
-  holderName: string;
-  number: string;
-  expiryMonth: string;
-  expiryYear: string;
-  cvv: string;
-}
-
 export interface CustomerPayload {
   name: string;
   email: string;
@@ -30,10 +22,9 @@ export interface ProcessPaymentPayload {
   userId: string;
   planId: CheckoutPlanId;
   billingCycle: CheckoutBillingCycle;
-  paymentMethod: 'CREDIT_CARD' | 'PIX';
+  paymentMethod: 'CREDIT_CARD' | 'PIX' | 'BOLETO';
   customer: CustomerPayload;
   address: AddressPayload;
-  card?: CardPayload;
 }
 
 export interface ProcessPaymentResponse {
@@ -41,6 +32,7 @@ export interface ProcessPaymentResponse {
   status?: 'PENDING' | 'APPROVED' | 'REJECTED';
   paymentId?: string;
   subscriptionId?: string;
+  invoiceUrl?: string;
   pixQrCode?: string;
   pixCopyPaste?: string;
   message?: string;
@@ -49,6 +41,29 @@ export interface ProcessPaymentResponse {
 export interface CheckStatusResponse {
   success: boolean;
   status?: 'PENDING' | 'APPROVED' | 'REJECTED';
+  message?: string;
+}
+
+export interface BoostPaymentPayload {
+  userId: string;
+  duration: string;
+  animalId?: string;
+  billingType: 'PIX' | 'CREDIT_CARD' | 'BOLETO';
+  customer?: CustomerPayload;
+  address?: AddressPayload;
+}
+
+export interface BoostPaymentResponse {
+  success: boolean;
+  paymentId?: string;
+  invoiceUrl?: string;
+  pixQrCode?: string;
+  pixCopyPaste?: string;
+  message?: string;
+}
+
+export interface CancelSubscriptionResponse {
+  success: boolean;
   message?: string;
 }
 
@@ -101,43 +116,6 @@ const extractErrorMessage = (error: unknown): string | null => {
 
   return null;
 };
-
-export interface BoostPaymentPayload {
-  userId: string;
-  quantity: number;
-  billingType: 'PIX' | 'CREDIT_CARD';
-  customer?: CustomerPayload;
-  address?: AddressPayload;
-  card?: CardPayload;
-}
-
-export interface BoostPaymentResponse {
-  success: boolean;
-  paymentId?: string;
-  invoiceUrl?: string;
-  pixQrCode?: string;
-  pixCopyPaste?: string;
-  message?: string;
-}
-
-export interface IndividualPaymentPayload {
-  userId: string;
-  contentId: string;
-  contentType: 'animal' | 'event';
-  billingType: 'PIX' | 'CREDIT_CARD';
-  customer?: CustomerPayload;
-  address?: AddressPayload;
-  card?: CardPayload;
-}
-
-export interface IndividualPaymentResponse {
-  success: boolean;
-  paymentId?: string;
-  invoiceUrl?: string;
-  pixQrCode?: string;
-  pixCopyPaste?: string;
-  message?: string;
-}
 
 const invokeFunctionViaFetch = async <T>(
   functionName: string,
@@ -305,30 +283,6 @@ export const processBoostPayment = async (
   }
 };
 
-export const processIndividualPayment = async (
-  payload: IndividualPaymentPayload
-): Promise<IndividualPaymentResponse> => {
-  try {
-    const { data, error } = await invokeWithTimeout<IndividualPaymentResponse>('process-individual-payment', payload);
-
-    if (error) {
-      return {
-        success: false,
-        message: extractErrorMessage(error) || error.message || 'Erro ao processar pagamento.',
-      };
-    }
-
-    return data as IndividualPaymentResponse;
-  } catch (err) {
-    const message = err instanceof Error && err.message === 'TIMEOUT'
-      ? 'Tempo esgotado ao comunicar com o servidor. Tente novamente.'
-      : err instanceof Error
-        ? err.message
-        : 'Erro ao processar pagamento.';
-    return { success: false, message };
-  }
-};
-
 export const checkPaymentStatus = async (
   params: { paymentId?: string; subscriptionId?: string }
 ): Promise<CheckStatusResponse> => {
@@ -354,6 +308,36 @@ export const checkPaymentStatus = async (
         : err instanceof Error
           ? err.message
           : 'Erro ao verificar status do pagamento.';
+    return { success: false, message };
+  }
+};
+
+export const cancelSubscription = async (
+  subscriptionId: string,
+  reason: string
+): Promise<CancelSubscriptionResponse> => {
+  try {
+    const { data, error } = await invokeWithTimeout<CancelSubscriptionResponse>(
+      'cancel-subscription',
+      { subscriptionId, reason },
+      15000
+    );
+
+    if (error) {
+      return {
+        success: false,
+        message: extractErrorMessage(error) || error.message || 'Erro ao cancelar assinatura.',
+      };
+    }
+
+    return data as CancelSubscriptionResponse;
+  } catch (err) {
+    const message =
+      err instanceof Error && err.message === 'TIMEOUT'
+        ? 'Tempo esgotado ao cancelar assinatura. Tente novamente.'
+        : err instanceof Error
+          ? err.message
+          : 'Erro ao cancelar assinatura.';
     return { success: false, message };
   }
 };

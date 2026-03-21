@@ -34,7 +34,7 @@ const ProfilePage = () => {
         console.log('[ProfilePage] Buscando perfil com public_code:', publicCode);
 
         const { data, error: fetchError } = await supabase
-          .from('profiles')
+          .from('public_profiles')
           .select('id, name, property_name, account_type')
           .eq('public_code', publicCode)
           .maybeSingle();

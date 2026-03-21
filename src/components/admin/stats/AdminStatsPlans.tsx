@@ -6,13 +6,14 @@ import { Loader2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { formatCurrency, formatDate } from './utils';
 
-type PlanId = 'free' | 'basic' | 'pro' | 'ultra' | 'vip';
+type PlanId = 'free' | 'essencial' | 'criador' | 'haras' | 'elite' | 'vip';
 
 interface PlanCounts {
   free: number;
-  basic: number;
-  pro: number;
-  ultra: number;
+  essencial: number;
+  criador: number;
+  haras: number;
+  elite: number;
   vip: number;
 }
 
@@ -37,9 +38,10 @@ interface PlanTransaction {
 
 const planLabels: Record<PlanId, string> = {
   free: 'Free',
-  basic: 'Basic',
-  pro: 'Pro',
-  ultra: 'Ultra',
+  essencial: 'Essencial',
+  criador: 'Criador',
+  haras: 'Haras Destaque',
+  elite: 'Elite',
   vip: 'VIP (Admin)'
 };
 
@@ -48,9 +50,10 @@ const AdminStatsPlans: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [counts, setCounts] = useState<PlanCounts>({
     free: 0,
-    basic: 0,
-    pro: 0,
-    ultra: 0,
+    essencial: 0,
+    criador: 0,
+    haras: 0,
+    elite: 0,
     vip: 0
   });
   const [vipProfiles, setVipProfiles] = useState<VipProfile[]>([]);
@@ -62,7 +65,7 @@ const AdminStatsPlans: React.FC = () => {
         setIsLoading(true);
         setError(null);
 
-        const planIds: PlanId[] = ['free', 'basic', 'pro', 'ultra', 'vip'];
+        const planIds: PlanId[] = ['free', 'essencial', 'criador', 'haras', 'elite', 'vip'];
         const planCounts = await Promise.all(
           planIds.map(async (plan) => {
             const { count } = await supabase
@@ -76,7 +79,7 @@ const AdminStatsPlans: React.FC = () => {
         const nextCounts = planCounts.reduce((acc, item) => {
           acc[item.plan] = item.count;
           return acc;
-        }, { free: 0, basic: 0, pro: 0, ultra: 0, vip: 0 } as PlanCounts);
+        }, { free: 0, essencial: 0, criador: 0, haras: 0, elite: 0, vip: 0 } as PlanCounts);
         setCounts(nextCounts);
 
         const { data: vipData, error: vipError } = await supabase
@@ -106,7 +109,7 @@ const AdminStatsPlans: React.FC = () => {
     fetchPlans();
   }, []);
 
-  const paidTotal = useMemo(() => counts.basic + counts.pro + counts.ultra + counts.vip, [counts]);
+  const paidTotal = useMemo(() => counts.essencial + counts.criador + counts.haras + counts.elite + counts.vip, [counts]);
 
   if (error) {
     return (
@@ -128,8 +131,8 @@ const AdminStatsPlans: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-        {(['free', 'basic', 'pro', 'ultra', 'vip'] as PlanId[]).map((plan) => (
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        {(['free', 'essencial', 'criador', 'haras', 'elite', 'vip'] as PlanId[]).map((plan) => (
           <Card key={plan} className="border">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm text-muted-foreground">{planLabels[plan]}</CardTitle>

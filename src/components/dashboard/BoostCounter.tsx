@@ -50,7 +50,7 @@ const BoostCounter: React.FC<BoostCounterProps> = ({
                 </TooltipTrigger>
                 <TooltipContent>
                   <p className="text-sm">
-                    Use para turbinar seus animais ou eventos por 24 horas
+                    Use para turbinar seus animais ou eventos (24h, 3 dias ou 7 dias)
                   </p>
                 </TooltipContent>
               </Tooltip>
@@ -58,7 +58,7 @@ const BoostCounter: React.FC<BoostCounterProps> = ({
             
             <p className="text-xs text-slate-600 mt-1">
               {availableBoosts > 0 
-                ? 'Tenha seu anúncio em destaque no site por 24h para alcançar mais pessoas e gerar mais cliques' 
+                ? 'Tenha seu anúncio em destaque no site para alcançar mais pessoas e gerar mais cliques'
                 : 'Sem créditos disponíveis'}
             </p>
           </div>

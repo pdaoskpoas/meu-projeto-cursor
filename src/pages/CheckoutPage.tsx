@@ -1,7 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import AppHeader from '@/components/layout/AppHeader';
-import AppFooter from '@/components/layout/AppFooter';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -20,30 +18,24 @@ import {
   getPlanById,
   getPlanPrice,
   getInstallmentCount,
+  getBoostTier,
+  BOOST_TIERS,
   type CheckoutBillingCycle,
   type CheckoutPlanId,
+  type BoostDuration,
 } from '@/constants/checkoutPlans';
 import {
-  formatCardNumber,
   formatCep,
   formatCpf,
-  formatCvv,
-  formatExpiry,
   formatPhone,
-  isValidCardNumber,
   isValidCpf,
-  isValidCvv,
-  isValidExpiry,
   sanitizeDigits,
 } from '@/utils/paymentValidation';
 import {
   checkPaymentStatus,
   processBoostPayment,
-  processIndividualPayment,
   processPayment,
 } from '@/services/checkoutService';
-import { getBoostTotal } from '@/components/payment/boostPricing';
-import { INDIVIDUAL_PRICES } from '@/constants/individualPricing';
 import { clearPlanCache } from '@/services/planService';
 import {
   clearCheckoutContext,
@@ -56,7 +48,9 @@ type CheckoutState = Partial<CheckoutContext> & {
   billingPeriod?: CheckoutBillingCycle;
 };
 
-type PurchaseType = 'plan' | 'boost' | 'individual';
+type PurchaseType = 'plan' | 'boost';
+
+type PaymentMethod = 'CREDIT_CARD' | 'PIX' | 'BOLETO';
 
 const CheckoutPage = () => {
   const navigate = useNavigate();
@@ -78,22 +72,18 @@ const CheckoutPage = () => {
   }, [state, storedContext]);
 
   const defaultPlan = getPlanById(state.planId) ?? CHECKOUT_PLANS[1];
-  const [purchaseType, setPurchaseType] = useState<PurchaseType>(resolvedContext.purchaseType ?? 'plan');
-  const [boostQuantity, setBoostQuantity] = useState(
-    resolvedContext.purchaseType === 'boost' ? resolvedContext.quantity : 1
+  const [purchaseType, setPurchaseType] = useState<PurchaseType>(
+    resolvedContext.purchaseType === 'boost' ? 'boost' : 'plan'
   );
-  const [individualContext, setIndividualContext] = useState(
-    resolvedContext.purchaseType === 'individual'
-      ? {
-          contentType: resolvedContext.contentType,
-          contentId: resolvedContext.contentId,
-          contentName: resolvedContext.contentName,
-        }
-      : null
+  const [boostDuration, setBoostDuration] = useState<BoostDuration>(
+    resolvedContext.purchaseType === 'boost' ? resolvedContext.boostDuration : '24h'
+  );
+  const [boostAnimalId] = useState<string | undefined>(
+    resolvedContext.purchaseType === 'boost' ? resolvedContext.animalId : undefined
   );
   const [planId, setPlanId] = useState<CheckoutPlanId>(defaultPlan.id);
   const [billingCycle, setBillingCycle] = useState<CheckoutBillingCycle>(
-    state.billingPeriod ?? 'monthly'
+    (state.billingPeriod as CheckoutBillingCycle) ?? 'monthly'
   );
 
   const [form, setForm] = useState({
@@ -108,17 +98,12 @@ const CheckoutPage = () => {
     bairro: '',
     city: '',
     state: '',
-    cardName: '',
-    cardNumber: '',
-    expiry: '',
-    cvv: '',
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [paymentMethod, setPaymentMethod] = useState<'CREDIT_CARD' | 'PIX'>('CREDIT_CARD');
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('PIX');
   const [isFetchingCep, setIsFetchingCep] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isPolling, setIsPolling] = useState(false);
   const [pixData, setPixData] = useState<{ qrCode?: string; copyPaste?: string } | null>(null);
   const [pixModalOpen, setPixModalOpen] = useState(false);
   const [pixExpiresAt, setPixExpiresAt] = useState<Date | null>(null);
@@ -136,14 +121,15 @@ const CheckoutPage = () => {
     [selectedPlan, billingCycle]
   );
 
+  const selectedBoostTier = useMemo(() => getBoostTier(boostDuration), [boostDuration]);
+
   const isPixDiscountActive =
     paymentMethod === 'PIX' && !(purchaseType === 'plan' && billingCycle === 'monthly');
 
   const baseTotal = useMemo(() => {
     if (purchaseType === 'plan') return planPrice;
-    if (purchaseType === 'boost') return getBoostTotal(boostQuantity);
-    return INDIVIDUAL_PRICES[individualContext?.contentType ?? 'animal'];
-  }, [purchaseType, planPrice, boostQuantity, individualContext]);
+    return selectedBoostTier.price;
+  }, [purchaseType, planPrice, selectedBoostTier]);
 
   const pixDiscount = isPixDiscountActive ? baseTotal * 0.03 : 0;
   const finalTotal = Math.max(0, baseTotal - pixDiscount);
@@ -162,16 +148,8 @@ const CheckoutPage = () => {
     }
   }, [purchaseType]);
 
-  useEffect(() => {
-    if (purchaseType === 'plan' && billingCycle === 'monthly' && paymentMethod === 'PIX') {
-      setPaymentMethod('CREDIT_CARD');
-    }
-  }, [purchaseType, billingCycle, paymentMethod]);
-
   const updateField = (field: keyof typeof form, value: string) => {
     if (isSubmitting) setIsSubmitting(false);
-    if (isPolling) setIsPolling(false);
-    if (isCheckingPix) setIsCheckingPix(false);
     setForm((prev) => ({ ...prev, [field]: value }));
     setErrors((prev) => ({ ...prev, [field]: '' }));
   };
@@ -189,12 +167,6 @@ const CheckoutPage = () => {
     if (!form.bairro.trim()) nextErrors.bairro = 'Informe o bairro.';
     if (!form.city.trim()) nextErrors.city = 'Informe a cidade.';
     if (!form.state.trim()) nextErrors.state = 'Informe o estado.';
-    if (paymentMethod === 'CREDIT_CARD') {
-      if (!form.cardName.trim()) nextErrors.cardName = 'Informe o nome no cartão.';
-      if (!isValidCardNumber(form.cardNumber)) nextErrors.cardNumber = 'Número do cartão inválido.';
-      if (!isValidExpiry(form.expiry)) nextErrors.expiry = 'Validade inválida.';
-      if (!isValidCvv(form.cvv)) nextErrors.cvv = 'CVV inválido.';
-    }
 
     setErrors(nextErrors);
     return Object.keys(nextErrors).length === 0;
@@ -225,61 +197,7 @@ const CheckoutPage = () => {
     }));
   };
 
-  const startPolling = async (
-    params: { paymentId?: string; subscriptionId?: string },
-    successMessage: string
-  ) => {
-    setIsPolling(true);
-    const timeoutAt = Date.now() + 60_000;
-
-    while (Date.now() < timeoutAt) {
-      const result = await checkPaymentStatus(params);
-      if (!result.success) {
-        setIsPolling(false);
-        toast({
-          title: 'Erro ao verificar pagamento',
-          description: result.message || 'Não foi possível confirmar o status. Tente novamente.',
-          variant: 'destructive',
-        });
-        return;
-      }
-      if (result.success && result.status) {
-        if (result.status === 'APPROVED') {
-          setIsPolling(false);
-          if (purchaseType === 'plan') {
-            clearPlanCache();
-            await refreshUser();
-          }
-          toast({
-            title: 'Pagamento aprovado!',
-            description: successMessage,
-          });
-          navigate('/dashboard');
-          return;
-        }
-
-        if (result.status === 'REJECTED') {
-          setIsPolling(false);
-          toast({
-            title: 'Pagamento rejeitado',
-            description: 'Verifique os dados e tente novamente.',
-            variant: 'destructive',
-          });
-          return;
-        }
-      }
-
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-    }
-
-    setIsPolling(false);
-    toast({
-      title: 'Pagamento em análise',
-      description: 'Ainda estamos aguardando a confirmação do banco. Você pode acompanhar no dashboard.',
-    });
-    navigate('/dashboard');
-  };
-
+  // PIX countdown timer
   useEffect(() => {
     if (!pixExpiresAt) return;
     const updateCountdown = () => {
@@ -291,7 +209,7 @@ const CheckoutPage = () => {
     return () => window.clearInterval(interval);
   }, [pixExpiresAt]);
 
-  // ── Polling automático: verifica pagamento PIX a cada 5s enquanto modal está aberto ──
+  // PIX auto-polling
   useEffect(() => {
     if (!pixModalOpen || !pixPaymentRef?.paymentId || pixTimeLeft <= 0) return;
 
@@ -314,9 +232,7 @@ const CheckoutPage = () => {
               description:
                 purchaseType === 'plan'
                   ? 'Seu plano foi ativado com sucesso.'
-                  : purchaseType === 'boost'
-                    ? 'Seus créditos foram liberados.'
-                    : 'Seu conteúdo foi publicado com sucesso.',
+                  : 'Seu turbinar foi ativado com sucesso.',
             });
             navigate('/dashboard');
             return;
@@ -331,11 +247,11 @@ const CheckoutPage = () => {
             return;
           }
         } catch {
-          // Silencia erros de polling — o botão manual serve de fallback
+          // Silencia erros de polling
         }
       }
     };
-    const handle = poll();
+    poll();
     return () => {
       cancelled = true;
     };
@@ -353,13 +269,10 @@ const CheckoutPage = () => {
     if (!pixPaymentRef?.paymentId && !pixPaymentRef?.subscriptionId) return;
     setIsCheckingPix(true);
     try {
-      console.log('[PIX-CHECK] Verificando pagamento...', pixPaymentRef);
       const result = await checkPaymentStatus(pixPaymentRef);
-      console.log('[PIX-CHECK] Resultado:', JSON.stringify(result));
       setIsCheckingPix(false);
 
       if (!result || typeof result !== 'object') {
-        console.error('[PIX-CHECK] Resultado inválido:', result);
         toast({
           title: 'Erro ao verificar pagamento',
           description: 'Resposta inesperada do servidor. Tente novamente.',
@@ -387,9 +300,7 @@ const CheckoutPage = () => {
           description:
             purchaseType === 'plan'
               ? 'Seu plano foi ativado com sucesso.'
-              : purchaseType === 'boost'
-                ? 'Seus créditos foram liberados.'
-                : 'Seu conteúdo foi publicado com sucesso.',
+              : 'Seu turbinar foi ativado com sucesso.',
         });
         navigate('/dashboard');
         return;
@@ -409,7 +320,6 @@ const CheckoutPage = () => {
         description: `Status: ${result.status || 'pendente'}. Clique novamente em alguns segundos.`,
       });
     } catch (err) {
-      console.error('[PIX-CHECK] Erro inesperado:', err);
       setIsCheckingPix(false);
       toast({
         title: 'Erro ao verificar pagamento',
@@ -423,22 +333,7 @@ const CheckoutPage = () => {
     event.preventDefault();
     if (!user) return;
 
-    if (purchaseType === 'plan' && billingCycle === 'monthly' && paymentMethod === 'PIX') {
-      setIsSubmitting(false);
-      setIsPolling(false);
-      setIsCheckingPix(false);
-      toast({
-        title: 'Forma de pagamento indisponível',
-        description: 'Para planos mensais, o pagamento disponível é apenas cartão.',
-        variant: 'destructive',
-      });
-      return;
-    }
-
     if (!validateForm()) {
-      setIsSubmitting(false);
-      setIsPolling(false);
-      setIsCheckingPix(false);
       toast({
         title: 'Revise os dados',
         description: 'Alguns campos precisam de atenção antes de continuar.',
@@ -449,17 +344,6 @@ const CheckoutPage = () => {
 
     setIsSubmitting(true);
     try {
-      const cardPayload =
-        paymentMethod === 'CREDIT_CARD'
-          ? {
-              holderName: form.cardName.trim(),
-              number: sanitizeDigits(form.cardNumber),
-              expiryMonth: sanitizeDigits(form.expiry).slice(0, 2),
-              expiryYear: `20${sanitizeDigits(form.expiry).slice(2)}`,
-              cvv: sanitizeDigits(form.cvv),
-            }
-          : undefined;
-
       const basePayload = {
         customer: {
           name: form.name.trim(),
@@ -476,22 +360,14 @@ const CheckoutPage = () => {
           city: form.city.trim(),
           state: form.state.trim(),
         },
-        ...(cardPayload ? { card: cardPayload } : {}),
       };
 
       let result;
       if (purchaseType === 'boost') {
         result = await processBoostPayment({
           userId: user.id,
-          quantity: boostQuantity,
-          billingType: paymentMethod,
-          ...basePayload,
-        });
-      } else if (purchaseType === 'individual' && individualContext) {
-        result = await processIndividualPayment({
-          userId: user.id,
-          contentId: individualContext.contentId,
-          contentType: individualContext.contentType,
+          duration: boostDuration,
+          animalId: boostAnimalId,
           billingType: paymentMethod,
           ...basePayload,
         });
@@ -514,12 +390,13 @@ const CheckoutPage = () => {
         return;
       }
 
-      if (paymentMethod === 'PIX') {
+      // PIX: show QR code modal
+      if (paymentMethod === 'PIX' && result.pixQrCode) {
         setPixData({
           qrCode: result.pixQrCode,
           copyPaste: result.pixCopyPaste,
         });
-        setPixPaymentRef({ paymentId: result.paymentId, subscriptionId: result.subscriptionId });
+        setPixPaymentRef({ paymentId: result.paymentId, subscriptionId: (result as any).subscriptionId });
         setPixExpiresAt(new Date(Date.now() + 10 * 60 * 1000));
         setPixModalOpen(true);
         toast({
@@ -529,19 +406,23 @@ const CheckoutPage = () => {
         return;
       }
 
-      toast({
-        title: 'Pagamento iniciado',
-        description: 'Estamos confirmando o status com o banco.',
-      });
+      // CREDIT_CARD / BOLETO: redirect to Asaas hosted checkout
+      if (result.invoiceUrl) {
+        toast({
+          title: 'Redirecionando para pagamento seguro',
+          description: 'Você será redirecionado para o ambiente seguro do Asaas.',
+        });
+        window.open(result.invoiceUrl, '_blank');
+        navigate('/dashboard');
+        return;
+      }
 
-      await startPolling(
-        { paymentId: result.paymentId, subscriptionId: result.subscriptionId },
-        purchaseType === 'plan'
-          ? 'Seu plano foi ativado com sucesso.'
-          : purchaseType === 'boost'
-            ? 'Seus créditos foram liberados.'
-            : 'Seu conteúdo foi publicado com sucesso.'
-      );
+      // Fallback: redirect to dashboard
+      toast({
+        title: 'Pagamento criado',
+        description: 'Acompanhe o status no dashboard.',
+      });
+      navigate('/dashboard');
     } catch (error) {
       toast({
         title: 'Erro ao processar pagamento',
@@ -554,23 +435,19 @@ const CheckoutPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-white">
-      <AppHeader />
-
-      <main className="flex-1 px-3 sm:px-4 py-8 sm:py-12">
+    <div className="flex flex-col bg-white">
+      <div className="flex-1 px-3 sm:px-4 py-8 sm:py-12">
         <div className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-[1.2fr_0.8fr] gap-6 sm:gap-10">
           <form onSubmit={handleSubmit} className="space-y-10">
             <section className="space-y-6">
               <div>
               <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
                 {purchaseType === 'plan'
-                  ? 'Checkout transparente'
-                  : purchaseType === 'boost'
-                    ? 'Finalizar compra de Boosts'
-                    : 'Finalizar publicação'}
+                  ? 'Checkout seguro'
+                  : 'Finalizar compra de Turbinar'}
               </h1>
                 <p className="text-sm text-gray-600">
-                Preencha os dados abaixo para concluir o pagamento via cartão.
+                Preencha os dados abaixo para concluir o pagamento.
                 </p>
               </div>
 
@@ -705,113 +582,80 @@ const CheckoutPage = () => {
             </section>
 
             <section className="space-y-6">
-              <h2 className="text-xl font-semibold text-gray-900">Dados do cartão</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="md:col-span-2">
-                  <Label>Forma de pagamento</Label>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2">
-                    <button
-                      type="button"
-                      onClick={() => setPaymentMethod('CREDIT_CARD')}
-                      className={`rounded-lg border px-4 py-3 text-left transition ${
-                        paymentMethod === 'CREDIT_CARD'
-                          ? 'border-gray-900 bg-gray-900 text-white'
-                          : 'border-gray-200 hover:border-gray-300'
-                      }`}
-                    >
-                      <p className="font-semibold">Cartão de crédito</p>
-                      <p className="text-xs">Processamento imediato</p>
-                    </button>
-                    {!(purchaseType === 'plan' && billingCycle === 'monthly') && (
-                      <button
-                        type="button"
-                        onClick={() => setPaymentMethod('PIX')}
-                        className={`rounded-lg border px-4 py-3 text-left transition ${
-                          paymentMethod === 'PIX'
-                            ? 'border-green-600 bg-green-50 text-green-700'
-                            : 'border-gray-200 hover:border-gray-300'
-                        }`}
-                      >
-                        <p className="font-semibold">PIX</p>
-                        <p className="text-xs">3% de desconto no pagamento à vista</p>
-                      </button>
-                    )}
-                  </div>
+              <h2 className="text-xl font-semibold text-gray-900">Forma de pagamento</h2>
+              <div>
+                <Label>Escolha a forma de pagamento</Label>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-2">
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod('PIX')}
+                    className={`rounded-lg border px-4 py-3 text-left transition ${
+                      paymentMethod === 'PIX'
+                        ? 'border-green-600 bg-green-50 text-green-700'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <p className="font-semibold">PIX</p>
+                    <p className="text-xs">3% de desconto no pagamento à vista</p>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod('CREDIT_CARD')}
+                    className={`rounded-lg border px-4 py-3 text-left transition ${
+                      paymentMethod === 'CREDIT_CARD'
+                        ? 'border-gray-900 bg-gray-900 text-white'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <p className="font-semibold">Cartão de crédito</p>
+                    <p className="text-xs">Pagamento seguro via Asaas</p>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod('BOLETO')}
+                    className={`rounded-lg border px-4 py-3 text-left transition ${
+                      paymentMethod === 'BOLETO'
+                        ? 'border-blue-600 bg-blue-50 text-blue-700'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <p className="font-semibold">Boleto bancário</p>
+                    <p className="text-xs">Vencimento em 3 dias úteis</p>
+                  </button>
                 </div>
 
                 {paymentMethod === 'CREDIT_CARD' && (
-                  <>
-                    <div className="md:col-span-2">
-                      <Label htmlFor="cardName">Nome no cartão</Label>
-                      <Input
-                        id="cardName"
-                        value={form.cardName}
-                        onChange={(e) => updateField('cardName', e.target.value)}
-                        placeholder="Como impresso no cartão"
-                        className={errors.cardName ? 'border-red-500' : ''}
-                      />
-                      {errors.cardName && (
-                        <p className="text-xs text-red-500 mt-1">{errors.cardName}</p>
-                      )}
-                    </div>
-                    <div className="md:col-span-2">
-                      <Label htmlFor="cardNumber">Número do cartão</Label>
-                      <Input
-                        id="cardNumber"
-                        value={form.cardNumber}
-                        onChange={(e) => updateField('cardNumber', formatCardNumber(e.target.value))}
-                        placeholder="0000 0000 0000 0000"
-                        className={errors.cardNumber ? 'border-red-500' : ''}
-                      />
-                      {errors.cardNumber && (
-                        <p className="text-xs text-red-500 mt-1">{errors.cardNumber}</p>
-                      )}
-                    </div>
-                    <div>
-                      <Label htmlFor="expiry">Validade (MM/AA)</Label>
-                      <Input
-                        id="expiry"
-                        value={form.expiry}
-                        onChange={(e) => updateField('expiry', formatExpiry(e.target.value))}
-                        placeholder="MM/AA"
-                        className={errors.expiry ? 'border-red-500' : ''}
-                      />
-                      {errors.expiry && <p className="text-xs text-red-500 mt-1">{errors.expiry}</p>}
-                    </div>
-                    <div>
-                      <Label htmlFor="cvv">CVV</Label>
-                      <Input
-                        id="cvv"
-                        value={form.cvv}
-                        onChange={(e) => updateField('cvv', formatCvv(e.target.value))}
-                        placeholder="123"
-                        className={errors.cvv ? 'border-red-500' : ''}
-                      />
-                      {errors.cvv && <p className="text-xs text-red-500 mt-1">{errors.cvv}</p>}
-                    </div>
-                  </>
+                  <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p className="text-sm text-blue-800">
+                      Ao finalizar, você será redirecionado para o ambiente seguro do Asaas
+                      para inserir os dados do cartão. Seus dados ficam protegidos.
+                    </p>
+                  </div>
+                )}
+
+                {paymentMethod === 'BOLETO' && (
+                  <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <p className="text-sm text-yellow-800">
+                      O boleto será gerado e você poderá pagar em qualquer banco ou app.
+                      Prazo de compensação: até 3 dias úteis.
+                    </p>
+                  </div>
                 )}
               </div>
-
-              {paymentMethod === 'PIX' && (pixData?.copyPaste || pixData?.qrCode) && (
-                <div className="rounded-lg border border-green-200 bg-green-50 p-4">
-                  <p className="text-sm font-semibold text-green-700 mb-2">Pagamento via Pix</p>
-                  <p className="text-xs text-green-700 mb-3">
-                    Use o QR Code no modal para concluir o pagamento.
-                  </p>
-                  <Button type="button" variant="outline" onClick={() => setPixModalOpen(true)}>
-                    Abrir QR Code
-                  </Button>
-                </div>
-              )}
             </section>
 
             <Button
               type="submit"
               className="w-full bg-blue-600 hover:bg-blue-700"
-              disabled={isSubmitting || isPolling}
+              disabled={isSubmitting}
             >
-              {isSubmitting || isPolling ? 'Processando...' : 'Finalizar pagamento'}
+              {isSubmitting
+                ? 'Processando...'
+                : paymentMethod === 'PIX'
+                  ? 'Gerar QR Code PIX'
+                  : paymentMethod === 'BOLETO'
+                    ? 'Gerar Boleto'
+                    : 'Pagar com Cartão'}
             </Button>
           </form>
 
@@ -834,13 +678,16 @@ const CheckoutPage = () => {
                       }`}
                     >
                       <p className="font-semibold text-gray-900">{plan.name}</p>
-                      <p className="text-xs text-gray-600">{plan.description}</p>
+                      <p className="text-xs text-gray-600">
+                        {plan.description} - Até {plan.animalLimit} {plan.animalLimit === 1 ? 'animal' : 'animais'}
+                        {plan.boostsPerMonth > 0 && ` + ${plan.boostsPerMonth} turbinares/mês`}
+                      </p>
                     </button>
                   ))}
                 </div>
 
                 <div className="mt-6 space-y-3">
-                  {(['monthly', 'semiannual', 'annual'] as CheckoutBillingCycle[]).map((cycle) => (
+                  {(['monthly', 'annual'] as CheckoutBillingCycle[]).map((cycle) => (
                     <button
                       key={cycle}
                       type="button"
@@ -853,7 +700,6 @@ const CheckoutPage = () => {
                     >
                       <p className="font-semibold">
                         {cycle === 'monthly' && 'Mensal'}
-                        {cycle === 'semiannual' && 'Semestral (6x sem juros)'}
                         {cycle === 'annual' && 'Anual (12x sem juros)'}
                       </p>
                       <p className="text-xs">
@@ -874,7 +720,7 @@ const CheckoutPage = () => {
                       <p className="text-xs text-green-700">Desconto PIX (3%)</p>
                     </>
                   )}
-                  {billingCycle !== 'monthly' && paymentMethod === 'CREDIT_CARD' && (
+                  {billingCycle === 'annual' && paymentMethod === 'CREDIT_CARD' && (
                     <p className="text-xs text-gray-500">
                       {getInstallmentCount(billingCycle)}x sem juros no cartão
                     </p>
@@ -883,52 +729,53 @@ const CheckoutPage = () => {
               </div>
             ) : (
               <div className="rounded-2xl border border-gray-200 p-6">
-                <h3 className="text-lg font-semibold text-gray-900">Resumo da compra</h3>
-                {purchaseType === 'boost' ? (
-                  <>
-                    <p className="text-sm text-gray-600">Pacote de Boosts</p>
-                    <div className="mt-4 rounded-lg bg-gray-50 p-4 space-y-1">
-                      <p className="text-sm text-gray-600">Quantidade</p>
-                      <p className="text-2xl font-bold text-gray-900">{boostQuantity} boosts</p>
-                      <p className="text-sm text-gray-600 mt-2">
-                        Total R$ {formatPrice(finalTotal)}
-                      </p>
-                      {isPixDiscountActive && (
-                        <p className="text-xs text-green-700">Desconto PIX (3%)</p>
-                      )}
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <p className="text-sm text-gray-600">
-                      {individualContext?.contentType === 'event' ? 'Evento individual' : 'Anúncio individual'}
-                    </p>
-                    {individualContext?.contentName && (
-                      <p className="text-sm text-gray-500 mt-1">{individualContext.contentName}</p>
-                    )}
-                    <div className="mt-4 rounded-lg bg-gray-50 p-4 space-y-1">
-                      <p className="text-sm text-gray-600">Total</p>
-                      <p className="text-2xl font-bold text-gray-900">
-                        R$ {formatPrice(finalTotal)}
-                      </p>
-                      {isPixDiscountActive && (
-                        <p className="text-xs text-green-700">Desconto PIX (3%)</p>
-                      )}
-                    </div>
-                  </>
-                )}
+                <h3 className="text-lg font-semibold text-gray-900">Turbinar Animal</h3>
+                <p className="text-sm text-gray-600 mb-4">Escolha a duração do destaque</p>
+
+                <div className="space-y-3">
+                  {BOOST_TIERS.map((tier) => (
+                    <button
+                      key={tier.duration}
+                      type="button"
+                      onClick={() => setBoostDuration(tier.duration)}
+                      className={`w-full text-left rounded-lg border px-4 py-3 transition ${
+                        tier.duration === boostDuration
+                          ? 'border-yellow-500 bg-yellow-50'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      <div className="flex justify-between items-center">
+                        <p className="font-semibold text-gray-900">{tier.label}</p>
+                        <p className="font-bold text-gray-900">R$ {formatPrice(tier.price)}</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+
+                <div className="mt-6 rounded-lg bg-gray-50 p-4 space-y-1">
+                  <p className="text-sm text-gray-600">Resumo</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    R$ {formatPrice(finalTotal)}
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    Turbinar por {selectedBoostTier.label}
+                  </p>
+                  {isPixDiscountActive && (
+                    <p className="text-xs text-green-700">Desconto PIX (3%)</p>
+                  )}
+                </div>
               </div>
             )}
 
             <div className="rounded-2xl border border-gray-200 p-6 space-y-3 text-sm text-gray-600">
               <p className="font-semibold text-gray-900">Sua compra está protegida</p>
-              <p>🔒 Pagamento processado pelo Asaas com criptografia ponta-a-ponta.</p>
-              <p>✅ Dados do cartão nunca são armazenados.</p>
-              <p>💬 Suporte humano caso precise de ajuda.</p>
+              <p>Pagamento processado pelo Asaas com criptografia ponta-a-ponta.</p>
+              <p>Dados sensíveis nunca passam pelo nosso servidor.</p>
+              <p>Suporte humano caso precise de ajuda.</p>
             </div>
           </aside>
         </div>
-      </main>
+      </div>
 
       <Dialog open={pixModalOpen} onOpenChange={setPixModalOpen}>
         <DialogContent className="max-w-md">
@@ -987,8 +834,6 @@ const CheckoutPage = () => {
           </div>
         </DialogContent>
       </Dialog>
-
-      <AppFooter />
     </div>
   );
 };

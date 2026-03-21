@@ -2,19 +2,14 @@
  * =================================================================
  * MODAL DE COMPRA DE PLANOS
  * =================================================================
- * 
- * Modal completo para compra de planos mensais e anuais
- * Integrado com Asaas.com via paymentService
- * 
- * Features:
- * - Seleção de plano (Basic, Pro, Ultra, VIP)
- * - Escolha entre mensal/anual
- * - Múltiplas formas de pagamento (Pix, Cartão, Boleto)
- * - Exibição de QR Code Pix
- * - Parcelamento para planos anuais
- * 
+ *
+ * Modelo 100% baseado em planos:
+ * - Essencial: R$ 39,90/mês | R$ 399,00/ano → 1 animal
+ * - Criador: R$ 97,90/mês | R$ 997,00/ano → 5 animais + 2 turbinares
+ * - Haras Destaque: R$ 197,90/mês | R$ 1.997,00/ano → 10 animais + 5 turbinares
+ * - Elite: R$ 397,90/mês | R$ 3.997,00/ano → 25 animais + 10 turbinares
+ *
  * @author Cavalaria Digital
- * @date 2025-11-27
  */
 
 import React, { useState } from 'react';
@@ -30,10 +25,11 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, CreditCard, QrCode, Barcode, Check, X } from 'lucide-react';
+import { Loader2, CreditCard, QrCode, Barcode, Check } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { storeCheckoutContext } from '@/utils/checkoutContext';
 import { useNavigate } from 'react-router-dom';
+import { CHECKOUT_PLANS, type CheckoutPlanId } from '@/constants/checkoutPlans';
 
 // =================================================================
 // TIPOS E INTERFACES
@@ -46,97 +42,6 @@ interface PurchasePlanModalProps {
   currentPlan?: string;
   onSuccess?: () => void;
 }
-
-interface Plan {
-  id: 'basic' | 'pro' | 'ultra' | 'vip';
-  name: string;
-  monthlyPrice: number;
-  annualPrice: number;
-  features: string[];
-  maxAnimals: number;
-  maxEvents: number;
-  boosts: number;
-}
-
-// =================================================================
-// DADOS DOS PLANOS
-// =================================================================
-
-const PLANS: Plan[] = [
-  {
-    id: 'basic',
-    name: 'Iniciante',
-    monthlyPrice: 97.00,
-    annualPrice: 776.00,
-    features: [
-      '10 anúncios ativos',
-      'Aparece no mapa interativo',
-      'Perfil completo com link para Instagram',
-      'Sistema completo de sociedades',
-      'Relatórios de visualização',
-      'Suporte por e-mail e tickets'
-    ],
-    maxAnimals: 10,
-    maxEvents: 1,
-    boosts: 0
-  },
-  {
-    id: 'pro',
-    name: 'Pro',
-    monthlyPrice: 147.00,
-    annualPrice: 882.00,
-    features: [
-      '15 anúncios ativos',
-      'Destaque nos resultados',
-      'Aparece no topo do mapa interativo',
-      'Perfil avançado verificado',
-      'Link para Instagram e WhatsApp',
-      'Sistema completo de sociedades',
-      'Relatórios detalhados de performance',
-      'Suporte prioritário',
-      '2 turbinares grátis por mês'
-    ],
-    maxAnimals: 15,
-    maxEvents: 3,
-    boosts: 2
-  },
-  {
-    id: 'ultra',
-    name: 'Elite',
-    monthlyPrice: 247.00,
-    annualPrice: 1482.00,
-    features: [
-      '25 anúncios ativos',
-      'Máxima visibilidade e destaque',
-      'Posição privilegiada no mapa',
-      'Perfil Elite com selo premium',
-      'Integração completa com redes sociais',
-      'Sistema completo de sociedades',
-      'Analytics avançados e insights',
-      'Suporte VIP dedicado',
-      'Consultoria de marketing digital',
-      '5 turbinares grátis por mês'
-    ],
-    maxAnimals: 25,
-    maxEvents: 5,
-    boosts: 5
-  },
-  {
-    id: 'vip',
-    name: 'VIP',
-    monthlyPrice: 147.00,
-    annualPrice: 882.00,
-    features: [
-      'Mesmo do plano Pro',
-      'Concedido apenas por administrador',
-      '15 anúncios ativos',
-      'Todos os recursos do Pro'
-    ],
-    maxAnimals: 15,
-    maxEvents: 3,
-    boosts: 2
-  }
-];
 
 // =================================================================
 // COMPONENTE PRINCIPAL
@@ -152,7 +57,7 @@ export function PurchasePlanModal({
   const navigate = useNavigate();
 
   // Estados
-  const [selectedPlan, setSelectedPlan] = useState<'basic' | 'pro' | 'ultra' | 'vip'>('pro');
+  const [selectedPlan, setSelectedPlan] = useState<CheckoutPlanId>('criador');
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
   const [billingType, setBillingType] = useState<'PIX' | 'CREDIT_CARD' | 'BOLETO'>('PIX');
   const [installments, setInstallments] = useState<number>(1);
@@ -164,20 +69,21 @@ export function PurchasePlanModal({
   } | null>(null);
 
   // Dados do plano selecionado
-  const plan = PLANS.find(p => p.id === selectedPlan)!;
-  const price = billingCycle === 'monthly' ? plan.monthlyPrice : plan.annualPrice;
+  const plan = CHECKOUT_PLANS.find(p => p.id === selectedPlan)!;
+  const price = billingCycle === 'monthly' ? plan.monthlyPrice : plan.annualTotal;
   const installmentPrice = billingCycle === 'annual' ? price / installments : price;
+
+  const formatPrice = (v: number) => v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   /**
    * Processa a compra do plano
    */
   const handlePurchase = async () => {
     setPaymentData(null);
-    const resolvedBillingCycle = billingCycle === 'annual' ? 'annual' : 'monthly';
     storeCheckoutContext({
       purchaseType: 'plan',
       planId: selectedPlan,
-      billingPeriod: resolvedBillingCycle,
+      billingPeriod: billingCycle,
     });
     toast({
       title: 'Redirecionando para o checkout',
@@ -194,7 +100,7 @@ export function PurchasePlanModal({
     if (paymentData?.pixCopyPaste) {
       navigator.clipboard.writeText(paymentData.pixCopyPaste);
       toast({
-        title: '✅ Copiado!',
+        title: 'Copiado!',
         description: 'Código Pix copiado para a área de transferência',
         duration: 2000
       });
@@ -204,12 +110,8 @@ export function PurchasePlanModal({
   /**
    * Calcula economia do plano anual
    */
-  const annualSavings = (plan.monthlyPrice * 12) - plan.annualPrice;
+  const annualSavings = (plan.monthlyPrice * 12) - plan.annualTotal;
   const savingsPercentage = Math.round((annualSavings / (plan.monthlyPrice * 12)) * 100);
-
-  // =================================================================
-  // RENDERIZAÇÃO
-  // =================================================================
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -217,7 +119,7 @@ export function PurchasePlanModal({
         <DialogHeader>
           <DialogTitle className="text-2xl">Escolha seu Plano</DialogTitle>
           <DialogDescription>
-            Selecione o plano ideal e a forma de pagamento
+            Selecione o plano ideal para cadastrar e publicar seus animais
           </DialogDescription>
         </DialogHeader>
 
@@ -230,10 +132,10 @@ export function PurchasePlanModal({
               </Label>
               <RadioGroup
                 value={selectedPlan}
-                onValueChange={(value) => setSelectedPlan(value as typeof selectedPlan)}
+                onValueChange={(value) => setSelectedPlan(value as CheckoutPlanId)}
               >
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {PLANS.map((p) => (
+                  {CHECKOUT_PLANS.map((p) => (
                     <Label
                       key={p.id}
                       htmlFor={p.id}
@@ -248,22 +150,27 @@ export function PurchasePlanModal({
                           <RadioGroupItem value={p.id} id={p.id} />
                           <span className="font-bold text-lg">{p.name}</span>
                         </div>
-                        {p.id === 'ultra' && (
+                        {p.popular && (
                           <Badge variant="secondary">Popular</Badge>
                         )}
                       </div>
-                      
+
                       <div className="text-2xl font-bold text-primary mb-2">
-                        R$ {billingCycle === 'monthly' ? p.monthlyPrice.toFixed(2) : p.annualPrice.toFixed(2)}
+                        R$ {formatPrice(billingCycle === 'monthly' ? p.monthlyPrice : p.annualTotal)}
                         <span className="text-sm text-gray-500 font-normal">
                           /{billingCycle === 'monthly' ? 'mês' : 'ano'}
                         </span>
                       </div>
 
+                      <div className="text-sm text-gray-600 mb-2">
+                        Até {p.animalLimit} {p.animalLimit === 1 ? 'animal' : 'animais'}
+                        {p.boostsPerMonth > 0 && ` + ${p.boostsPerMonth} turbinares/mês`}
+                      </div>
+
                       <ul className="space-y-1 text-sm text-gray-600">
-                        {p.features.map((feature, idx) => (
+                        {p.highlights.slice(0, 5).map((feature, idx) => (
                           <li key={idx} className="flex items-center gap-2">
-                            <Check className="h-4 w-4 text-green-600" />
+                            <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
                             {feature}
                           </li>
                         ))}
@@ -286,27 +193,32 @@ export function PurchasePlanModal({
                 <TabsList className="grid w-full grid-cols-2">
                   <TabsTrigger value="monthly">Mensal</TabsTrigger>
                   <TabsTrigger value="annual">
-                    Anual 
-                    <Badge variant="destructive" className="ml-2">-{savingsPercentage}%</Badge>
+                    Anual
+                    {savingsPercentage > 0 && (
+                      <Badge variant="destructive" className="ml-2">-{savingsPercentage}%</Badge>
+                    )}
                   </TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="monthly" className="mt-4">
                   <div className="p-4 bg-blue-50 rounded-lg">
                     <p className="text-sm text-blue-900">
-                      ♻️ <strong>Renovação automática:</strong> Cobrança mensal recorrente via Pix ou cartão de crédito.
-                      Cancele quando quiser.
+                      <strong>Renovação automática:</strong> Cobrança mensal recorrente.
+                      Cancele quando quiser. Turbinares inclusos renovam todo mês.
                     </p>
                   </div>
                 </TabsContent>
 
                 <TabsContent value="annual" className="mt-4">
                   <div className="p-4 bg-green-50 rounded-lg space-y-2">
+                    {annualSavings > 0 && (
+                      <p className="text-sm text-green-900">
+                        <strong>Economia de R$ {formatPrice(annualSavings)}</strong> em relação ao plano mensal!
+                      </p>
+                    )}
                     <p className="text-sm text-green-900">
-                      💰 <strong>Economia de R$ {annualSavings.toFixed(2)}</strong> em relação ao plano mensal!
-                    </p>
-                    <p className="text-sm text-green-900">
-                      ✅ Pagamento único para 12 meses. Parcele em até 12x no cartão (sem juros).
+                      Pagamento único para 12 meses. Parcele em até 12x no cartão.
+                      Turbinares inclusos continuam renovando mensalmente.
                     </p>
                   </div>
                 </TabsContent>
@@ -353,7 +265,7 @@ export function PurchasePlanModal({
                       <CreditCard className="h-5 w-5" />
                       <div className="flex-1">
                         <div className="font-semibold">Cartão de Crédito</div>
-                        <div className="text-sm text-gray-500">Parcele em até 12x sem juros</div>
+                        <div className="text-sm text-gray-500">Parcele em até 12x</div>
                       </div>
                     </Label>
                   )}
@@ -399,7 +311,7 @@ export function PurchasePlanModal({
                         <div className="text-center">
                           <div className="font-bold">{num}x</div>
                           <div className="text-xs text-gray-500">
-                            R$ {(price / num).toFixed(2)}
+                            R$ {formatPrice(price / num)}
                           </div>
                         </div>
                       </Label>
@@ -415,18 +327,18 @@ export function PurchasePlanModal({
               <div className="space-y-1 text-sm">
                 <div className="flex justify-between">
                   <span>Plano {plan.name} ({billingCycle === 'monthly' ? 'Mensal' : 'Anual'})</span>
-                  <span className="font-semibold">R$ {price.toFixed(2)}</span>
+                  <span className="font-semibold">R$ {formatPrice(price)}</span>
                 </div>
                 {billingCycle === 'annual' && billingType === 'CREDIT_CARD' && installments > 1 && (
                   <div className="flex justify-between text-gray-600">
                     <span>Parcelamento:</span>
-                    <span>{installments}x de R$ {installmentPrice.toFixed(2)}</span>
+                    <span>{installments}x de R$ {formatPrice(installmentPrice)}</span>
                   </div>
                 )}
-                {billingCycle === 'annual' && (
+                {billingCycle === 'annual' && annualSavings > 0 && (
                   <div className="flex justify-between text-green-600 font-semibold">
                     <span>Economia:</span>
-                    <span>R$ {annualSavings.toFixed(2)}</span>
+                    <span>R$ {formatPrice(annualSavings)}</span>
                   </div>
                 )}
               </div>
@@ -460,9 +372,9 @@ export function PurchasePlanModal({
 
             {/* Informações Legais */}
             <div className="text-xs text-gray-500 text-center space-y-1">
-              <p>🔒 Pagamento 100% seguro via Asaas.com</p>
-              <p>📜 Você pode cancelar a qualquer momento</p>
-              <p>💰 Reembolso integral em até 7 dias (CDC Art. 49)</p>
+              <p>Pagamento 100% seguro via Asaas.com</p>
+              <p>Você pode cancelar a qualquer momento</p>
+              <p>Reembolso integral em até 7 dias (CDC Art. 49)</p>
             </div>
           </div>
         ) : (
@@ -475,7 +387,7 @@ export function PurchasePlanModal({
             <div>
               <h3 className="text-xl font-bold mb-2">Pagamento Criado com Sucesso!</h3>
               <p className="text-gray-600">
-                {billingType === 'PIX' 
+                {billingType === 'PIX'
                   ? 'Escaneie o QR Code ou copie o código Pix Copia e Cola'
                   : 'Acesse o link para concluir seu pagamento'}
               </p>
@@ -483,16 +395,14 @@ export function PurchasePlanModal({
 
             {billingType === 'PIX' && paymentData.pixQrCode && (
               <div className="space-y-4">
-                {/* QR Code */}
                 <div className="flex justify-center">
-                  <img 
+                  <img
                     src={`data:image/png;base64,${paymentData.pixQrCode}`}
                     alt="QR Code Pix"
                     className="w-64 h-64 border-4 border-gray-200 rounded-lg"
                   />
                 </div>
 
-                {/* Código Copia e Cola */}
                 {paymentData.pixCopyPaste && (
                   <div className="space-y-2">
                     <p className="text-sm font-semibold">Pix Copia e Cola:</p>
@@ -531,4 +441,3 @@ export function PurchasePlanModal({
 }
 
 export default PurchasePlanModal;
-

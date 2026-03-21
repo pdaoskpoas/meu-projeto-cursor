@@ -350,17 +350,12 @@ const PublishAnimalPage: React.FC = () => {
         console.log('[PublishAnimal] Nenhuma foto foi enviada no formulário');
       }
 
-      // 3. Criar transação de anúncio individual
-      await animalService.createIndividualAdTransaction(user.id, newAnimal.id, 47.0);
-
-      // 4. Publicar animal
-      await animalService.publishAnimal(newAnimal.id, user.id);
-
-      // 5. Limpar sessionStorage
+      // 3. Limpar sessionStorage antes de redirecionar
       sessionStorage.removeItem('pendingAnimalData');
 
-      toast({ title: 'Publicação individual confirmada!' });
-      navigate('/dashboard/animals');
+      // 4. Redirecionar para checkout - pagamento é processado via Edge Function
+      // A ativação do anúncio ocorre via webhook após confirmação do pagamento
+      navigate(`/checkout?type=individual&contentType=animal&contentId=${newAnimal.id}`);
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : 'Tente novamente';
       toast({ title: 'Falha ao pagar/publicar', description: message, variant: 'destructive' });

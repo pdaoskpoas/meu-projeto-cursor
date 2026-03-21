@@ -245,10 +245,10 @@ export const ticketService = {
       throw new Error(`Erro ao buscar respostas: ${error.message}`);
     }
 
-    // Buscar nomes dos admins
+    // Buscar nomes dos admins (view pública - sem PII)
     const adminIds = [...new Set(data?.map(r => r.admin_id) || [])];
     const { data: adminsData } = await supabase
-      .from('profiles')
+      .from('public_profiles')
       .select('id, name')
       .in('id', adminIds);
 

@@ -116,7 +116,6 @@ const PublishDraftPage: React.FC = () => {
         if (cached) {
           const dataUrls: string[] = JSON.parse(cached);
           const blobs: Blob[] = await Promise.all(dataUrls.map(async (u) => (await fetch(u)).blob()));
-          // Converter Blob para File
           const files: File[] = blobs.map((blob, i) => new File([blob], `image_${i+1}.jpg`, { type: blob.type || 'image/jpeg' }));
           const urls = await uploadAnimalImages(user.id, animalId, files, files.map((f) => f.name));
           await updateAnimalImages(animalId, urls);
@@ -125,13 +124,12 @@ const PublishDraftPage: React.FC = () => {
       } catch (uploadError) {
         console.warn('Falha no upload de imagens:', uploadError);
       }
-      await animalService.createIndividualAdTransaction(user.id, animalId, 47.0);
-      await animalService.publishAnimal(animalId, user.id);
-      toast({ title: 'Publicação individual confirmada' });
-      navigate('/dashboard/animals');
+      // Redirecionar para checkout - pagamento é processado via Edge Function
+      // A ativação do anúncio ocorre via webhook após confirmação do pagamento
+      navigate(`/checkout?type=individual&contentType=animal&contentId=${animalId}`);
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : 'Tente novamente';
-      toast({ title: 'Falha ao pagar/publicar', description: message, variant: 'destructive' });
+      toast({ title: 'Falha ao preparar publicação', description: message, variant: 'destructive' });
     } finally {
       setSubmitting(false);
     }

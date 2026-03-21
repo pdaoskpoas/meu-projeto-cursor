@@ -40,7 +40,6 @@ const PublishDraftPage = lazy(() => import("./pages/PublishDraftPage"));
 const PublishAnimalPage = lazy(() => import("./pages/PublishAnimalPage"));
 const TermsPage = lazy(() => import("./pages/TermsPage"));
 const PrivacyPage = lazy(() => import("./pages/PrivacyPage"));
-const ContactPage = lazy(() => import("./pages/ContactPage"));
 const AnimalsPage = lazy(() => import("./pages/dashboard/AnimalsPage"));
 const EditAnimalPage = lazy(() => import("./pages/dashboard/EditAnimalPage"));
 const DashboardEventsPage = lazy(() => import("./pages/dashboard/EventsPage"));
@@ -54,6 +53,7 @@ const FavoritosPage = lazy(() => import("./pages/dashboard/FavoritosPage"));
 const TestUploadPage = lazy(() => import("./pages/TestUploadPage"));
 const HelpPage = lazy(() => import("./pages/dashboard/HelpPage"));
 const SocietyPage = lazy(() => import("./pages/dashboard/SocietyPage"));
+const AboutPage = lazy(() => import("./pages/AboutPage"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient({
@@ -91,10 +91,6 @@ const App = () => (
               <RouteProgressBar />
               <Suspense fallback={<PageLoadingFallback />}>
                 <Routes>
-                  {/* Rota de ajuda pública (sem AppLayout) */}
-                  <Route path="/ajuda" element={<HelpPage />} />
-                  
-                  {/* Todas as outras rotas com AppLayout */}
                   <Route path="*" element={
                     <AppLayout>
                       <Routes>
@@ -180,7 +176,12 @@ const App = () => (
                       <Route path="/planos" element={<PlansPage />} />
                       <Route path="/terms" element={<TermsPage />} />
                       <Route path="/privacy" element={<PrivacyPage />} />
-                      <Route path="/contact" element={<ContactPage />} />
+                      <Route path="/ajuda" element={<HelpPage />} />
+                      <Route
+                        path="/contact"
+                        element={<Navigate to={{ pathname: "/ajuda", hash: "contato" }} replace />}
+                      />
+                      <Route path="/sobre" element={<AboutPage />} />
                       <Route path="/checkout" element={<CheckoutPage />} />
                       <Route path="/publicar/:draftId" element={<PublishDraftPage />} />
                       <Route path="/publicar-animal" element={<PublishAnimalPage />} />

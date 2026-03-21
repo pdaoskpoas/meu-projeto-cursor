@@ -289,7 +289,7 @@ class AnimalService {
       }
 
       const { data: ownerProfile } = await supabase
-        .from('profiles')
+        .from('public_profiles')
         .select('name, public_code, account_type, property_name, property_type')
         .eq('id', animal.owner_id)
         .single()

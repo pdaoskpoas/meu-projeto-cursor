@@ -1,7 +1,19 @@
+/**
+ * =================================================================
+ * PROCESS-PAYMENT Edge Function (Secure)
+ * =================================================================
+ *
+ * Cria cobranças e assinaturas no Asaas SEM manipular dados de cartão.
+ * O pagamento é feito exclusivamente via checkout hospedado (invoiceUrl).
+ *
+ * O frontend NUNCA recebe nem envia dados de cartão.
+ * Toda comunicação com o Asaas ocorre exclusivamente aqui no backend.
+ */
 // @ts-expect-error - runtime import resolved by Deno in Edge Functions
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 // @ts-expect-error - runtime import resolved by Deno in Edge Functions
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { checkRateLimit } from '../_shared/asaasPaymentUtils.ts';
 
 declare const Deno: {
   env: {
@@ -15,14 +27,15 @@ const corsHeaders = {
 };
 
 const PLAN_PRICES = {
-  basic: { monthly: 97, semiannual: 97 * 6, annual: 776 },
-  pro: { monthly: 147, semiannual: 147 * 6, annual: 882 },
-  ultra: { monthly: 247, semiannual: 247 * 6, annual: 1482 },
+  essencial: { monthly: 39.90, annual: 399.00 },
+  criador: { monthly: 97.90, annual: 997.00 },
+  haras: { monthly: 197.90, annual: 1997.00 },
+  elite: { monthly: 397.90, annual: 3997.00 },
 } as const;
 
 type PlanId = keyof typeof PLAN_PRICES;
-type BillingCycle = 'monthly' | 'semiannual' | 'annual';
-type PaymentMethod = 'CREDIT_CARD' | 'PIX';
+type BillingCycle = 'monthly' | 'annual';
+type PaymentMethod = 'CREDIT_CARD' | 'PIX' | 'BOLETO';
 
 interface CustomerPayload {
   name: string;
@@ -41,13 +54,7 @@ interface AddressPayload {
   state: string;
 }
 
-interface CardPayload {
-  holderName: string;
-  number: string;
-  expiryMonth: string;
-  expiryYear: string;
-  cvv: string;
-}
+// Sem CardPayload - dados de cartão NUNCA passam por este servidor
 
 interface ProcessPaymentBody {
   userId?: string;
@@ -56,7 +63,7 @@ interface ProcessPaymentBody {
   paymentMethod?: string;
   customer: CustomerPayload;
   address: AddressPayload;
-  card?: CardPayload;
+  // card removido - pagamento via invoiceUrl
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -66,9 +73,9 @@ const getString = (value: unknown) => (typeof value === 'string' ? value : '');
 
 const isPlanId = (value: string): value is PlanId => value in PLAN_PRICES;
 const isBillingCycle = (value: string): value is BillingCycle =>
-  ['monthly', 'semiannual', 'annual'].includes(value);
+  ['monthly', 'annual'].includes(value);
 const isPaymentMethod = (value: string): value is PaymentMethod =>
-  ['CREDIT_CARD', 'PIX'].includes(value);
+  ['CREDIT_CARD', 'PIX', 'BOLETO'].includes(value);
 
 const getErrorMessage = (error: unknown) =>
   error instanceof Error ? error.message : String(error ?? 'Erro desconhecido');
@@ -78,7 +85,6 @@ const parseProcessPaymentBody = (raw: unknown): ProcessPaymentBody | null => {
 
   const customerRaw = isRecord(raw.customer) ? raw.customer : {};
   const addressRaw = isRecord(raw.address) ? raw.address : {};
-  const cardRaw = isRecord(raw.card) ? raw.card : null;
 
   return {
     userId: typeof raw.userId === 'string' ? raw.userId : undefined,
@@ -100,15 +106,6 @@ const parseProcessPaymentBody = (raw: unknown): ProcessPaymentBody | null => {
       city: getString(addressRaw.city),
       state: getString(addressRaw.state),
     },
-    card: cardRaw
-      ? {
-          holderName: getString(cardRaw.holderName),
-          number: getString(cardRaw.number),
-          expiryMonth: getString(cardRaw.expiryMonth),
-          expiryYear: getString(cardRaw.expiryYear),
-          cvv: getString(cardRaw.cvv),
-        }
-      : undefined,
   };
 };
 
@@ -161,11 +158,10 @@ const asaasRequest = async (endpoint: string, method: string, data?: unknown) =>
   const apiKey = Deno.env.get('ASAAS_API_KEY');
 
   if (!baseUrl || !apiKey) {
-    throw new Error('Configuração do Asaas ausente.');
+    throw new Error('Configuracao do Asaas ausente.');
   }
 
   const resolvedBaseUrl = normalizeBaseUrl(baseUrl);
-  console.log('[plan] asaas request', { endpoint, method, baseUrl: resolvedBaseUrl });
   const response = await fetch(`${resolvedBaseUrl}${endpoint}`, {
     method,
     headers: {
@@ -179,7 +175,6 @@ const asaasRequest = async (endpoint: string, method: string, data?: unknown) =>
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
     const message = payload?.errors?.[0]?.description || payload?.message || 'Erro ao comunicar com Asaas.';
-    console.error('[plan] asaas error', { endpoint, status: response.status, message });
     throw new Error(message);
   }
   return payload;
@@ -206,7 +201,7 @@ const buildSupabaseClients = (authHeader: string | null) => {
   return { authClient, serviceClient };
 };
 
-serve(async (req) => {
+serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
@@ -223,7 +218,7 @@ serve(async (req) => {
     const { data: authData, error: authError } = await authClient.auth.getUser();
 
     if (authError || !authData?.user) {
-      return new Response(JSON.stringify({ success: false, message: 'JWT inválido ou ausente.' }), {
+      return new Response(JSON.stringify({ success: false, message: 'JWT invalido ou ausente.' }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -234,13 +229,13 @@ serve(async (req) => {
     try {
       body = parseProcessPaymentBody(await req.json());
     } catch {
-      return new Response(JSON.stringify({ success: false, message: 'Payload inválido.' }), {
+      return new Response(JSON.stringify({ success: false, message: 'Payload invalido.' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
     if (!body) {
-      return new Response(JSON.stringify({ success: false, message: 'Payload inválido.' }), {
+      return new Response(JSON.stringify({ success: false, message: 'Payload invalido.' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -253,56 +248,50 @@ serve(async (req) => {
       paymentMethod,
       customer,
       address,
-      card,
     } = body ?? {};
 
     userId = typeof bodyUserId === 'string' ? bodyUserId : authData.user.id;
     if (!userId || userId !== authData.user.id) {
-      return new Response(JSON.stringify({ success: false, message: 'Usuário inválido.' }), {
+      return new Response(JSON.stringify({ success: false, message: 'Usuario invalido.' }), {
         status: 403,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
+    // Rate limiting: max 5 tentativas de pagamento por 10 minutos por usuário
+    stage = 'rate_limit';
+    const rateLimitResult = await checkRateLimit(serviceClient, userId, 'process_payment', 5, 10);
+    if (!rateLimitResult.allowed) {
+      return new Response(
+        JSON.stringify({ success: false, message: rateLimitResult.message || 'Muitas tentativas. Aguarde alguns minutos.' }),
+        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     stage = 'validate_payload';
     if (!planId || !isPlanId(planId)) {
-      return new Response(JSON.stringify({ success: false, message: 'Plano inválido.' }), {
+      return new Response(JSON.stringify({ success: false, message: 'Plano invalido.' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
     if (!billingCycle || !isBillingCycle(billingCycle)) {
-      return new Response(JSON.stringify({ success: false, message: 'Ciclo de cobrança inválido.' }), {
+      return new Response(JSON.stringify({ success: false, message: 'Ciclo de cobranca invalido.' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
     if (!paymentMethod || !isPaymentMethod(paymentMethod)) {
-      return new Response(JSON.stringify({ success: false, message: 'Forma de pagamento inválida.' }), {
+      return new Response(JSON.stringify({ success: false, message: 'Forma de pagamento invalida.' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
-    }
-
-    if (paymentMethod === 'PIX' && billingCycle === 'monthly') {
-      return new Response(
-        JSON.stringify({ success: false, message: 'Para planos mensais, o pagamento disponível é apenas cartão.' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
     }
 
     if (!customer.cpfCnpj || !address.postalCode) {
-      return new Response(JSON.stringify({ success: false, message: 'Dados obrigatórios ausentes.' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    const creditCardData = paymentMethod === 'CREDIT_CARD' ? card : undefined;
-    if (paymentMethod === 'CREDIT_CARD' && (!creditCardData?.number || !creditCardData?.cvv)) {
-      return new Response(JSON.stringify({ success: false, message: 'Dados do cartão inválidos.' }), {
+      return new Response(JSON.stringify({ success: false, message: 'Dados obrigatorios ausentes.' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -310,44 +299,35 @@ serve(async (req) => {
 
     const normalizedCpf = sanitizeDigits(customer.cpfCnpj);
     if (!isValidCpf(normalizedCpf)) {
-      return new Response(JSON.stringify({ success: false, message: 'CPF inválido.' }), {
+      return new Response(JSON.stringify({ success: false, message: 'CPF invalido.' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    const normalizedCard =
-      paymentMethod === 'CREDIT_CARD' && creditCardData ? sanitizeDigits(creditCardData.number) : '';
     const normalizedPhone = customer.mobilePhone && isValidPhone(customer.mobilePhone)
       ? sanitizeDigits(customer.mobilePhone)
       : undefined;
     const normalizedPostal = sanitizeDigits(address.postalCode);
     const phoneFormatted = normalizedPhone ? formatPhone(normalizedPhone) : undefined;
 
-    console.log('[plan] payload snapshot', {
-      paymentMethod,
-      billingCycle,
-      hasPhone: Boolean(normalizedPhone),
-      postalLen: normalizedPostal.length,
-    });
-
     if (!normalizedPhone) {
       return new Response(
-        JSON.stringify({ success: false, message: 'WhatsApp inválido. Atualize seus dados.' }),
+        JSON.stringify({ success: false, message: 'WhatsApp invalido. Atualize seus dados.' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     if (!normalizedPostal || normalizedPostal.length !== 8) {
       return new Response(
-        JSON.stringify({ success: false, message: 'CEP inválido. Atualize seu endereço.' }),
+        JSON.stringify({ success: false, message: 'CEP invalido. Atualize seu endereco.' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     if (!address.address || !address.addressNumber || !address.province || !address.city || !address.state) {
       return new Response(
-        JSON.stringify({ success: false, message: 'Endereço incompleto. Informe rua, número, bairro, cidade e UF.' }),
+        JSON.stringify({ success: false, message: 'Endereco incompleto. Informe rua, numero, bairro, cidade e UF.' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -362,11 +342,13 @@ serve(async (req) => {
 
       if (existingPhone && existingPhone.length > 0) {
         return new Response(
-          JSON.stringify({ success: false, message: 'WhatsApp já está em uso por outro usuário.' }),
+          JSON.stringify({ success: false, message: 'WhatsApp ja esta em uso por outro usuario.' }),
           { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
     }
+
+    // ── Criar/obter cliente no Asaas ──
 
     stage = 'load_customer';
     const { data: existingCustomer } = await serviceClient
@@ -393,7 +375,7 @@ serve(async (req) => {
         city: address.city,
         state: address.state,
         externalReference: userId,
-        notificationDisabled: true,
+        notificationDisabled: false,
       };
 
       const createdCustomer = await asaasRequest('/customers', 'POST', customerPayload);
@@ -434,60 +416,40 @@ serve(async (req) => {
         city: address.city,
         state: address.state,
         externalReference: userId,
-        notificationDisabled: true,
+        notificationDisabled: false,
       });
     }
 
     if (!customerRowId) {
-      throw new Error('Cliente não encontrado para cobrança.');
+      throw new Error('Cliente nao encontrado para cobranca.');
     }
+
+    // ── Calcular precos ──
 
     const prices = PLAN_PRICES[planId];
     const baseTotal = prices[billingCycle];
     const discountRate = paymentMethod === 'PIX' ? 0.03 : 0;
     const discountAmount = Number((baseTotal * discountRate).toFixed(2));
     const totalValue = Number((baseTotal - discountAmount).toFixed(2));
-    const subscriptionDurationMonths =
-      billingCycle === 'monthly' ? 1 : billingCycle === 'semiannual' ? 6 : 12;
-    const installmentCount = subscriptionDurationMonths;
-    const installmentValue = Number((baseTotal / installmentCount).toFixed(2));
     const externalReference = `${userId}-${planId}-${Date.now()}`;
 
-    const creditCard = paymentMethod === 'CREDIT_CARD'
-      ? {
-          holderName: creditCardData!.holderName,
-          number: normalizedCard,
-          expiryMonth: creditCardData!.expiryMonth,
-          expiryYear: creditCardData!.expiryYear,
-          ccv: creditCardData!.cvv,
-        }
-      : null;
+    // ══════════════════════════════════════════════════════════════
+    // ASSINATURA MENSAL — via checkout hospedado (sem dados de cartao)
+    // ══════════════════════════════════════════════════════════════
 
-    const creditCardHolderInfo = {
-      name: customer.name,
-      email: customer.email,
-      cpfCnpj: normalizedCpf,
-      phone: normalizedPhone,
-      postalCode: normalizedPostal,
-      addressNumber: address.addressNumber,
-      address: address.address,
-      province: address.province,
-      city: address.city,
-      complement: address.complement,
-      state: address.state,
-    };
-
-    if (billingCycle === 'monthly' && paymentMethod === 'CREDIT_CARD') {
+    if (billingCycle === 'monthly') {
       stage = 'create_subscription';
+
+      // Criar assinatura SEM dados de cartao.
+      // O Asaas gera um payment com invoiceUrl para checkout hospedado.
       const subscriptionPayload = {
         customer: asaasCustomerId,
-        billingType: 'CREDIT_CARD',
+        billingType: paymentMethod,
         value: totalValue,
         cycle: 'MONTHLY',
         description: `Assinatura Mensal - Plano ${planId.toUpperCase()}`,
         externalReference,
-        creditCard,
-        creditCardHolderInfo,
+        // SEM creditCard / creditCardHolderInfo
       };
 
       const subscription = await asaasRequest('/subscriptions', 'POST', subscriptionPayload);
@@ -510,7 +472,12 @@ serve(async (req) => {
           next_due_date: nextDueDate,
           expires_at: expiresAt.toISOString(),
           auto_renew: true,
-          metadata: { asaas_response: subscription },
+          metadata: {
+            asaas_subscription_id: subscription.id,
+            asaas_status: subscription.status,
+            cycle: subscription.cycle,
+            next_due_date: subscription.nextDueDate,
+          },
         })
         .select('id')
         .single();
@@ -522,15 +489,42 @@ serve(async (req) => {
 
       // ── Buscar o primeiro pagamento gerado pela assinatura ──
       let firstPaymentId: string | null = subscription?.payment?.id ?? null;
+      let invoiceUrl: string | null = subscription?.payment?.invoiceUrl ?? null;
+
       if (!firstPaymentId) {
         try {
           const paymentsData = await asaasRequest(
             `/subscriptions/${subscription.id}/payments?limit=1`,
             'GET'
           );
-          firstPaymentId = paymentsData?.data?.[0]?.id ?? null;
+          const firstPayment = paymentsData?.data?.[0];
+          firstPaymentId = firstPayment?.id ?? null;
+          invoiceUrl = firstPayment?.invoiceUrl ?? null;
         } catch {
-          // Se não conseguir buscar, prossegue sem — o check-payment-status cobre
+          // Se nao conseguir buscar, prossegue sem
+        }
+      }
+
+      // Se temos paymentId mas nao invoiceUrl, buscar o payment direto
+      if (firstPaymentId && !invoiceUrl) {
+        try {
+          const paymentDetail = await asaasRequest(`/payments/${firstPaymentId}`, 'GET');
+          invoiceUrl = paymentDetail?.invoiceUrl ?? null;
+        } catch {
+          // silent
+        }
+      }
+
+      // ── Buscar QR code PIX se metodo for PIX ──
+      let pixQrCode: string | null = null;
+      let pixCopyPaste: string | null = null;
+      if (paymentMethod === 'PIX' && firstPaymentId) {
+        try {
+          const pixData = await asaasRequest(`/payments/${firstPaymentId}/pixQrCode`, 'GET');
+          pixQrCode = pixData?.encodedImage ?? null;
+          pixCopyPaste = pixData?.payload ?? null;
+        } catch {
+          // PIX QR nao disponivel, usuario usara invoiceUrl
         }
       }
 
@@ -544,12 +538,15 @@ serve(async (req) => {
           payment_type: 'subscription',
           subscription_id: subscriptionRow.id,
           value: totalValue,
-          billing_type: 'CREDIT_CARD',
+          billing_type: paymentMethod,
           status: 'pending',
           description: `Assinatura Mensal - Plano ${planId.toUpperCase()}`,
           external_reference: externalReference,
+          invoice_url: invoiceUrl,
+          pix_qr_code: pixQrCode,
+          pix_copy_paste: pixCopyPaste,
           metadata: {
-            asaas_response: subscription,
+            asaas_subscription_id: subscription.id,
             is_monthly: true,
           },
         });
@@ -561,13 +558,20 @@ serve(async (req) => {
           status: 'PENDING',
           subscriptionId: subscriptionRow.id,
           paymentId: firstPaymentId ?? undefined,
+          invoiceUrl: invoiceUrl ?? undefined,
+          pixQrCode: pixQrCode ?? undefined,
+          pixCopyPaste: pixCopyPaste ?? undefined,
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
+    // ══════════════════════════════════════════════════════════════
+    // PAGAMENTO UNICO (anual) — via checkout hospedado
+    // ══════════════════════════════════════════════════════════════
+
     const subscriptionExpiresAt = new Date();
-    subscriptionExpiresAt.setMonth(subscriptionExpiresAt.getMonth() + subscriptionDurationMonths);
+    subscriptionExpiresAt.setMonth(subscriptionExpiresAt.getMonth() + 12);
 
     stage = 'insert_subscription';
     const { data: subscriptionRow, error: subscriptionRowError } = await serviceClient
@@ -592,24 +596,19 @@ serve(async (req) => {
     const dueDate = new Date();
     dueDate.setDate(dueDate.getDate() + 1);
 
-    const paymentDescription =
-      billingCycle === 'monthly'
-        ? 'Plano Mensal'
-        : billingCycle === 'semiannual'
-          ? 'Plano Semestral'
-          : 'Plano Anual';
+    const paymentDescription = 'Plano Anual';
 
-    const paymentPayload = {
+    // Criar pagamento SEM dados de cartao.
+    // O Asaas retorna invoiceUrl para checkout hospedado.
+    const paymentPayload: Record<string, unknown> = {
       customer: asaasCustomerId,
       billingType: paymentMethod,
       value: totalValue,
       description: paymentDescription,
       dueDate: dueDate.toISOString().split('T')[0],
       externalReference,
-      installmentCount: paymentMethod === 'CREDIT_CARD' ? installmentCount : undefined,
-      installmentValue: paymentMethod === 'CREDIT_CARD' ? installmentValue : undefined,
-      creditCard: paymentMethod === 'CREDIT_CARD' ? creditCard : undefined,
-      creditCardHolderInfo: paymentMethod === 'CREDIT_CARD' ? creditCardHolderInfo : undefined,
+      // SEM creditCard / creditCardHolderInfo / installmentCount
+      // O parcelamento e feito na pagina do Asaas pelo cliente
     };
 
     stage = 'create_payment';
@@ -619,9 +618,13 @@ serve(async (req) => {
 
     if (paymentMethod === 'PIX') {
       stage = 'fetch_pix_qr';
-      const pixData = await asaasRequest(`/payments/${payment.id}/pixQrCode`, 'GET');
-      pixQrCode = pixData?.encodedImage ?? null;
-      pixCopyPaste = pixData?.payload ?? null;
+      try {
+        const pixData = await asaasRequest(`/payments/${payment.id}/pixQrCode`, 'GET');
+        pixQrCode = pixData?.encodedImage ?? null;
+        pixCopyPaste = pixData?.payload ?? null;
+      } catch {
+        // PIX QR nao disponivel, usuario usara invoiceUrl
+      }
     }
 
     stage = 'insert_payment';
@@ -636,13 +639,12 @@ serve(async (req) => {
       status: payment.status?.toLowerCase() ?? 'pending',
       due_date: payment.dueDate ?? paymentPayload.dueDate,
       invoice_url: payment.invoiceUrl ?? null,
-      pix_qr_code: pixQrCode ?? payment.encodedImage ?? null,
-      pix_copy_paste: pixCopyPaste ?? payment.payload ?? null,
-      installment_count: installmentCount,
-      description: paymentPayload.description,
+      pix_qr_code: pixQrCode ?? null,
+      pix_copy_paste: pixCopyPaste ?? null,
+      description: paymentPayload.description as string,
       external_reference: externalReference,
       metadata: {
-        asaas_response: payment,
+        asaas_payment_id: payment.id,
         base_price: baseTotal,
         discount_rate: discountRate,
         discount_amount: discountAmount,
@@ -662,8 +664,9 @@ serve(async (req) => {
         status: 'PENDING',
         paymentId: payment.id,
         subscriptionId: subscriptionRow.id,
-        pixQrCode: pixQrCode ?? payment.encodedImage ?? null,
-        pixCopyPaste: pixCopyPaste ?? payment.payload ?? null,
+        invoiceUrl: payment.invoiceUrl ?? null,
+        pixQrCode: pixQrCode ?? null,
+        pixCopyPaste: pixCopyPaste ?? null,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
@@ -676,11 +679,11 @@ serve(async (req) => {
           action: 'process_plan_error',
           performed_by: userId,
           performed_by_type: 'user',
-      reason: getErrorMessage(error),
+          reason: getErrorMessage(error),
           changes: { stage },
         });
       } catch {
-        // silêncio para não mascarar erro principal
+        // silencio para nao mascarar erro principal
       }
     }
     return new Response(

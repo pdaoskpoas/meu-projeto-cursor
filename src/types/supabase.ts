@@ -1,35 +1,44 @@
 // Tipos principais do Supabase
-export interface Profile {
+
+// Perfil PÚBLICO - SEM dados sensíveis (usado para exibir perfis de outros usuários)
+// Corresponde à VIEW public_profiles no banco de dados
+export interface PublicProfile {
   id: string
   name: string
-  email: string
-  cpf: string | null
-  phone: string | null
   avatar_url: string | null
   account_type: 'personal' | 'institutional'
   property_name: string | null
   property_type: 'haras' | 'fazenda' | 'cte' | 'central-reproducao' | null
   property_id: string | null
   public_code: string | null
-  plan: 'free' | 'basic' | 'pro' | 'ultra' | 'vip'
-  plan_expires_at: string | null
-  plan_purchased_at: string | null
-  is_annual_plan: boolean
-  available_boosts: number
-  boosts_reset_at: string | null
-  role: 'user' | 'admin'
-  is_active: boolean
-  is_suspended: boolean
+  plan: 'free' | 'essencial' | 'criador' | 'haras' | 'elite' | 'vip' | 'basic' | 'pro' | 'ultra'
   city: string | null
   state: string | null
   country: string | null
   founded_year: string | null
   owner_name: string | null
   bio: string | null
-  cep: string | null
   instagram: string | null
+  is_active: boolean
+  is_suspended: boolean
   created_at: string
+}
+
+// Perfil COMPLETO - Inclui PII (usado APENAS para o próprio usuário logado ou admin)
+export interface Profile extends PublicProfile {
+  email: string
+  cpf: string | null
+  phone: string | null
+  cep: string | null
+  plan_expires_at: string | null
+  plan_purchased_at: string | null
+  is_annual_plan: boolean
+  available_boosts: number
+  boosts_reset_at: string | null
+  role: 'user' | 'admin'
   updated_at: string
+  marketing_consent: boolean
+  marketing_consent_at: string | null
 }
 
 export interface Animal {
@@ -187,7 +196,9 @@ export interface ProfileInsert {
   property_type?: 'haras' | 'fazenda' | 'cte' | 'central-reproducao' | null
   property_id?: string | null
   public_code?: string | null
-  plan?: 'free' | 'basic' | 'pro' | 'ultra' | 'vip'
+  plan?: 'free' | 'essencial' | 'criador' | 'haras' | 'elite' | 'vip' | 'basic' | 'pro' | 'ultra'
+  marketing_consent?: boolean
+  marketing_consent_at?: string | null
 }
 
 export interface AnimalInsert {

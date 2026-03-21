@@ -1,5 +1,6 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { checkRateLimit } from '../_shared/asaasPaymentUtils.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -138,7 +139,8 @@ serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
-    const { userId: bodyUserId, contentId, contentType, billingType, customer, address, card } = body ?? {};
+    // card removido do destructuring - dados de cartao NUNCA aceitos
+    const { userId: bodyUserId, contentId, contentType, billingType, customer, address } = body ?? {};
     userId = typeof bodyUserId === 'string' ? bodyUserId : authData.user.id;
 
     if (!userId || userId !== authData.user.id) {
@@ -146,6 +148,16 @@ serve(async (req) => {
         status: 403,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
+    }
+
+    // Rate limiting: max 5 tentativas por 10 minutos por usuário
+    stage = 'rate_limit';
+    const rateLimitResult = await checkRateLimit(serviceClient, userId, 'process_individual_payment', 5, 10);
+    if (!rateLimitResult.allowed) {
+      return new Response(
+        JSON.stringify({ success: false, message: rateLimitResult.message || 'Muitas tentativas. Aguarde alguns minutos.' }),
+        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     stage = 'validate_payload';
@@ -156,7 +168,7 @@ serve(async (req) => {
       });
     }
 
-    if (!['PIX', 'CREDIT_CARD'].includes(billingType)) {
+    if (!['PIX', 'CREDIT_CARD', 'BOLETO'].includes(billingType)) {
       return new Response(JSON.stringify({ success: false, message: 'Forma de pagamento inválida.' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -334,36 +346,8 @@ serve(async (req) => {
       externalReference: `${contentType}-${contentId}-${userId}-${Date.now()}`,
     };
 
-    if (billingType === 'CREDIT_CARD') {
-      if (!card?.number || !card?.cvv || !card?.holderName) {
-        return new Response(
-          JSON.stringify({ success: false, message: 'Dados do cartão são obrigatórios.' }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-
-      const normalizedCard = sanitizeDigits(card.number);
-      paymentPayload.creditCard = {
-        holderName: card.holderName,
-        number: normalizedCard,
-        expiryMonth: card.expiryMonth,
-        expiryYear: card.expiryYear,
-        ccv: card.cvv,
-      };
-      paymentPayload.creditCardHolderInfo = {
-        name: resolvedCustomer.name,
-        email: resolvedCustomer.email,
-        cpfCnpj: sanitizeDigits(resolvedCustomer.cpfCnpj),
-        phone: normalizedPhone,
-        postalCode: normalizedPostal,
-        addressNumber: resolvedAddress.addressNumber,
-        address: resolvedAddress.address,
-        complement: resolvedAddress.complement,
-        province: resolvedAddress.province,
-        city: resolvedAddress.city,
-        state: resolvedAddress.state,
-      };
-    }
+    // Payload SEM creditCard / creditCardHolderInfo
+    // O pagamento via cartao e feito pelo checkout hospedado (invoiceUrl)
 
     const payment = await asaasRequest('/payments', 'POST', paymentPayload);
     let pixQrCode: string | null = null;

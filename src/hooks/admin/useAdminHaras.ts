@@ -10,7 +10,7 @@ export interface AdminHarasProfile {
   city?: string;
   state?: string;
   phone?: string;
-  plan: 'free' | 'basic' | 'pro' | 'ultra' | 'vip';
+  plan: 'free' | 'essencial' | 'criador' | 'haras' | 'elite' | 'vip' | 'basic' | 'pro' | 'ultra';
   planExpiresAt?: string;
   isActive: boolean;
   isSuspended: boolean;

@@ -206,10 +206,10 @@ const HarasPage = () => {
       setLoading(true);
       setErrorMessage(null);
       try {
-        // Buscar perfil do usuário
+        // Buscar perfil do usuário (view pública - sem dados sensíveis)
         const { data: profileData, error: profileError } = await withTimeout(
           supabase
-            .from('profiles')
+            .from('public_profiles')
             .select('*')
             .eq('id', id)
             .single(),
@@ -359,7 +359,7 @@ const HarasPage = () => {
     owner: (profile.owner_name as string) || profile.name || 'Não informado',
     description: (profile.bio as string) || 'Informações não disponíveis.',
     instagram: (profile.instagram as string | null) || null,
-    verified: normalizedPlan === 'pro' || normalizedPlan === 'ultra' || normalizedPlan === 'vip',
+    verified: normalizedPlan === 'criador' || normalizedPlan === 'haras' || normalizedPlan === 'elite' || normalizedPlan === 'vip',
     subscription: normalizedPlan || 'free',
     logo: profile.avatar_url as string | undefined,
   } : null;

@@ -35,9 +35,9 @@ const ShortHarasRedirect: React.FC = () => {
       }
 
       try {
-        // Buscar o perfil pelo public_code
+        // Buscar o perfil pelo public_code (view pública - sem PII)
         const { data, error: fetchError } = await supabase
-          .from('profiles')
+          .from('public_profiles')
           .select('id, property_name, name, account_type')
           .eq('public_code', code.toUpperCase())
           .maybeSingle();

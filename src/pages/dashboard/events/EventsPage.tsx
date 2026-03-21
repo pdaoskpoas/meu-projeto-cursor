@@ -12,7 +12,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import CreateEventModal from '@/components/events/CreateEventModal';
 import BoostCountdown from '@/components/BoostCountdown';
-import BoostPlansModal from '@/components/BoostPlansModal';
 import PurchaseBoostsModal from '@/components/payment/PurchaseBoostsModal';
 import { eventLimitsService } from '@/services/eventLimitsService';
 import { boostService } from '@/services/boostService';
@@ -51,9 +50,7 @@ const EventsPage = () => {
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showBoostPlansModal, setShowBoostPlansModal] = useState(false);
   const [showBoostCheckout, setShowBoostCheckout] = useState(false);
-  const [selectedBoostQty, setSelectedBoostQty] = useState<number>(1);
   const [events, setEvents] = useState<UserEvent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { boosts, refreshBoosts } = useUserBoosts();
@@ -177,7 +174,7 @@ const EventsPage = () => {
 
     // Se não tem boosts, abre modal de compra
     if (boosts.total === 0) {
-      setShowBoostPlansModal(true);
+      setShowBoostCheckout(true);
       return;
     }
 
@@ -279,11 +276,11 @@ const EventsPage = () => {
                 <span className="text-gray-600">Turbinar Disponíveis</span>
               </div>
               <p className="text-gray-600 text-sm">
-                Tenha seu evento ou animal em destaque por 24h! Os créditos são compartilhados entre eventos e animais.
+                Tenha seu evento ou animal em destaque! Os créditos são compartilhados entre eventos e animais.
               </p>
             </div>
             <Button
-              onClick={() => setShowBoostPlansModal(true)}
+              onClick={() => setShowBoostCheckout(true)}
               className="w-full sm:w-auto bg-purple-600 hover:bg-purple-700 min-h-11"
             >
               Comprar Turbinar
@@ -537,25 +534,11 @@ const EventsPage = () => {
           onSuccess={handleCreateSuccess}
         />
 
-        {/* Modal de compra de boosts */}
-        <BoostPlansModal
-          isOpen={showBoostPlansModal}
-          onClose={() => setShowBoostPlansModal(false)}
-          onSelectPlan={(plan) => {
-            const quantities = { single: 1, popular: 5, prime: 10 };
-            setSelectedBoostQty(quantities[plan]);
-            setShowBoostPlansModal(false);
-            setShowBoostCheckout(true);
-          }}
-          type="event"
-        />
-
+        {/* Modal de compra de turbinar (duração) */}
         <PurchaseBoostsModal
           isOpen={showBoostCheckout}
           onClose={() => setShowBoostCheckout(false)}
           userId={user?.id || ''}
-          initialQuantity={selectedBoostQty}
-          lockQuantity
           onSuccess={() => {
             refreshBoosts();
             setShowBoostCheckout(false);

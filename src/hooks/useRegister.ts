@@ -13,6 +13,7 @@ interface RegisterData {
   phone: string;
   password: string;
   confirmPassword: string;
+  marketingConsent?: boolean;
 }
 
 interface UseRegisterReturn {
@@ -77,7 +78,8 @@ export const useRegister = (): UseRegisterReturn => {
         cpf,
         email,
         phone,
-        password
+        password,
+        marketingConsent: data.marketingConsent ?? false
       };
       
       const success = await register(registerData);
@@ -91,14 +93,35 @@ export const useRegister = (): UseRegisterReturn => {
       } else {
         toast({
           title: "Erro no cadastro",
-          description: "Este email já está em uso.",
+          description: "Não foi possível criar a conta. Tente novamente.",
           variant: "destructive"
         });
       }
     } catch (error) {
+      // handleSupabaseError retorna objeto simples, não Error — tratar ambos
+      const message = error instanceof Error
+        ? error.message
+        : (error as { message?: string })?.message ?? String(error);
+
+      console.error('[useRegister] Registration error:', message);
+
+      let title = "Erro no cadastro";
+      let description = message || "Tente novamente em alguns instantes.";
+
+      if (message.includes('Email já cadastrado') || message.includes('already registered')) {
+        description = "Este e-mail já está em uso.";
+      } else if (message.includes('CPF já cadastrado')) {
+        description = "Este CPF já está em uso.";
+      } else if (message.toLowerCase().includes('suspenso')) {
+        title = "Conta suspensa";
+        description = "Usuário suspenso. Entre em contato com o suporte.";
+      } else if (message.includes('consentimento')) {
+        description = "Falha ao registrar consentimento. Tente novamente.";
+      }
+
       toast({
-        title: "Erro no sistema",
-        description: "Tente novamente em alguns instantes.",
+        title,
+        description,
         variant: "destructive"
       });
     } finally {

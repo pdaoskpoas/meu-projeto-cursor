@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
-import { 
-  User, 
-  Lock, 
-  Mail, 
-  Phone, 
-  Building, 
+import {
+  User,
+  Lock,
+  Mail,
+  Phone,
+  Building,
   Save,
   Eye,
   EyeOff,
@@ -16,7 +16,9 @@ import {
   Bell,
   CheckCircle2,
   AlertCircle,
-  Trash2
+  Trash2,
+  Download,
+  Loader2
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -66,7 +68,7 @@ const SettingsPage = () => {
     emailNewAnimal: false,
     emailEventUpdate: true,
     emailPartnership: true,
-    emailMarketing: false,
+    emailMarketing: user?.marketingConsent ?? false,
     pushNotifications: true
   });
 
@@ -337,13 +339,49 @@ const SettingsPage = () => {
     }
   };
 
-  const handleSaveNotifications = () => {
-    // In real app, this would update notification preferences
-    toast({
-      title: "Preferências de notificações salvas",
-      description: "Suas preferências foram atualizadas com sucesso.",
-    });
-    setHasUnsavedChanges({...hasUnsavedChanges, notifications: false});
+  const handleSaveNotifications = async () => {
+    if (!user?.id) return;
+    try {
+      // Persistir marketing_consent no banco
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          marketing_consent: notificationPreferences.emailMarketing,
+          marketing_consent_at: new Date().toISOString()
+        })
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      // Registrar alteracao de consentimento no consent_logs
+      await supabase.rpc('record_consent', {
+        p_user_id: user.id,
+        p_terms_version: '1.0',
+        p_privacy_version: '1.0',
+        p_ip_address: null,
+        p_user_agent: navigator.userAgent,
+        p_mechanism: notificationPreferences.emailMarketing
+          ? 'marketing_opt_in_settings'
+          : 'marketing_opt_out_settings',
+        p_metadata: {
+          marketing_consent: notificationPreferences.emailMarketing,
+          changed_at: new Date().toISOString()
+        }
+      });
+
+      toast({
+        title: "Preferencias de notificacoes salvas",
+        description: "Suas preferencias foram atualizadas com sucesso.",
+      });
+      setHasUnsavedChanges({...hasUnsavedChanges, notifications: false});
+    } catch (error) {
+      console.error('Erro ao salvar preferencias:', error);
+      toast({
+        title: "Erro ao salvar",
+        description: "Nao foi possivel salvar as preferencias.",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleChangePassword = () => {
@@ -378,13 +416,106 @@ const SettingsPage = () => {
     });
   };
 
+  // === LGPD: Exclusão de conta ===
+  const navigate = useNavigate();
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletePassword, setDeletePassword] = useState('');
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [exportLoading, setExportLoading] = useState(false);
+
   const handleDeleteAccount = () => {
-    // Confirmação adicional necessária
-    toast({
-      title: "Atenção",
-      description: "Entre em contato com o suporte para excluir sua conta.",
-      variant: "destructive"
-    });
+    setShowDeleteModal(true);
+    setDeletePassword('');
+  };
+
+  const confirmDeleteAccount = async () => {
+    if (!deletePassword) {
+      toast({ title: 'Erro', description: 'Digite sua senha para confirmar.', variant: 'destructive' });
+      return;
+    }
+
+    setDeleteLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast({ title: 'Erro', description: 'Sessão expirada. Faça login novamente.', variant: 'destructive' });
+        return;
+      }
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/delete-account`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+          },
+          body: JSON.stringify({ password: deletePassword }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        toast({ title: 'Erro', description: result.error || 'Falha ao excluir conta.', variant: 'destructive' });
+        return;
+      }
+
+      await supabase.auth.signOut();
+      navigate('/');
+      toast({ title: 'Conta excluída', description: 'Sua conta e todos os dados foram removidos.' });
+    } catch {
+      toast({ title: 'Erro', description: 'Erro de conexão. Tente novamente.', variant: 'destructive' });
+    } finally {
+      setDeleteLoading(false);
+      setShowDeleteModal(false);
+    }
+  };
+
+  // === LGPD: Exportação de dados ===
+  const handleExportData = async () => {
+    setExportLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast({ title: 'Erro', description: 'Sessão expirada.', variant: 'destructive' });
+        return;
+      }
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/export-user-data`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        toast({ title: 'Erro', description: 'Falha ao exportar dados.', variant: 'destructive' });
+        return;
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `meus-dados-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+
+      toast({ title: 'Dados exportados', description: 'O download do arquivo JSON foi iniciado.' });
+    } catch {
+      toast({ title: 'Erro', description: 'Erro de conexão. Tente novamente.', variant: 'destructive' });
+    } finally {
+      setExportLoading(false);
+    }
   };
 
   return (
@@ -1045,6 +1176,38 @@ const SettingsPage = () => {
                 </div>
               </Card>
 
+              {/* LGPD: Seus Dados */}
+              <Card className="bg-white shadow-lg border-l-4 border-l-blue-500">
+                <div className="p-6 border-b border-gray-200">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                      <Download className="h-5 w-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <h2 className="text-xl font-semibold text-gray-900">Seus Dados</h2>
+                      <p className="text-sm text-gray-600">Exporte ou gerencie seus dados pessoais (LGPD)</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-gray-900">Exportar meus dados</p>
+                      <p className="text-xs text-gray-500">Baixe todos os seus dados em formato JSON (perfil, animais, eventos, mensagens, pagamentos)</p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      onClick={handleExportData}
+                      disabled={exportLoading}
+                      className="border-blue-600 text-blue-600 hover:bg-blue-50"
+                    >
+                      {exportLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
+                      {exportLoading ? 'Exportando...' : 'Exportar Dados'}
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+
               {/* Delete Account Card */}
               <Card className="bg-white shadow-lg border-l-4 border-l-red-500">
                 <div className="p-6 border-b border-gray-200">
@@ -1058,7 +1221,7 @@ const SettingsPage = () => {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="p-6">
                   <Alert className="bg-red-50 border-red-200 mb-4">
                     <AlertCircle className="h-4 w-4 text-red-600" />
@@ -1072,8 +1235,8 @@ const SettingsPage = () => {
                       <p className="text-sm font-medium text-gray-900">Excluir conta</p>
                       <p className="text-xs text-gray-500">Remova permanentemente sua conta e todos os dados associados</p>
                     </div>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       onClick={handleDeleteAccount}
                       className="border-red-600 text-red-600 hover:bg-red-50"
                     >
@@ -1083,6 +1246,63 @@ const SettingsPage = () => {
                   </div>
                 </div>
               </Card>
+
+              {/* Modal de confirmação de exclusão */}
+              {showDeleteModal && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                  <Card className="bg-white max-w-md w-full">
+                    <div className="p-6">
+                      <div className="flex items-center space-x-3 mb-4">
+                        <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                          <AlertCircle className="h-5 w-5 text-red-600" />
+                        </div>
+                        <h3 className="text-lg font-semibold text-gray-900">Confirmar exclusão da conta</h3>
+                      </div>
+
+                      <p className="text-sm text-gray-600 mb-4">
+                        Esta ação é <strong>irreversível</strong>. Todos os seus dados serão permanentemente removidos, incluindo:
+                      </p>
+                      <ul className="text-sm text-gray-600 mb-4 list-disc pl-5 space-y-1">
+                        <li>Perfil e dados pessoais</li>
+                        <li>Animais cadastrados e fotos</li>
+                        <li>Eventos criados</li>
+                        <li>Histórico de mensagens</li>
+                        <li>Pagamentos e transações</li>
+                      </ul>
+
+                      <p className="text-sm font-medium text-gray-900 mb-2">Digite sua senha para confirmar:</p>
+                      <Input
+                        type="password"
+                        placeholder="Sua senha atual"
+                        value={deletePassword}
+                        onChange={(e) => setDeletePassword(e.target.value)}
+                        className="mb-4"
+                        autoFocus
+                      />
+
+                      <div className="flex space-x-3">
+                        <Button
+                          variant="outline"
+                          onClick={() => setShowDeleteModal(false)}
+                          className="flex-1"
+                          disabled={deleteLoading}
+                        >
+                          Cancelar
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          onClick={confirmDeleteAccount}
+                          disabled={deleteLoading || !deletePassword}
+                          className="flex-1"
+                        >
+                          {deleteLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Trash2 className="h-4 w-4 mr-2" />}
+                          {deleteLoading ? 'Excluindo...' : 'Excluir definitivamente'}
+                        </Button>
+                      </div>
+                    </div>
+                  </Card>
+                </div>
+              )}
             </TabsContent>
           </Tabs>
         </div>

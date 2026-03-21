@@ -1,27 +1,51 @@
-export type CheckoutPlanId = 'basic' | 'pro' | 'ultra';
-export type CheckoutBillingCycle = 'monthly' | 'semiannual' | 'annual';
+export type CheckoutPlanId = 'essencial' | 'criador' | 'haras' | 'elite';
+export type CheckoutBillingCycle = 'monthly' | 'annual';
 
 export interface CheckoutPlan {
   id: CheckoutPlanId;
   name: string;
   description: string;
   monthlyPrice: number;
-  semiannualTotal: number;
   annualTotal: number;
+  animalLimit: number;
+  boostsPerMonth: number;
   highlights: string[];
   popular?: boolean;
 }
 
+/**
+ * Preços dos turbinares avulsos (por duração)
+ */
+export type BoostDuration = '24h' | '3d' | '7d';
+
+export interface BoostTier {
+  duration: BoostDuration;
+  label: string;
+  hours: number;
+  price: number;
+}
+
+export const BOOST_TIERS: BoostTier[] = [
+  { duration: '24h', label: '24 horas', hours: 24, price: 19.90 },
+  { duration: '3d', label: '3 dias', hours: 72, price: 49.90 },
+  { duration: '7d', label: '7 dias', hours: 168, price: 89.90 },
+];
+
+export const getBoostTier = (duration: BoostDuration): BoostTier => {
+  return BOOST_TIERS.find(t => t.duration === duration) ?? BOOST_TIERS[0];
+};
+
 export const CHECKOUT_PLANS: CheckoutPlan[] = [
   {
-    id: 'basic',
-    name: 'Iniciante',
+    id: 'essencial',
+    name: 'Essencial',
     description: 'Para quem está começando',
-    monthlyPrice: 97,
-    semiannualTotal: 97 * 6,
-    annualTotal: 776,
+    monthlyPrice: 39.90,
+    annualTotal: 399.00,
+    animalLimit: 1,
+    boostsPerMonth: 0,
     highlights: [
-      'Até 10 anúncios ativos',
+      'Até 1 animal ativo',
       'Aparece no mapa interativo',
       'Perfil completo com link para Instagram',
       'Sistema completo de sociedades',
@@ -30,14 +54,16 @@ export const CHECKOUT_PLANS: CheckoutPlan[] = [
     ],
   },
   {
-    id: 'pro',
-    name: 'Pro',
-    description: 'Mais vendido',
-    monthlyPrice: 147,
-    semiannualTotal: 147 * 6,
-    annualTotal: 882,
+    id: 'criador',
+    name: 'Criador',
+    description: 'Para criadores em crescimento',
+    monthlyPrice: 97.90,
+    annualTotal: 997.00,
+    animalLimit: 5,
+    boostsPerMonth: 2,
     highlights: [
-      'Até 15 anúncios ativos',
+      'Até 5 animais ativos',
+      '2 turbinares grátis por mês',
       'Destaque nos resultados',
       'Aparece no topo do mapa interativo',
       'Perfil avançado verificado',
@@ -45,28 +71,48 @@ export const CHECKOUT_PLANS: CheckoutPlan[] = [
       'Sistema completo de sociedades',
       'Relatórios detalhados de performance',
       'Suporte prioritário por e-mail e tickets',
-      '2 turbinares grátis por mês',
+    ],
+  },
+  {
+    id: 'haras',
+    name: 'Haras Destaque',
+    description: 'Para haras e criadores profissionais',
+    monthlyPrice: 197.90,
+    annualTotal: 1997.00,
+    animalLimit: 10,
+    boostsPerMonth: 5,
+    highlights: [
+      'Até 10 animais ativos',
+      '5 turbinares grátis por mês',
+      'Máxima visibilidade e destaque',
+      'Posição privilegiada no mapa',
+      'Perfil Haras com selo premium',
+      'Integração completa com redes sociais',
+      'Sistema completo de sociedades',
+      'Analytics avançados e insights',
+      'Suporte VIP dedicado',
     ],
     popular: true,
   },
   {
-    id: 'ultra',
+    id: 'elite',
     name: 'Elite',
     description: 'Para quem quer o máximo',
-    monthlyPrice: 247,
-    semiannualTotal: 247 * 6,
-    annualTotal: 1482,
+    monthlyPrice: 397.90,
+    annualTotal: 3997.00,
+    animalLimit: 25,
+    boostsPerMonth: 10,
     highlights: [
-      'Até 25 anúncios ativos',
+      'Até 25 animais ativos',
+      '10 turbinares grátis por mês',
       'Máxima visibilidade e destaque',
       'Posição privilegiada no mapa',
-      'Perfil Elite com selo premium',
+      'Perfil Elite com selo exclusivo',
       'Integração completa com redes sociais',
       'Sistema completo de sociedades',
       'Analytics avançados e insights',
       'Suporte VIP dedicado',
       'Consultoria de marketing digital',
-      '5 turbinares grátis por mês',
     ],
   },
 ];
@@ -78,12 +124,10 @@ export const getPlanById = (planId: string | null | undefined): CheckoutPlan | n
 
 export const getPlanPrice = (plan: CheckoutPlan, cycle: CheckoutBillingCycle): number => {
   if (cycle === 'monthly') return plan.monthlyPrice;
-  if (cycle === 'semiannual') return plan.semiannualTotal;
   return plan.annualTotal;
 };
 
 export const getInstallmentCount = (cycle: CheckoutBillingCycle): number => {
-  if (cycle === 'semiannual') return 6;
   if (cycle === 'annual') return 12;
   return 1;
 };

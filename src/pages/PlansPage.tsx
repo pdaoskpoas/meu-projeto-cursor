@@ -1,6 +1,5 @@
 // src/pages/PlansPage.tsx
-// Página de Planos e Preços - Standalone (sem menu lateral)
-// Inspirada em Canva, Notion, Figma - Clean & Conversão
+// Página de Planos e Preços - Modelo 100% baseado em planos
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -8,8 +7,6 @@ import { Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import AppHeader from '@/components/layout/AppHeader';
-import AppFooter from '@/components/layout/AppFooter';
 import { CHECKOUT_PLANS, type CheckoutBillingCycle } from '@/constants/checkoutPlans';
 
 const PlansPage = () => {
@@ -32,26 +29,28 @@ const PlansPage = () => {
     description: plan.description,
     monthlyPrice: plan.monthlyPrice,
     annualPrice: plan.annualTotal,
-    monthlyDiscount: null,
-    annualDiscount: null,
     features: plan.highlights,
     cta: 'Começar',
     popular: plan.popular ?? false,
   }));
 
+  const formatPrice = (price: number) => {
+    return price.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  };
+
   return (
-    <div className="min-h-screen flex flex-col bg-white">
-      <AppHeader />
-      
-      <main className="flex-1">
-        {/* Hero Section */}
+    <div className="flex flex-col bg-white">
+      {/* Hero Section */}
         <div className="bg-gradient-to-b from-blue-50 to-white py-16 px-4">
           <div className="max-w-4xl mx-auto text-center">
             <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
               Planos e Preços
             </h1>
-            <p className="text-xl text-gray-600 mb-8">
+            <p className="text-xl text-gray-600 mb-2">
               Escolha o plano ideal para seu negócio
+            </p>
+            <p className="text-sm text-gray-500 mb-8">
+              Para cadastrar e publicar seus animais, é necessário ter um plano ativo.
             </p>
 
             {/* Toggle Billing */}
@@ -76,7 +75,7 @@ const PlansPage = () => {
               >
                 Anual
                 <span className="ml-2 text-xs text-green-600 font-semibold">
-                  Economize até 50%
+                  Economize
                 </span>
               </button>
             </div>
@@ -85,8 +84,8 @@ const PlansPage = () => {
 
         {/* Plans Section */}
         <div className="py-16 px-4">
-          <div className="max-w-6xl mx-auto">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="max-w-7xl mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {plans.map((plan) => (
                 <div
                   key={plan.id}
@@ -126,11 +125,11 @@ const PlansPage = () => {
                   {/* Price */}
                   <div className="mb-6">
                     <div className="flex items-baseline">
-                      <span className="text-4xl font-bold">
+                      <span className="text-3xl font-bold">
                         R${' '}
                         {billingPeriod === 'monthly'
-                          ? plan.monthlyPrice
-                          : Math.floor(plan.annualPrice / 12)}
+                          ? formatPrice(plan.monthlyPrice)
+                          : formatPrice(plan.annualPrice / 12)}
                       </span>
                       <span
                         className={`ml-2 text-sm ${
@@ -146,7 +145,7 @@ const PlansPage = () => {
                           plan.popular ? 'text-gray-400' : 'text-gray-500'
                         }`}
                       >
-                        Cobrado R$ {plan.annualPrice}/ano
+                        Cobrado R$ {formatPrice(plan.annualPrice)}/ano
                       </p>
                     )}
                   </div>
@@ -187,9 +186,6 @@ const PlansPage = () => {
             </div>
           </div>
         </div>
-      </main>
-
-      <AppFooter />
     </div>
   );
 };

@@ -24,6 +24,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, AlertTriangle, DollarSign, Calendar, Info } from 'lucide-react';
+import { cancelSubscription } from '@/services/checkoutService';
 import paymentService from '@/services/paymentService';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
@@ -150,8 +151,8 @@ export function CancelSubscriptionModal({
     setLoading(true);
 
     try {
-      // 1. Cancelar assinatura
-      const cancelResponse = await paymentService.cancelSubscription(
+      // 1. Cancelar assinatura via Edge Function
+      const cancelResponse = await cancelSubscription(
         subscriptionId,
         reason
       );

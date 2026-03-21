@@ -73,9 +73,9 @@ class PartnershipService {
         throw new Error('Percentual deve estar entre 0 e 100')
       }
 
-      // Buscar o parceiro pelo código público
+      // Buscar o parceiro pelo código público (view pública - sem PII)
       const { data: partner, error: partnerError } = await supabase
-        .from('profiles')
+        .from('public_profiles')
         .select('id, name, property_name, public_code')
         .eq('public_code', partnerPublicCode)
         .single()
@@ -715,7 +715,7 @@ class PartnershipService {
   async transferAnimalOwnership(animalId: string, newOwnerId: string) {
     try {
       const { data: profile, error: profileError } = await supabase
-        .from('profiles')
+        .from('public_profiles')
         .select('property_name, account_type')
         .eq('id', newOwnerId)
         .single();

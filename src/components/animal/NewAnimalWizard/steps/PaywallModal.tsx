@@ -1,4 +1,7 @@
 // src/components/animal/NewAnimalWizard/steps/PaywallModal.tsx
+//
+// Modal exibido quando o usuário tenta publicar sem plano ativo ou com cota esgotada.
+// Modelo 100% baseado em planos: toda publicação exige plano.
 
 import React from 'react';
 import {
@@ -9,36 +12,37 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Sparkles, 
-  CreditCard, 
-  X
-} from 'lucide-react';
+import { Sparkles, AlertCircle, X } from 'lucide-react';
 
 interface PaywallModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSelectIndividual: () => void;
   onSelectPlan: () => void;
+  /** true quando o usuário já tem plano, mas a cota está esgotada */
+  isQuotaExceeded?: boolean;
 }
 
 export const PaywallModal: React.FC<PaywallModalProps> = ({
   isOpen,
   onClose,
-  onSelectIndividual,
-  onSelectPlan
+  onSelectPlan,
+  isQuotaExceeded = false,
 }) => {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-lg">
         <DialogHeader>
           <div className="flex justify-between items-start pb-2">
             <div className="flex-1">
               <DialogTitle className="text-2xl font-bold text-gray-900 mb-1">
-                Seu anúncio está pronto
+                {isQuotaExceeded
+                  ? 'Limite de animais atingido'
+                  : 'Plano necessário para publicar'}
               </DialogTitle>
               <p className="text-sm text-gray-600">
-                Escolha um plano para ativar a publicação
+                {isQuotaExceeded
+                  ? 'Faça upgrade para cadastrar mais animais.'
+                  : 'Para cadastrar e publicar animais, é necessário ter um plano ativo.'}
               </p>
             </div>
             <Button
@@ -53,73 +57,55 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
         </DialogHeader>
 
         <div className="space-y-6 pt-4">
-          {/* Call to Action */}
-          <div>
-            <h3 className="text-center font-semibold text-lg text-gray-700 mb-6">
-              Escolha como deseja ativar seu anúncio:
-            </h3>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Opção 1: Pagamento Individual */}
-              <Button
-                variant="outline"
-                className="h-auto p-5 flex flex-col items-start gap-3 border-2 border-gray-300 hover:border-blue-500 hover:bg-blue-50 transition-all"
-                onClick={onSelectIndividual}
-              >
-                <div className="text-left w-full">
-                  <div className="flex items-center gap-2 mb-2">
-                    <CreditCard className="h-5 w-5 text-gray-700" />
-                    <span className="font-bold text-base text-gray-900">Publicação Individual</span>
-                  </div>
-                  <p className="text-2xl font-bold text-gray-900 mb-3">
-                    R$ 47,00<span className="text-sm font-normal text-gray-600">/30 dias</span>
-                  </p>
-                  <div className="space-y-1.5 text-sm text-gray-700">
-                    <p>• Apenas este anúncio</p>
-                    <p>• Ativo por 30 dias</p>
-                    <p>• Renovação manual</p>
-                  </div>
-                </div>
-              </Button>
-
-              {/* Opção 2: Assinar Plano */}
-              <Button
-                variant="outline"
-                className="h-auto p-5 flex flex-col items-start gap-3 border-2 border-blue-400 hover:border-blue-600 hover:bg-blue-50 transition-all"
-                onClick={onSelectPlan}
-              >
-                <div className="text-left w-full">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Sparkles className="h-5 w-5 text-blue-600" />
-                    <span className="font-bold text-base text-gray-900">Plano Mensal</span>
-                    <Badge className="bg-blue-600 text-white text-xs ml-auto">Recomendado</Badge>
-                  </div>
-                  <p className="text-2xl font-bold text-gray-900 mb-3">
-                    A partir de R$ 97<span className="text-sm font-normal text-gray-600">/mês</span>
-                  </p>
-                  <div className="space-y-1.5 text-sm text-gray-700">
-                    <p>• Até 15 anúncios ativos</p>
-                    <p>• Economia de até 55%</p>
-                    <p>• Recursos Premium</p>
-                  </div>
-                </div>
-              </Button>
+          {isQuotaExceeded && (
+            <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+              <AlertCircle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-amber-900">
+                Você atingiu o limite de animais do seu plano atual.
+                Faça upgrade para um plano superior para cadastrar mais animais.
+                Seus animais existentes continuarão ativos.
+              </p>
             </div>
+          )}
 
-            {/* Botão para voltar */}
-            <div className="text-center mt-6">
-              <Button
-                variant="ghost"
-                onClick={onClose}
-                className="text-gray-500 hover:text-gray-700 text-sm"
-              >
-                ← Voltar
-              </Button>
+          {/* Assinar / Upgrade Plano */}
+          <Button
+            className="w-full h-auto p-6 flex flex-col items-start gap-3 bg-blue-600 hover:bg-blue-700 text-white transition-all"
+            onClick={onSelectPlan}
+          >
+            <div className="text-left w-full">
+              <div className="flex items-center gap-2 mb-2">
+                <Sparkles className="h-5 w-5" />
+                <span className="font-bold text-lg">
+                  {isQuotaExceeded ? 'Fazer Upgrade' : 'Assinar um Plano'}
+                </span>
+                <Badge className="bg-white text-blue-700 text-xs ml-auto">
+                  Obrigatório
+                </Badge>
+              </div>
+              <p className="text-2xl font-bold mb-3">
+                A partir de R$ 39,90<span className="text-sm font-normal opacity-80">/mês</span>
+              </p>
+              <div className="space-y-1.5 text-sm opacity-90">
+                <p>Essencial: 1 animal por R$ 39,90/mês</p>
+                <p>Criador: 5 animais + 2 turbinares por R$ 97,90/mês</p>
+                <p>Haras Destaque: 10 animais + 5 turbinares por R$ 197,90/mês</p>
+                <p>Elite: 25 animais + 10 turbinares por R$ 397,90/mês</p>
+              </div>
             </div>
+          </Button>
+
+          <div className="text-center">
+            <Button
+              variant="ghost"
+              onClick={onClose}
+              className="text-gray-500 hover:text-gray-700 text-sm"
+            >
+              Voltar
+            </Button>
           </div>
         </div>
       </DialogContent>
     </Dialog>
   );
 };
-

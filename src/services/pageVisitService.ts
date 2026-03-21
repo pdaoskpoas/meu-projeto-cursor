@@ -32,7 +32,6 @@ const TRACKABLE_PAGES: Array<{ key: string; pattern: RegExp }> = [
   { key: 'help', pattern: /^\/ajuda$/ },
   { key: 'terms', pattern: /^\/terms$/ },
   { key: 'privacy', pattern: /^\/privacy$/ },
-  { key: 'contact', pattern: /^\/contact$/ },
 ];
 
 let hasWarnedMissingTable = false;

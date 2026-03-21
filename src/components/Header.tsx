@@ -48,8 +48,8 @@ const Header = () => {
 
             {/* Desktop Navigation - Enhanced */}
             <nav className="hidden md:flex items-center space-x-4 lg:space-x-8">
-              <Link 
-                to="/" 
+              <Link
+                to="/"
                 className={`text-sm font-semibold transition-all duration-300 hover:text-blue-600 relative ${
                   isActive('/') ? 'text-blue-600' : 'text-slate-700'
                 }`}
@@ -57,8 +57,17 @@ const Header = () => {
                 Início
                 {isActive('/') && <div className="absolute -bottom-6 left-0 right-0 h-0.5 bg-blue-600"></div>}
               </Link>
-              <Link 
-                to="/buscar" 
+              <Link
+                to="/sobre"
+                className={`text-sm font-semibold transition-all duration-300 hover:text-blue-600 relative ${
+                  isActive('/sobre') ? 'text-blue-600' : 'text-slate-700'
+                }`}
+              >
+                Sobre Nós
+                {isActive('/sobre') && <div className="absolute -bottom-6 left-0 right-0 h-0.5 bg-blue-600"></div>}
+              </Link>
+              <Link
+                to="/buscar"
                 className={`text-sm font-semibold transition-all duration-300 hover:text-blue-600 flex items-center space-x-2 relative ${
                   isActive('/buscar') ? 'text-blue-600' : 'text-slate-700'
                 }`}
@@ -67,8 +76,18 @@ const Header = () => {
                 <span>Buscar</span>
                 {isActive('/buscar') && <div className="absolute -bottom-6 left-0 right-0 h-0.5 bg-blue-600"></div>}
               </Link>
-              <Link 
-                to="/noticias" 
+              <Link
+                to="/ranking"
+                className={`text-sm font-semibold transition-all duration-300 hover:text-blue-600 flex items-center space-x-2 relative ${
+                  isActive('/ranking') ? 'text-blue-600' : 'text-slate-700'
+                }`}
+              >
+                <Award className="h-4 w-4" />
+                <span>Ranking</span>
+                {isActive('/ranking') && <div className="absolute -bottom-6 left-0 right-0 h-0.5 bg-blue-600"></div>}
+              </Link>
+              <Link
+                to="/noticias"
                 className={`text-sm font-semibold transition-all duration-300 hover:text-blue-600 flex items-center space-x-2 relative ${
                   isActive('/noticias') ? 'text-blue-600' : 'text-slate-700'
                 }`}
@@ -77,8 +96,8 @@ const Header = () => {
                 <span>Notícias</span>
                 {isActive('/noticias') && <div className="absolute -bottom-6 left-0 right-0 h-0.5 bg-blue-600"></div>}
               </Link>
-              <Link 
-                to="/eventos" 
+              <Link
+                to="/eventos"
                 className={`text-sm font-semibold transition-all duration-300 hover:text-blue-600 flex items-center space-x-2 relative ${
                   isActive('/eventos') ? 'text-blue-600' : 'text-slate-700'
                 }`}
@@ -86,16 +105,6 @@ const Header = () => {
                 <Calendar className="h-4 w-4" />
                 <span>Eventos</span>
                 {isActive('/eventos') && <div className="absolute -bottom-6 left-0 right-0 h-0.5 bg-blue-600"></div>}
-              </Link>
-              <Link 
-                to="/ajuda" 
-                className={`text-sm font-semibold transition-all duration-300 hover:text-blue-600 flex items-center space-x-2 relative ${
-                  isActive('/ajuda') ? 'text-blue-600' : 'text-slate-700'
-                }`}
-              >
-                <HelpCircle className="h-4 w-4" />
-                <span>Ajuda</span>
-                {isActive('/ajuda') && <div className="absolute -bottom-6 left-0 right-0 h-0.5 bg-blue-600"></div>}
               </Link>
             </nav>
 
@@ -138,8 +147,8 @@ const Header = () => {
           {isMenuOpen && (
             <div className="md:hidden py-4 sm:py-6 border-t border-slate-200 bg-white shadow-lg">
               <nav className="space-y-4">
-                <Link 
-                  to="/" 
+                <Link
+                  to="/"
                   className={`flex items-center py-3 font-semibold transition-colors ${
                     isActive('/') ? 'text-blue-600' : 'text-slate-700 hover:text-blue-600'
                   }`}
@@ -147,8 +156,17 @@ const Header = () => {
                 >
                   Início
                 </Link>
-                <Link 
-                  to="/buscar" 
+                <Link
+                  to="/sobre"
+                  className={`flex items-center py-3 font-semibold transition-colors ${
+                    isActive('/sobre') ? 'text-blue-600' : 'text-slate-700 hover:text-blue-600'
+                  }`}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Sobre Nós
+                </Link>
+                <Link
+                  to="/buscar"
                   className={`flex items-center py-3 font-semibold transition-colors space-x-3 ${
                     isActive('/buscar') ? 'text-blue-600' : 'text-slate-700 hover:text-blue-600'
                   }`}
@@ -157,8 +175,18 @@ const Header = () => {
                   <Search className="h-5 w-5" />
                   <span>Buscar</span>
                 </Link>
-                <Link 
-                  to="/noticias" 
+                <Link
+                  to="/ranking"
+                  className={`flex items-center py-3 font-semibold transition-colors space-x-3 ${
+                    isActive('/ranking') ? 'text-blue-600' : 'text-slate-700 hover:text-blue-600'
+                  }`}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <Award className="h-5 w-5" />
+                  <span>Ranking</span>
+                </Link>
+                <Link
+                  to="/noticias"
                   className={`flex items-center py-3 font-semibold transition-colors space-x-3 ${
                     isActive('/noticias') ? 'text-blue-600' : 'text-slate-700 hover:text-blue-600'
                   }`}
@@ -167,8 +195,8 @@ const Header = () => {
                   <Users className="h-5 w-5" />
                   <span>Notícias</span>
                 </Link>
-                <Link 
-                  to="/eventos" 
+                <Link
+                  to="/eventos"
                   className={`flex items-center py-3 font-semibold transition-colors space-x-3 ${
                     isActive('/eventos') ? 'text-blue-600' : 'text-slate-700 hover:text-blue-600'
                   }`}
@@ -176,16 +204,6 @@ const Header = () => {
                 >
                   <Calendar className="h-5 w-5" />
                   <span>Eventos</span>
-                </Link>
-                <Link 
-                  to="/dashboard/help" 
-                  className={`flex items-center py-3 font-semibold transition-colors space-x-3 ${
-                    isActive('/dashboard/help') ? 'text-blue-600' : 'text-slate-700 hover:text-blue-600'
-                  }`}
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  <HelpCircle className="h-5 w-5" />
-                  <span>Ajuda</span>
                 </Link>
                 <div className="pt-6 border-t border-slate-200 space-y-3">
                   

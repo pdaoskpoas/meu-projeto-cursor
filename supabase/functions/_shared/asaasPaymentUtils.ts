@@ -1,4 +1,34 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+
+// =================================================================
+// RATE LIMITING - usa check_rate_limit() do banco
+// =================================================================
+export const checkRateLimit = async (
+  serviceClient: any,
+  userId: string,
+  operation: string,
+  maxAttempts = 5,
+  windowMinutes = 10
+): Promise<{ allowed: boolean; message?: string }> => {
+  const { data, error } = await serviceClient.rpc('check_rate_limit', {
+    identifier: userId,
+    operation,
+    max_attempts: maxAttempts,
+    window_minutes: windowMinutes,
+  });
+
+  if (error) {
+    console.error('[rate-limit] Erro ao verificar rate limit:', error.message);
+    // Em caso de erro na verificação, permitir (fail-open para não bloquear pagamentos legítimos)
+    return { allowed: true };
+  }
+
+  return {
+    allowed: data?.allowed ?? true,
+    message: data?.message ?? undefined,
+  };
+};
+
 export const mapPaymentStatus = (status?: string) => {
   const normalized = status?.toUpperCase() ?? '';
   if (['CONFIRMED', 'RECEIVED', 'RECEIVED_IN_CASH'].includes(normalized)) return 'APPROVED';
@@ -193,6 +223,7 @@ export const applyApprovedPaymentEffects = async (
   if (paymentRow.payment_type === 'boost_purchase') {
     const metadata = (paymentRow.metadata ?? {}) as Record<string, unknown>;
     const boostsGranted = Boolean(metadata.boosts_granted);
+    // Compatível com modelo antigo (boost_quantity) e novo (boost_duration → sempre 1 crédito)
     const boostQuantity = (metadata.boost_quantity as number | undefined) ?? 1;
 
     if (!boostsGranted) {

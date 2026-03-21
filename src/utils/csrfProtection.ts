@@ -60,7 +60,7 @@ export const validateOrigin = (): boolean => {
 
     return true;
   } catch {
-    return true; // Fail open em caso de erro
+    return false; // Fail closed: bloquear se não conseguir validar origem
   }
 };
 

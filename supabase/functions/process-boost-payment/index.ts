@@ -1,16 +1,27 @@
+/**
+ * =================================================================
+ * PROCESS-BOOST-PAYMENT Edge Function (Secure)
+ * =================================================================
+ *
+ * Cria cobranças de Turbinar no Asaas SEM manipular dados de cartão.
+ * O pagamento é feito exclusivamente via checkout hospedado (invoiceUrl).
+ */
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { checkRateLimit } from '../_shared/asaasPaymentUtils.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const BOOST_PRICE = 47;
-const PACKAGE_PRICES: Record<number, { priceEach: number; discount: number }> = {
-  5: { priceEach: 25.85, discount: 0.45 },
-  10: { priceEach: 20.21, discount: 0.57 },
+const BOOST_TIERS: Record<string, { hours: number; price: number; label: string }> = {
+  '24h': { hours: 24, price: 19.90, label: '24 horas' },
+  '3d':  { hours: 72, price: 49.90, label: '3 dias' },
+  '7d':  { hours: 168, price: 89.90, label: '7 dias' },
 };
+
+const VALID_DURATIONS = Object.keys(BOOST_TIERS);
 
 const sanitizeDigits = (value: string) => value.replace(/\D/g, '');
 
@@ -48,12 +59,6 @@ const formatPhone = (value: string) => {
   return digits.replace(/^(\d{2})(\d)/, '($1) $2').replace(/(\d{5})(\d)/, '$1-$2');
 };
 
-const getPackagePrice = (quantity: number) => {
-  if (quantity >= 10) return quantity * PACKAGE_PRICES[10].priceEach;
-  if (quantity >= 5) return quantity * PACKAGE_PRICES[5].priceEach;
-  return quantity * BOOST_PRICE;
-};
-
 const normalizeBaseUrl = (baseUrl: string) => {
   const trimmed = baseUrl.replace(/\/+$/, '');
   if (trimmed.endsWith('/api/v3') || trimmed.endsWith('/v3')) {
@@ -67,11 +72,10 @@ const asaasRequest = async (endpoint: string, method: string, data?: unknown) =>
   const apiKey = Deno.env.get('ASAAS_API_KEY');
 
   if (!baseUrl || !apiKey) {
-    throw new Error('Configuração do Asaas ausente.');
+    throw new Error('Configuracao do Asaas ausente.');
   }
 
   const resolvedBaseUrl = normalizeBaseUrl(baseUrl);
-  console.log('[boost] asaas request', { endpoint, method, baseUrl: resolvedBaseUrl });
   const response = await fetch(`${resolvedBaseUrl}${endpoint}`, {
     method,
     headers: {
@@ -85,7 +89,6 @@ const asaasRequest = async (endpoint: string, method: string, data?: unknown) =>
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
     const message = payload?.errors?.[0]?.description || payload?.message || 'Erro ao comunicar com Asaas.';
-    console.error('[boost] asaas error', { endpoint, status: response.status, message });
     throw new Error(message);
   }
   return payload;
@@ -112,7 +115,7 @@ const buildSupabaseClients = (authHeader: string | null) => {
   return { authClient, serviceClient };
 };
 
-serve(async (req) => {
+serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
@@ -141,8 +144,7 @@ serve(async (req) => {
     const { data: authData, error: authError } = await authClient.auth.getUser();
 
     if (authError || !authData?.user) {
-      console.error('[boost] auth failed', { hasAuthHeader: Boolean(authHeader) });
-      return errorResponse(401, 'JWT inválido ou ausente.');
+      return errorResponse(401, 'JWT invalido ou ausente.');
     }
 
     stage = 'parse_body';
@@ -153,45 +155,52 @@ serve(async (req) => {
     try {
       body = (await req.json()) as Record<string, unknown>;
     } catch {
-      return errorResponse(400, 'Payload inválido.');
+      return errorResponse(400, 'Payload invalido.');
     }
-    const { userId: bodyUserId, quantity, billingType, customer, address, card } = body ?? {};
+
+    // card removido do destructuring - dados de cartao NUNCA aceitos
+    const { userId: bodyUserId, duration, billingType, customer, address, animalId } = body ?? {};
     userId = typeof bodyUserId === 'string' ? bodyUserId : authUserId;
 
     if (!userId || userId !== authUserId) {
-      console.error('[boost] user mismatch', { userId, authUserId: authData.user.id });
-      return errorResponse(403, 'Usuário inválido.');
+      return errorResponse(403, 'Usuario invalido.');
+    }
+
+    // Rate limiting: max 10 boosts por 10 minutos por usuário
+    stage = 'rate_limit';
+    const rateLimitResult = await checkRateLimit(serviceClient, userId, 'process_boost_payment', 10, 10);
+    if (!rateLimitResult.allowed) {
+      return errorResponse(429, rateLimitResult.message || 'Muitas tentativas. Aguarde alguns minutos.');
     }
 
     stage = 'validate_payload';
-    const qty = Number(quantity);
-    if (!qty || qty < 1 || qty > 100) {
-      console.error('[boost] invalid quantity', { qty });
-      return errorResponse(400, 'Quantidade inválida.');
+
+    const durationStr = String(duration || '');
+    if (!VALID_DURATIONS.includes(durationStr)) {
+      return errorResponse(400, `Duracao invalida. Opcoes: ${VALID_DURATIONS.join(', ')}`);
     }
 
-    if (!['PIX', 'CREDIT_CARD'].includes(billingType)) {
-      console.error('[boost] invalid billing type', { billingType });
-      return errorResponse(400, 'Forma de pagamento inválida.');
-    }
+    const tier = BOOST_TIERS[durationStr];
 
-    console.log('[boost] start', { userId, qty, billingType });
+    if (!['PIX', 'CREDIT_CARD', 'BOLETO'].includes(billingType as string)) {
+      return errorResponse(400, 'Forma de pagamento invalida.');
+    }
 
     const resolvedCustomer = {
-      name: customer?.name ?? null,
-      email: customer?.email ?? null,
-      cpfCnpj: customer?.cpfCnpj ?? null,
-      mobilePhone: customer?.mobilePhone ?? null,
+      name: (customer as Record<string, unknown>)?.name ?? null,
+      email: (customer as Record<string, unknown>)?.email ?? null,
+      cpfCnpj: (customer as Record<string, unknown>)?.cpfCnpj ?? null,
+      mobilePhone: (customer as Record<string, unknown>)?.mobilePhone ?? null,
     };
 
     const resolvedAddress = {
-      postalCode: address?.postalCode ?? null,
-      address: address?.address ?? '',
-      addressNumber: address?.addressNumber ?? '',
-      complement: address?.complement,
-      province: address?.province ?? '',
-      city: address?.city ?? null,
-      state: address?.state ?? null,
+      postalCode: (address as Record<string, unknown>)?.postalCode ?? null,
+      address: (address as Record<string, unknown>)?.address ?? '',
+      addressNumber: (address as Record<string, unknown>)?.addressNumber ?? '',
+      complement: (address as Record<string, unknown>)?.complement,
+      province: (address as Record<string, unknown>)?.province ?? '',
+      city: (address as Record<string, unknown>)?.city ?? null,
+      state: (address as Record<string, unknown>)?.state ?? null,
     };
 
     if (!resolvedCustomer.name || !resolvedCustomer.email || !resolvedCustomer.cpfCnpj) {
@@ -199,39 +208,40 @@ serve(async (req) => {
     }
 
     if (!resolvedCustomer.mobilePhone) {
-      return errorResponse(400, 'WhatsApp obrigatório. Verifique no checkout.');
+      return errorResponse(400, 'WhatsApp obrigatorio. Verifique no checkout.');
     }
 
     if (!resolvedAddress.postalCode || !resolvedAddress.city || !resolvedAddress.state) {
-      return errorResponse(400, 'Endereço incompleto. Verifique no checkout.');
+      return errorResponse(400, 'Endereco incompleto. Verifique no checkout.');
     }
 
-    if (!resolvedCustomer.cpfCnpj || !isValidCpf(resolvedCustomer.cpfCnpj)) {
-      console.error('[boost] invalid cpf', { userId });
-      return errorResponse(400, 'CPF inválido. Verifique no checkout.');
+    if (!resolvedCustomer.cpfCnpj || !isValidCpf(String(resolvedCustomer.cpfCnpj))) {
+      return errorResponse(400, 'CPF invalido. Verifique no checkout.');
     }
 
-    const normalizedPhone = resolvedCustomer.mobilePhone && isValidPhone(resolvedCustomer.mobilePhone)
-      ? sanitizeDigits(resolvedCustomer.mobilePhone)
+    const normalizedPhone = resolvedCustomer.mobilePhone && isValidPhone(String(resolvedCustomer.mobilePhone))
+      ? sanitizeDigits(String(resolvedCustomer.mobilePhone))
       : undefined;
     const phoneFormatted = normalizedPhone ? formatPhone(normalizedPhone) : undefined;
-    const normalizedPostal = resolvedAddress.postalCode ? sanitizeDigits(resolvedAddress.postalCode) : '';
+    const normalizedPostal = resolvedAddress.postalCode ? sanitizeDigits(String(resolvedAddress.postalCode)) : '';
 
     if (!normalizedPhone) {
-      return errorResponse(400, 'WhatsApp inválido. Verifique no checkout.');
+      return errorResponse(400, 'WhatsApp invalido. Verifique no checkout.');
     }
 
     if (!normalizedPostal || normalizedPostal.length !== 8) {
-      return errorResponse(400, 'CEP inválido. Verifique no checkout.');
+      return errorResponse(400, 'CEP invalido. Verifique no checkout.');
     }
 
     if (!resolvedAddress.city || !resolvedAddress.state) {
-      return errorResponse(400, 'Cidade e estado são obrigatórios.');
+      return errorResponse(400, 'Cidade e estado sao obrigatorios.');
     }
 
     if (!resolvedAddress.address || !resolvedAddress.addressNumber || !resolvedAddress.province) {
       return errorResponse(400, 'Endereco, numero e bairro sao obrigatorios.');
     }
+
+    // ── Criar/obter cliente no Asaas ──
 
     stage = 'load_customer';
     const { data: existingCustomer } = await serviceClient
@@ -247,7 +257,7 @@ serve(async (req) => {
       stage = 'create_customer';
       const customerPayload = {
         name: resolvedCustomer.name,
-        cpfCnpj: sanitizeDigits(resolvedCustomer.cpfCnpj),
+        cpfCnpj: sanitizeDigits(String(resolvedCustomer.cpfCnpj)),
         email: resolvedCustomer.email,
         mobilePhone: normalizedPhone,
         postalCode: normalizedPostal,
@@ -272,7 +282,7 @@ serve(async (req) => {
           asaas_customer_id: asaasCustomerId,
           name: resolvedCustomer.name,
           email: resolvedCustomer.email,
-          cpf_cnpj: sanitizeDigits(resolvedCustomer.cpfCnpj),
+          cpf_cnpj: sanitizeDigits(String(resolvedCustomer.cpfCnpj)),
           phone: phoneFormatted ?? normalizedPhone ?? null,
           is_active: true,
         })
@@ -288,7 +298,7 @@ serve(async (req) => {
     } else {
       await asaasRequest(`/customers/${asaasCustomerId}`, 'PUT', {
         name: resolvedCustomer.name,
-        cpfCnpj: sanitizeDigits(resolvedCustomer.cpfCnpj),
+        cpfCnpj: sanitizeDigits(String(resolvedCustomer.cpfCnpj)),
         email: resolvedCustomer.email,
         mobilePhone: normalizedPhone,
         postalCode: normalizedPostal,
@@ -304,54 +314,28 @@ serve(async (req) => {
     }
 
     if (!customerRowId || !asaasCustomerId) {
-      console.error('[boost] customer not found', { userId });
-      throw new Error('Cliente não encontrado para cobrança.');
+      throw new Error('Cliente nao encontrado para cobranca.');
     }
 
+    // ── Criar pagamento SEM dados de cartao ──
+
     stage = 'create_payment';
-    const basePrice = Number(getPackagePrice(qty).toFixed(2));
+    const basePrice = tier.price;
     const discountRate = billingType === 'PIX' ? 0.03 : 0;
     const discountAmount = Number((basePrice * discountRate).toFixed(2));
     const finalPrice = Number((basePrice - discountAmount).toFixed(2));
     const dueDate = new Date();
     dueDate.setDate(dueDate.getDate() + 3);
 
+    // Payload SEM creditCard / creditCardHolderInfo
     const paymentPayload: Record<string, unknown> = {
       customer: asaasCustomerId,
       billingType,
       value: finalPrice,
-      description: `Compra de ${qty} Boost(s)`,
+      description: `Turbinar ${tier.label}`,
       dueDate: dueDate.toISOString().split('T')[0],
-      externalReference: `boost-${qty}-${userId}-${Date.now()}`,
+      externalReference: `boost-${durationStr}-${userId}-${Date.now()}`,
     };
-
-    if (billingType === 'CREDIT_CARD') {
-      if (!card?.number || !card?.cvv || !card?.holderName) {
-        return errorResponse(400, 'Dados do cartão são obrigatórios.');
-      }
-
-      const normalizedCard = sanitizeDigits(card.number);
-      paymentPayload.creditCard = {
-        holderName: card.holderName,
-        number: normalizedCard,
-        expiryMonth: card.expiryMonth,
-        expiryYear: card.expiryYear,
-        ccv: card.cvv,
-      };
-      paymentPayload.creditCardHolderInfo = {
-        name: resolvedCustomer.name,
-        email: resolvedCustomer.email,
-        cpfCnpj: sanitizeDigits(resolvedCustomer.cpfCnpj),
-        phone: normalizedPhone,
-        postalCode: normalizedPostal,
-        addressNumber: resolvedAddress.addressNumber,
-        address: resolvedAddress.address,
-        complement: resolvedAddress.complement,
-        province: resolvedAddress.province,
-        city: resolvedAddress.city,
-        state: resolvedAddress.state,
-      };
-    }
 
     const payment = await asaasRequest('/payments', 'POST', paymentPayload);
     let pixQrCode: string | null = null;
@@ -359,9 +343,13 @@ serve(async (req) => {
 
     if (billingType === 'PIX') {
       stage = 'fetch_pix_qr';
-      const pixData = await asaasRequest(`/payments/${payment.id}/pixQrCode`, 'GET');
-      pixQrCode = pixData?.encodedImage ?? null;
-      pixCopyPaste = pixData?.payload ?? null;
+      try {
+        const pixData = await asaasRequest(`/payments/${payment.id}/pixQrCode`, 'GET');
+        pixQrCode = pixData?.encodedImage ?? null;
+        pixCopyPaste = pixData?.payload ?? null;
+      } catch {
+        // PIX QR nao disponivel, usuario usara invoiceUrl
+      }
     }
 
     stage = 'insert_payment';
@@ -371,18 +359,20 @@ serve(async (req) => {
       asaas_payment_id: payment.id,
       payment_type: 'boost_purchase',
       value: finalPrice,
-      billing_type: billingType,
+      billing_type: billingType as string,
       status: payment.status?.toLowerCase() ?? 'pending',
       due_date: payment.dueDate ?? paymentPayload.dueDate,
       invoice_url: payment.invoiceUrl ?? null,
       bank_slip_url: payment.bankSlipUrl ?? null,
-      pix_qr_code: pixQrCode ?? payment.encodedImage ?? null,
-      pix_copy_paste: pixCopyPaste ?? payment.payload ?? null,
-      description: paymentPayload.description,
-      external_reference: paymentPayload.externalReference,
+      pix_qr_code: pixQrCode ?? null,
+      pix_copy_paste: pixCopyPaste ?? null,
+      description: paymentPayload.description as string,
+      external_reference: paymentPayload.externalReference as string,
       metadata: {
-        boost_quantity: qty,
-        unit_price: BOOST_PRICE,
+        boost_duration: durationStr,
+        boost_hours: tier.hours,
+        boost_price: tier.price,
+        animal_id: animalId || null,
         base_price: basePrice,
         discount_rate: discountRate,
         discount_amount: discountAmount,
@@ -391,20 +381,17 @@ serve(async (req) => {
     });
 
     if (paymentError) {
-      console.error('[boost] payment insert failed', { userId, error: paymentError.message });
       await asaasRequest(`/payments/${payment.id}`, 'DELETE').catch(() => null);
       throw new Error('Falha ao salvar pagamento no banco.');
     }
-
-    console.log('[boost] payment created', { userId, paymentId: payment.id });
 
     return new Response(
       JSON.stringify({
         success: true,
         paymentId: payment.id,
         invoiceUrl: payment.invoiceUrl ?? null,
-        pixQrCode: pixQrCode ?? payment.encodedImage ?? null,
-        pixCopyPaste: pixCopyPaste ?? payment.payload ?? null,
+        pixQrCode: pixQrCode ?? null,
+        pixCopyPaste: pixCopyPaste ?? null,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
@@ -417,14 +404,13 @@ serve(async (req) => {
           action: 'process_boost_error',
           performed_by: userId,
           performed_by_type: 'user',
-          reason: error?.message || 'Erro desconhecido',
+          reason: (error as Error)?.message || 'Erro desconhecido',
           changes: { stage },
         });
       } catch {
-        // silêncio para não mascarar erro principal
+        // silencio para nao mascarar erro principal
       }
     }
-    console.error('[boost] unexpected error', { message: error?.message ?? 'unknown' });
-    return errorResponse(500, `Erro ao processar pagamento (etapa: ${stage}). ${error?.message || ''}`.trim());
+    return errorResponse(500, `Erro ao processar pagamento (etapa: ${stage}). ${(error as Error)?.message || ''}`.trim());
   }
 });

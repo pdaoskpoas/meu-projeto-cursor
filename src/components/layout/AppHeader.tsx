@@ -114,12 +114,22 @@ const AppHeader: React.FC<AppHeaderProps> = ({ onToggleSidebar, sidebarOpen }) =
             <Link
               to="/"
               className={`px-4 py-2.5 rounded-xl font-semibold transition-all duration-300 ${
-                isActive('/') 
-                  ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg' 
+                isActive('/')
+                  ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg'
                   : 'text-slate-700 hover:bg-slate-100'
               }`}
             >
               Início
+            </Link>
+            <Link
+              to="/sobre"
+              className={`flex items-center space-x-2 px-4 py-2.5 rounded-xl font-semibold transition-all duration-300 ${
+                isActive('/sobre')
+                  ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg'
+                  : 'text-slate-700 hover:bg-slate-100'
+              }`}
+            >
+              <span>Sobre Nós</span>
             </Link>
             <Link
               to="/buscar"
@@ -131,6 +141,17 @@ const AppHeader: React.FC<AppHeaderProps> = ({ onToggleSidebar, sidebarOpen }) =
             >
               <Search className="h-4 w-4" />
               <span>Buscar</span>
+            </Link>
+            <Link
+              to="/ranking"
+              className={`flex items-center space-x-2 px-4 py-2.5 rounded-xl font-semibold transition-all duration-300 ${
+                isActive('/ranking')
+                  ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg'
+                  : 'text-slate-700 hover:bg-slate-100'
+              }`}
+            >
+              <Award className="h-4 w-4" />
+              <span>Ranking</span>
             </Link>
             <Link
               to="/noticias"
@@ -153,28 +174,6 @@ const AppHeader: React.FC<AppHeaderProps> = ({ onToggleSidebar, sidebarOpen }) =
             >
               <Calendar className="h-4 w-4" />
               <span>Eventos</span>
-            </Link>
-            <Link
-              to="/ranking"
-              className={`flex items-center space-x-2 px-4 py-2.5 rounded-xl font-semibold transition-all duration-300 ${
-                isActive('/ranking')
-                  ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg'
-                  : 'text-slate-700 hover:bg-slate-100'
-              }`}
-            >
-              <Award className="h-4 w-4" />
-              <span>Ranking</span>
-            </Link>
-            <Link
-              to="/ajuda"
-              className={`flex items-center space-x-2 px-4 py-2.5 rounded-xl font-semibold transition-all duration-300 ${
-                isActive('/ajuda') || isActive('/dashboard/help')
-                  ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg'
-                  : 'text-slate-700 hover:bg-slate-100'
-              }`}
-            >
-              <HelpCircle className="h-4 w-4" />
-              <span>Ajuda</span>
             </Link>
           </nav>
 
@@ -331,15 +330,27 @@ const AppHeader: React.FC<AppHeaderProps> = ({ onToggleSidebar, sidebarOpen }) =
                 <Link
                   to="/"
                   className={`flex items-center space-x-3 px-4 py-3.5 rounded-xl font-semibold transition-all min-h-[48px] ${
-                    isActive('/') 
-                      ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white' 
+                    isActive('/')
+                      ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white'
                       : 'text-slate-700 hover:bg-slate-100'
                   }`}
                   onClick={() => setIsMenuOpen(false)}
                 >
                   <span>Início</span>
                 </Link>
-                
+
+                <Link
+                  to="/sobre"
+                  className={`flex items-center space-x-3 px-4 py-3.5 rounded-xl font-semibold transition-all min-h-[48px] ${
+                    isActive('/sobre')
+                      ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white'
+                      : 'text-slate-700 hover:bg-slate-100'
+                  }`}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <span>Sobre Nós</span>
+                </Link>
+
                 <Link
                   to="/buscar"
                   className={`flex items-center space-x-3 px-4 py-3.5 rounded-xl font-semibold transition-all min-h-[48px] ${
@@ -351,6 +362,19 @@ const AppHeader: React.FC<AppHeaderProps> = ({ onToggleSidebar, sidebarOpen }) =
                 >
                   <Search className="h-5 w-5" />
                   <span>Buscar</span>
+                </Link>
+
+                <Link
+                  to="/ranking"
+                  className={`flex items-center space-x-3 px-4 py-3.5 rounded-xl font-semibold transition-all min-h-[48px] ${
+                    isActive('/ranking')
+                      ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white'
+                      : 'text-slate-700 hover:bg-slate-100'
+                  }`}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <Award className="h-5 w-5" />
+                  <span>Ranking</span>
                 </Link>
 
                 <Link
@@ -377,32 +401,6 @@ const AppHeader: React.FC<AppHeaderProps> = ({ onToggleSidebar, sidebarOpen }) =
                 >
                   <Calendar className="h-5 w-5" />
                   <span>Eventos</span>
-                </Link>
-
-                <Link
-                  to="/ranking"
-                  className={`flex items-center space-x-3 px-4 py-3.5 rounded-xl font-semibold transition-all min-h-[48px] ${
-                    isActive('/ranking')
-                      ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white'
-                      : 'text-slate-700 hover:bg-slate-100'
-                  }`}
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  <Award className="h-5 w-5" />
-                  <span>Ranking</span>
-                </Link>
-
-                <Link
-                  to="/ajuda"
-                  className={`flex items-center space-x-3 px-4 py-3.5 rounded-xl font-semibold transition-all min-h-[48px] ${
-                    isActive('/ajuda')
-                      ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white'
-                      : 'text-slate-700 hover:bg-slate-100'
-                  }`}
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  <HelpCircle className="h-5 w-5" />
-                  <span>Ajuda</span>
                 </Link>
 
                 {!user && (

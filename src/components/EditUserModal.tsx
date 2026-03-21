@@ -215,18 +215,19 @@ export function EditUserModal({ user, isOpen, onClose, onSave }: EditUserModalPr
           <div className="space-y-2">
             <Label htmlFor="plan">Tipo de Plano</Label>
             <Select 
-              value={formData.plan} 
-              onValueChange={(value: "free" | "basic" | "pro" | "ultra" | "vip") => setFormData({ ...formData, plan: value })}
+              value={formData.plan}
+              onValueChange={(value: "free" | "essencial" | "criador" | "haras" | "elite" | "vip") => setFormData({ ...formData, plan: value })}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Selecione o plano" />
               </SelectTrigger>
               <SelectContent side="bottom" align="start" avoidCollisions={false}>
-                <SelectItem value="free">Free</SelectItem>
-                <SelectItem value="basic">Basic</SelectItem>
-                <SelectItem value="pro">Pro</SelectItem>
-                <SelectItem value="ultra">Ultra</SelectItem>
-                <SelectItem value="vip">VIP</SelectItem>
+                <SelectItem value="free">Sem Plano</SelectItem>
+                <SelectItem value="essencial">Essencial</SelectItem>
+                <SelectItem value="criador">Criador</SelectItem>
+                <SelectItem value="haras">Haras Destaque</SelectItem>
+                <SelectItem value="elite">Elite</SelectItem>
+                <SelectItem value="vip">VIP (Cortesia)</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -238,7 +239,7 @@ export function EditUserModal({ user, isOpen, onClose, onSave }: EditUserModalPr
             <Crown className="h-5 w-5 text-yellow-500" />
             <h3 className="text-lg font-semibold">Gerenciamento VIP</h3>
             <Badge variant="outline" className="text-xs">
-              Mesmo que Pro (gratuito)
+              Mesmo que Haras Destaque (sem turbinares grátis)
             </Badge>
           </div>
 
@@ -252,7 +253,7 @@ export function EditUserModal({ user, isOpen, onClose, onSave }: EditUserModalPr
                 onChange={(e) => setVipEndDate(e.target.value)}
               />
               <p className="text-xs text-muted-foreground">
-                O VIP oferece os mesmos benefícios do Pro, mas é concedido gratuitamente pelo administrador.
+                O VIP oferece os mesmos benefícios do Haras Destaque (10 animais), mas sem turbinares grátis. Concedido gratuitamente pelo administrador.
               </p>
             </div>
 

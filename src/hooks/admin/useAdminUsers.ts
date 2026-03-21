@@ -11,7 +11,7 @@ export interface AdminUser {
   accountType: 'personal' | 'institutional';
   propertyName?: string;
   propertyType?: 'haras' | 'fazenda' | 'cte' | 'central-reproducao';
-  plan: 'free' | 'basic' | 'pro' | 'ultra' | 'vip';
+  plan: 'free' | 'essencial' | 'criador' | 'haras' | 'elite' | 'vip' | 'basic' | 'pro' | 'ultra';
   planExpiresAt?: string;
   planPurchasedAt?: string;
   isAnnualPlan?: boolean;

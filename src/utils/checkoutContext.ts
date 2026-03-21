@@ -1,3 +1,5 @@
+import { type BoostDuration } from '@/constants/checkoutPlans';
+
 export type CheckoutContext =
   | {
       purchaseType: 'plan';
@@ -6,13 +8,8 @@ export type CheckoutContext =
     }
   | {
       purchaseType: 'boost';
-      quantity: number;
-    }
-  | {
-      purchaseType: 'individual';
-      contentType: 'animal' | 'event';
-      contentId: string;
-      contentName?: string;
+      boostDuration: BoostDuration;
+      animalId?: string;
     };
 
 const CHECKOUT_CONTEXT_KEY = 'checkout_context';

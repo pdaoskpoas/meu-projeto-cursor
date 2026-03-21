@@ -1,9 +1,20 @@
 /**
- * Serviço de Boost (Impulsionar)
- * Sistema UNIFICADO - boosts são compartilhados entre animais e eventos
+ * Serviço de Turbinar (Boost)
+ *
+ * Novo modelo baseado em duração:
+ * - 24 horas → R$ 19,90
+ * - 3 dias   → R$ 49,90
+ * - 7 dias   → R$ 89,90
+ *
+ * Regras:
+ * - Turbinares do plano são consumidos primeiro
+ * - Após esgotar, o usuário compra avulso
+ * - Animal já turbinado não pode ser turbinado novamente (até expirar)
+ * - Destaque expira automaticamente ao final do período
  */
 
 import { supabase } from '@/lib/supabase';
+import { type BoostDuration, getBoostTier } from '@/constants/checkoutPlans';
 
 export interface BoostInfo {
   available_boosts: number;
@@ -17,11 +28,12 @@ export interface BoostResult {
   success: boolean;
   message: string;
   boosts_remaining?: number;
+  boost_expires_at?: string;
 }
 
 class BoostService {
   /**
-   * Obtém informações sobre boosts disponíveis do usuário
+   * Obtém informações sobre turbinares disponíveis do usuário
    */
   async getBoostInfo(userId: string): Promise<BoostInfo> {
     try {
@@ -41,35 +53,73 @@ class BoostService {
         plan_boost_credits: profile.plan_boost_credits || 0,
         purchased_boost_credits: profile.purchased_boost_credits || 0,
         can_boost,
-        message: can_boost 
-          ? `Você tem ${total_boosts} crédito(s) disponível(is)`
-          : 'Você não tem créditos disponíveis. Compre mais ou aguarde a renovação mensal do seu plano.',
+        message: can_boost
+          ? `Você tem ${total_boosts} turbinar(es) disponível(is)`
+          : 'Você não tem turbinares disponíveis. Compre avulso ou aguarde a renovação mensal do seu plano.',
       };
     } catch (error: unknown) {
-      console.error('Erro ao obter informações de boost:', error);
+      console.error('Erro ao obter informações de turbinar:', error);
       return {
         available_boosts: 0,
         plan_boost_credits: 0,
         purchased_boost_credits: 0,
         can_boost: false,
-        message: 'Erro ao verificar créditos disponíveis.',
+        message: 'Erro ao verificar turbinares disponíveis.',
       };
     }
   }
 
   /**
-   * Aplica boost em um animal
-   * Usa função atômica do banco para prevenir race conditions
-   * ✅ CORRIGIDO: Função atômica com row-level lock
+   * Verifica se um animal já está turbinado
    */
-  async boostAnimal(userId: string, animalId: string): Promise<BoostResult> {
+  async isAnimalBoosted(animalId: string): Promise<{ boosted: boolean; expiresAt: string | null }> {
     try {
-      // Chamar função atômica do banco de dados
-      // Esta função usa FOR UPDATE para prevenir race conditions
+      const { data, error } = await supabase
+        .from('animals')
+        .select('is_boosted, boost_expires_at')
+        .eq('id', animalId)
+        .single();
+
+      if (error) throw error;
+
+      const now = new Date();
+      const expiresAt = data?.boost_expires_at ? new Date(data.boost_expires_at) : null;
+      const isBoosted = data?.is_boosted && expiresAt && expiresAt > now;
+
+      return {
+        boosted: !!isBoosted,
+        expiresAt: isBoosted ? data.boost_expires_at : null
+      };
+    } catch {
+      return { boosted: false, expiresAt: null };
+    }
+  }
+
+  /**
+   * Aplica turbinar em um animal usando créditos do plano
+   * Usa função atômica do banco para prevenir race conditions
+   *
+   * @param duration - Duração do turbinar (24h, 3d, 7d)
+   */
+  async boostAnimal(userId: string, animalId: string, duration: BoostDuration = '24h'): Promise<BoostResult> {
+    try {
+      // 1. Verificar se animal já está turbinado
+      const { boosted, expiresAt } = await this.isAnimalBoosted(animalId);
+      if (boosted) {
+        const expiresDate = expiresAt ? new Date(expiresAt).toLocaleString('pt-BR') : '';
+        return {
+          success: false,
+          message: `Este animal já está turbinado até ${expiresDate}. Aguarde o período expirar.`,
+        };
+      }
+
+      const tier = getBoostTier(duration);
+
+      // 2. Chamar função atômica do banco de dados
       const { data, error } = await supabase.rpc('boost_animal_atomic', {
         p_user_id: userId,
         p_animal_id: animalId,
-        p_duration_hours: 24
+        p_duration_hours: tier.hours
       });
 
       if (error) {
@@ -80,9 +130,8 @@ class BoostService {
         };
       }
 
-      // A função SQL retorna JSONB com { success, message, boosts_remaining }
       return data as BoostResult;
-      
+
     } catch (error: unknown) {
       console.error('Erro ao turbinar animal:', error);
       const message = error instanceof Error ? error.message : 'Erro desconhecido';
@@ -94,17 +143,16 @@ class BoostService {
   }
 
   /**
-   * Aplica boost em um evento
-   * Reduz do pool compartilhado de boosts (mesmos créditos dos animais!)
+   * Aplica turbinar em um evento
    */
-  async boostEvent(userId: string, eventId: string): Promise<BoostResult> {
+  async boostEvent(userId: string, eventId: string, duration: BoostDuration = '24h'): Promise<BoostResult> {
     try {
-      // Chamar função atômica do banco de dados
-      // Esta função usa FOR UPDATE para prevenir race conditions
+      const tier = getBoostTier(duration);
+
       const { data, error } = await supabase.rpc('boost_event_atomic', {
         p_user_id: userId,
         p_event_id: eventId,
-        p_duration_hours: 24
+        p_duration_hours: tier.hours
       });
 
       if (error) {
@@ -115,7 +163,6 @@ class BoostService {
         };
       }
 
-      // A função SQL retorna JSONB com { success, message, boosts_remaining }
       return data as BoostResult;
 
     } catch (error: unknown) {
@@ -127,12 +174,6 @@ class BoostService {
       };
     }
   }
-
-  /**
-   * Compra de boosts adicionais
-   * Fluxo real é feito via edge function (process-boost-payment).
-   */
 }
 
 export const boostService = new BoostService();
-

@@ -17,7 +17,8 @@ import {
   MessageSquare,
   Clock,
   CheckCircle,
-  Calendar
+  Calendar,
+  MapPin
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -29,8 +30,6 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import AppHeader from '@/components/layout/AppHeader';
-import AppFooter from '@/components/layout/AppFooter';
 import { ticketService, Ticket, TicketResponse } from '@/services/ticketService';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -238,11 +237,11 @@ const HelpPage = () => {
 
   const contactOptions = [
     {
-      type: 'email',
-      title: 'Email',
+      type: 'email-suporte',
+      title: 'Suporte técnico',
       description: 'suporte@vitrinedocavalo.com.br',
       icon: Mail,
-      action: 'Enviar Email',
+      action: 'Enviar e-mail',
       available: true
     }
   ];
@@ -325,6 +324,15 @@ const HelpPage = () => {
     }
   }, [user, loadMyTickets]);
 
+  // Links antigos (/contact) e rodapé apontam para #contato
+  useEffect(() => {
+    if (location.hash !== '#contato') return;
+    const t = window.setTimeout(() => {
+      document.getElementById('contato')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
+    return () => window.clearTimeout(t);
+  }, [location.hash, location.pathname]);
+
   // Recarregar tickets após enviar novo ticket
   const handleTicketSubmitWithReload = async (e: React.FormEvent) => {
     await handleTicketSubmit(e);
@@ -366,9 +374,7 @@ const HelpPage = () => {
 
   return (
     <>
-      {!isDashboardContext && <AppHeader onToggleSidebar={undefined} sidebarOpen={false} />}
-      
-      <div className={`min-h-screen bg-white ${isDashboardContext ? '' : 'pt-16 lg:pt-20'}`}>
+      <div className="min-h-screen bg-white">
         {/* Hero Section */}
         <div className="bg-gradient-to-br from-blue-50 to-white border-b border-slate-200">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
@@ -380,7 +386,7 @@ const HelpPage = () => {
                 Central de Ajuda
               </h1>
               <p className="text-xl text-slate-600 max-w-2xl mx-auto">
-                Encontre respostas para suas dúvidas ou entre em contato com nosso suporte
+                Perguntas frequentes, suporte por ticket e contato com nosso time
               </p>
             </div>
           </div>
@@ -414,11 +420,13 @@ const HelpPage = () => {
             </div>
           )}
 
+          {/* ── Grid: FAQ (esquerda) + Ticket (direita) ── */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Help Categories with FAQs */}
+
+            {/* Coluna esquerda — Perguntas Frequentes */}
             <div className="lg:col-span-2 space-y-8">
               <h2 className="text-3xl font-bold text-slate-900">Perguntas Frequentes</h2>
-              
+
               <div className="space-y-6">
                 {helpCategories.map((category) => {
                   const IconComponent = category.icon;
@@ -439,12 +447,11 @@ const HelpPage = () => {
                           </div>
                         </div>
 
-                        {/* FAQs Accordion */}
                         <div className="space-y-3">
                           {category.faqs.map((faq, index) => {
                             const faqId = `${category.id}-${index}`;
                             const isExpanded = expandedFAQ === faqId;
-                            
+
                             return (
                               <div key={index} className="border border-slate-200 rounded-lg overflow-hidden">
                                 <button
@@ -460,7 +467,7 @@ const HelpPage = () => {
                                     <ChevronDown className="h-5 w-5 text-slate-400 flex-shrink-0" />
                                   )}
                                 </button>
-                                
+
                                 {isExpanded && (
                                   <div className="px-4 pb-4 pt-2 bg-slate-50 border-t border-slate-200">
                                     <p className="text-slate-700 leading-relaxed">
@@ -476,112 +483,115 @@ const HelpPage = () => {
                     </Card>
                   );
                 })}
+              </div>
+            </div>
+
+            {/* Coluna direita — Enviar ticket de suporte (sticky) */}
+            <div className="lg:col-span-1">
+              <div className="lg:sticky lg:top-24 space-y-6">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-2xl font-bold text-slate-900">Enviar ticket</h2>
+                  {user && (
+                    <Badge className="bg-green-100 text-green-700 border-0">
+                      Conectado
+                    </Badge>
+                  )}
+                </div>
+
+                {!user && (
+                  <Alert className="bg-orange-50 border-orange-200">
+                    <AlertCircle className="h-4 w-4 text-orange-600" />
+                    <AlertDescription className="text-orange-800">
+                      <strong>Login necessário:</strong> Você precisa estar logado para enviar um ticket.
+                      Preencha o formulário e clique em "Enviar" para ser redirecionado ao login.
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                <Card className="bg-white shadow-lg border border-slate-200">
+                  <div className="p-6">
+                    <form onSubmit={handleTicketSubmitWithReload} className="space-y-5">
+                      <div className="space-y-2">
+                        <Label htmlFor="subject" className="text-sm font-semibold text-gray-700">
+                          Assunto *
+                        </Label>
+                        <Input
+                          id="subject"
+                          placeholder="Ex: Problema ao cadastrar animal"
+                          value={ticketData.subject}
+                          onChange={(e) => setTicketData({ ...ticketData, subject: e.target.value })}
+                          className="h-11"
+                          required
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="category" className="text-sm font-semibold text-gray-700">
+                          Categoria *
+                        </Label>
+                        <select
+                          id="category"
+                          value={ticketData.category}
+                          onChange={(e) => setTicketData({ ...ticketData, category: e.target.value })}
+                          className="w-full h-11 px-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          required
+                        >
+                          <option value="">Selecione uma categoria</option>
+                          {ticketCategories.map((cat) => (
+                            <option key={cat.value} value={cat.value}>
+                              {cat.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="description" className="text-sm font-semibold text-gray-700">
+                          Descrição *
+                        </Label>
+                        <Textarea
+                          id="description"
+                          placeholder="Descreva detalhadamente seu problema ou dúvida..."
+                          value={ticketData.description}
+                          onChange={(e) => setTicketData({ ...ticketData, description: e.target.value })}
+                          className="min-h-[130px] resize-none"
+                          required
+                        />
+                        <p className="text-xs text-gray-500">
+                          Quanto mais detalhes, mais rápido poderemos ajudar.
+                        </p>
+                      </div>
+
+                      <Button
+                        type="submit"
+                        disabled={isSubmitting}
+                        className="w-full h-11 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg"
+                      >
+                        {isSubmitting ? (
+                          <>
+                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                            Enviando...
+                          </>
+                        ) : (
+                          <>
+                            <Send className="h-5 w-5 mr-2" />
+                            {user ? 'Enviar Ticket' : 'Fazer Login para Enviar'}
+                          </>
+                        )}
+                      </Button>
+                    </form>
+                  </div>
+                </Card>
+              </div>
             </div>
           </div>
 
-          {/* Ticket Support Form */}
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-gray-900">Enviar Ticket</h2>
-              {user && (
-                <Badge className="bg-green-100 text-green-700 border-0">
-                  Conectado
-                </Badge>
-              )}
-            </div>
+          {/* ── Seção Contato (abaixo do grid) ── */}
+          <section id="contato" className="mt-16 space-y-8 scroll-mt-24 lg:scroll-mt-28">
 
-            {!user && (
-              <Alert className="bg-orange-50 border-orange-200">
-                <AlertCircle className="h-4 w-4 text-orange-600" />
-                <AlertDescription className="text-orange-800">
-                  <strong>Login necessário:</strong> Você precisa estar logado para enviar um ticket. 
-                  Preencha o formulário e clique em "Enviar" para ser redirecionado ao login.
-                </AlertDescription>
-              </Alert>
-            )}
-            
-            <Card className="bg-white shadow-lg">
-              <div className="p-6">
-                <form onSubmit={handleTicketSubmitWithReload} className="space-y-6">
-                  {/* Assunto */}
-                  <div className="space-y-2">
-                    <Label htmlFor="subject" className="text-sm font-semibold text-gray-700">
-                      Assunto do Ticket *
-                    </Label>
-                    <Input
-                      id="subject"
-                      placeholder="Ex: Problema ao cadastrar animal"
-                      value={ticketData.subject}
-                      onChange={(e) => setTicketData({ ...ticketData, subject: e.target.value })}
-                      className="h-12"
-                      required
-                    />
-                  </div>
-
-                  {/* Categoria */}
-                  <div className="space-y-2">
-                    <Label htmlFor="category" className="text-sm font-semibold text-gray-700">
-                      Categoria *
-                    </Label>
-                    <select
-                      id="category"
-                      value={ticketData.category}
-                      onChange={(e) => setTicketData({ ...ticketData, category: e.target.value })}
-                      className="w-full h-12 px-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      required
-                    >
-                      <option value="">Selecione uma categoria</option>
-                      {ticketCategories.map((cat) => (
-                        <option key={cat.value} value={cat.value}>
-                          {cat.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Descrição */}
-                  <div className="space-y-2">
-                    <Label htmlFor="description" className="text-sm font-semibold text-gray-700">
-                      Descrição do Problema *
-                    </Label>
-                    <Textarea
-                      id="description"
-                      placeholder="Descreva detalhadamente seu problema ou dúvida..."
-                      value={ticketData.description}
-                      onChange={(e) => setTicketData({ ...ticketData, description: e.target.value })}
-                      className="min-h-[150px] resize-none"
-                      required
-                    />
-                    <p className="text-xs text-gray-500">
-                      Quanto mais detalhes você fornecer, mais rápido poderemos ajudar.
-                    </p>
-                  </div>
-
-                  {/* Botão Submit */}
-                  <Button 
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="w-full h-12 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg"
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                        Enviando...
-                      </>
-                    ) : (
-                      <>
-                        <Send className="h-5 w-5 mr-2" />
-                        {user ? 'Enviar Ticket' : 'Fazer Login para Enviar'}
-                      </>
-                    )}
-                  </Button>
-                </form>
-              </div>
-            </Card>
-
-            {/* Contact Options */}
+            {/* Outros canais */}
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-slate-900">Outros Canais de Contato</h3>
+              <h2 className="text-3xl font-bold text-slate-900">Outros canais</h2>
               {contactOptions.map((option) => {
                 const IconComponent = option.icon;
                 return (
@@ -595,7 +605,7 @@ const HelpPage = () => {
                           <h4 className="font-semibold text-slate-900 text-sm">{option.title}</h4>
                           <p className="text-sm text-slate-600 truncate">{option.description}</p>
                         </div>
-                        <a 
+                        <a
                           href={`mailto:${option.description}`}
                           className="text-sm font-medium text-blue-600 hover:text-blue-700 flex-shrink-0"
                         >
@@ -608,7 +618,33 @@ const HelpPage = () => {
               })}
             </div>
 
-            {/* Quick Links */}
+            {/* Contato */}
+            <Card className="bg-slate-50 border-slate-200 shadow-sm">
+              <div className="p-6 space-y-4">
+                <h3 className="text-lg font-semibold text-slate-900">Contato</h3>
+                <p className="text-slate-600 leading-relaxed">
+                  Nosso time está pronto para ajudar. Responderemos o mais rápido possível.
+                </p>
+                <div className="flex flex-col sm:flex-row sm:flex-wrap gap-4 text-slate-700">
+                  <a
+                    href="mailto:contato@vitrinedocavalo.com.br"
+                    className="inline-flex items-center gap-2 font-medium text-blue-600 hover:text-blue-700"
+                  >
+                    <Mail className="h-4 w-4 shrink-0" />
+                    contato@vitrinedocavalo.com.br
+                  </a>
+                  <span className="hidden sm:inline text-slate-300" aria-hidden>
+                    |
+                  </span>
+                  <span className="inline-flex items-center gap-2">
+                    <MapPin className="h-4 w-4 shrink-0 text-slate-500" />
+                    São Paulo, SP — Brasil
+                  </span>
+                </div>
+              </div>
+            </Card>
+
+            {/* Links Úteis */}
             <Card className="bg-blue-50 border-blue-200">
               <div className="p-6">
                 <h3 className="text-lg font-semibold text-slate-900 mb-4">Links Úteis</h3>
@@ -628,12 +664,9 @@ const HelpPage = () => {
                 </div>
               </div>
             </Card>
-          </div>
+          </section>
         </div>
       </div>
-    </div>
-    
-    {!isDashboardContext && <AppFooter sidebarOpen={false} hasSidebar={false} />}
 
     {/* Modal: Meus Tickets */}
     {user && (

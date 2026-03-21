@@ -1,33 +1,46 @@
 /**
- * Constantes centralizadas para planos e limites de anúncios.
+ * Constantes centralizadas para planos e limites.
  *
- * IMPORTANTE:
- * - Limites são para anúncios ATIVOS simultaneamente (não acumulam mês a mês).
- * - Anúncios individuais pagos NÃO consomem cota do plano.
+ * MODELO 100% BASEADO EM PLANOS:
+ * - Nenhum usuário publica sem plano ativo
+ * - Limites são para animais ATIVOS simultaneamente
+ * - Turbinares inclusos resetam mensalmente (não acumulam)
  */
 
 export const PLAN_LIMITS = {
   free: 0,
-  basic: 10,
-  pro: 15,
-  ultra: 25,
-  vip: 15
+  essencial: 1,
+  criador: 5,
+  haras: 10,
+  elite: 25,
+  vip: 10
+} as const;
+
+export const PLAN_BOOSTS_INCLUDED = {
+  free: 0,
+  essencial: 0,
+  criador: 2,
+  haras: 5,
+  elite: 10,
+  vip: 0
 } as const;
 
 export const PLAN_NAMES = {
-  free: 'Gratuito',
-  basic: 'Plano Iniciante',
-  pro: 'Plano Pro',
-  ultra: 'Plano Elite',
+  free: 'Sem Plano',
+  essencial: 'Essencial',
+  criador: 'Criador',
+  haras: 'Haras Destaque',
+  elite: 'Elite',
   vip: 'VIP (Cortesia)'
 } as const;
 
 export const PLAN_DESCRIPTIONS = {
-  free: 'Sem anúncios incluídos. Pague individualmente por anúncio (30 dias).',
-  basic: 'Mantenha até 10 anúncios ativos simultaneamente durante todo o mês.',
-  pro: 'Mantenha até 15 anúncios ativos simultaneamente durante todo o mês.',
-  ultra: 'Mantenha até 25 anúncios ativos simultaneamente durante todo o mês.',
-  vip: 'Plano cortesia com benefícios do Pro, concedido exclusivamente pelo administrador.'
+  free: 'Assine um plano para começar a cadastrar seus animais.',
+  essencial: 'Cadastre até 1 animal ativo.',
+  criador: 'Cadastre até 5 animais + 2 turbinares/mês.',
+  haras: 'Cadastre até 10 animais + 5 turbinares/mês.',
+  elite: 'Cadastre até 25 animais + 10 turbinares/mês.',
+  vip: 'Plano cortesia (10 animais, sem turbinares grátis). Concedido pelo administrador.'
 } as const;
 
 export type PlanType = keyof typeof PLAN_LIMITS;
@@ -40,7 +53,9 @@ const isKnownPlan = (plan: string | null | undefined): plan is PlanType => {
 };
 
 /**
- * Normaliza identificadores de plano (ex.: basic_annual -> basic).
+ * Normaliza identificadores de plano (ex.: criador_annual -> criador).
+ * Também mapeia planos antigos para os novos:
+ *   basic -> essencial, pro -> criador, ultra -> elite
  */
 export const normalizePlanId = (plan: string | null | undefined): PlanType | null => {
   if (!plan) return null;
@@ -50,6 +65,17 @@ export const normalizePlanId = (plan: string | null | undefined): PlanType | nul
     ? lower.slice(0, -ANNUAL_SUFFIX.length)
     : lower;
 
+  // Mapeamento de planos antigos para novos
+  const legacyMap: Record<string, PlanType> = {
+    basic: 'essencial',
+    pro: 'criador',
+    ultra: 'elite'
+  };
+
+  if (legacyMap[sanitized]) {
+    return legacyMap[sanitized];
+  }
+
   return isKnownPlan(sanitized) ? (sanitized as PlanType) : null;
 };
 
@@ -58,7 +84,7 @@ export const normalizePlanId = (plan: string | null | undefined): PlanType | nul
  */
 export const isPaidPlan = (plan: string | null | undefined): boolean => {
   const normalized = normalizePlanId(plan);
-  return normalized === 'basic' || normalized === 'pro' || normalized === 'ultra';
+  return normalized === 'essencial' || normalized === 'criador' || normalized === 'haras' || normalized === 'elite';
 };
 
 /**
@@ -69,7 +95,7 @@ export const isAdminOnlyPlan = (plan: string | null | undefined): boolean => {
 };
 
 /**
- * Retorna o limite de anúncios para um plano
+ * Retorna o limite de animais para um plano
  */
 export const getPlanLimit = (plan: string | PlanType | null | undefined): number => {
   const normalized = normalizePlanId(plan);
@@ -79,3 +105,13 @@ export const getPlanLimit = (plan: string | PlanType | null | undefined): number
   return PLAN_LIMITS[normalized] ?? PLAN_LIMITS.free;
 };
 
+/**
+ * Retorna a quantidade de turbinares inclusos no plano por mês
+ */
+export const getPlanBoostsIncluded = (plan: string | PlanType | null | undefined): number => {
+  const normalized = normalizePlanId(plan);
+  if (!normalized) {
+    return PLAN_BOOSTS_INCLUDED.free;
+  }
+  return PLAN_BOOSTS_INCLUDED[normalized] ?? PLAN_BOOSTS_INCLUDED.free;
+};

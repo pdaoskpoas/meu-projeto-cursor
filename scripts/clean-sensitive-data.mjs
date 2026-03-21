@@ -31,6 +31,8 @@ const replacements = [
   // Chaves Supabase expostas (manter apenas estrutura)
   { pattern: /eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/g, 
     replacement: 'your_supabase_anon_key_here' },
+  { pattern: /sb_secret_[A-Za-z0-9_-]+/g, 
+    replacement: 'sb_secret_***' },
   
   // URLs do Supabase (manter apenas estrutura)
   { pattern: /https:\/\/wyufgltprapazpxmtaff\.supabase\.co/g, 

@@ -50,7 +50,15 @@ export async function refreshActiveSession(timeoutMs = DEFAULT_TIMEOUT_MS) {
       const { data } = await supabase.auth.getSession();
       if (data.session) return data.session;
     } catch {
-      // Se o outro refresh falhou, tentar nosso próprio
+      // Se o outro refresh falhou, verificar se sessão existe mesmo assim
+      // (o auth listener pode ter atualizado em background)
+      try {
+        const { data } = await supabase.auth.getSession();
+        if (data.session && isSessionFresh(data.session)) {
+          diagnostics.info(SESSION_SCOPE, 'Using existing fresh session after failed wait');
+          return data.session;
+        }
+      } catch { /* continuar para tentar nosso próprio refresh */ }
     }
   }
 
@@ -78,6 +86,20 @@ export async function refreshActiveSession(timeoutMs = DEFAULT_TIMEOUT_MS) {
 
     diagnostics.debug(SESSION_SCOPE, 'Session refresh succeeded');
     return data.session;
+  } catch (refreshError) {
+    // FALLBACK: Se o refresh deu timeout mas a sessão existe (auth listener
+    // pode ter renovado em background via TOKEN_REFRESHED), usar ela
+    try {
+      const { data } = await supabase.auth.getSession();
+      if (data.session) {
+        diagnostics.info(SESSION_SCOPE, 'Refresh timed out but session exists, using it', {
+          expiresAt: data.session.expires_at
+        });
+        return data.session;
+      }
+    } catch { /* sem sessão, propagar erro original */ }
+
+    throw refreshError;
   } finally {
     activeRefreshPromise = null;
   }

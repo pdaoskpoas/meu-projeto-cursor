@@ -20,7 +20,12 @@ export interface RegisterData {
   accountType: 'personal' | 'institutional'
   propertyName?: string
   propertyType?: 'haras' | 'fazenda' | 'cte' | 'central-reproducao'
+  marketingConsent?: boolean
 }
+
+// Versoes atuais dos documentos legais — atualizar a cada nova versao
+export const CURRENT_TERMS_VERSION = '1.0'
+export const CURRENT_PRIVACY_VERSION = '1.0'
 
 export interface AuthUser {
   id: string
@@ -89,25 +94,19 @@ class AuthService {
       logSupabaseOperation('Register attempt', { email: userData.email })
 
       const supabase = await getSupabaseClient()
-      // Verificar se email já existe
-      const { data: existingUser } = await supabase
-        .from('profiles')
-        .select('email')
-        .eq('email', userData.email)
-        .single()
+      // Verificar se email já existe (via RPC segura - não expõe dados)
+      const { data: emailExists } = await supabase
+        .rpc('check_email_exists', { check_email: userData.email })
 
-      if (existingUser) {
+      if (emailExists) {
         throw new Error('Email já cadastrado')
       }
 
-      // Verificar se CPF já existe
-      const { data: existingCpf } = await supabase
-        .from('profiles')
-        .select('cpf')
-        .eq('cpf', userData.cpf)
-        .single()
+      // Verificar se CPF já existe (via RPC segura - não expõe dados)
+      const { data: cpfExists } = await supabase
+        .rpc('check_cpf_exists', { check_cpf: userData.cpf })
 
-      if (existingCpf) {
+      if (cpfExists) {
         throw new Error('CPF já cadastrado')
       }
 
@@ -125,21 +124,51 @@ class AuthService {
 
       if (authError) {
         logSupabaseOperation('Auth signup failed', null, authError)
-        throw handleSupabaseError(authError)
+        // Converter erro do Supabase Auth para Error com mensagem legível
+        const authMsg = authError.message || ''
+        if (authMsg.toLowerCase().includes('already registered') ||
+            authMsg.toLowerCase().includes('already been registered') ||
+            authMsg.toLowerCase().includes('user already')) {
+          throw new Error('Email já cadastrado')
+        }
+        throw new Error(authMsg || 'Erro ao criar conta')
       }
 
       if (!authData.user) {
         throw new Error('Erro ao criar usuário')
       }
 
+      // Registrar consentimento ANTES do perfil (trigger exige, se migration aplicada)
+      try {
+        const { error: consentError } = await supabase.rpc('record_consent', {
+          p_user_id: authData.user.id,
+          p_terms_version: CURRENT_TERMS_VERSION,
+          p_privacy_version: CURRENT_PRIVACY_VERSION,
+          p_ip_address: null,
+          p_user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : null,
+          p_mechanism: 'signup_checkbox',
+          p_metadata: {
+            marketing_consent: userData.marketingConsent ?? false,
+            signup_timestamp: new Date().toISOString()
+          }
+        })
+
+        if (consentError) {
+          logSupabaseOperation('Consent recording failed (non-fatal)', null, consentError)
+        }
+      } catch (consentErr) {
+        // RPC pode não existir se migration 101 não foi aplicada — prosseguir
+        logSupabaseOperation('record_consent unavailable (non-fatal)', null, consentErr)
+      }
+
       // Gerar código público
       const publicCode = await this.generatePublicCode(
-        authData.user.id, 
+        authData.user.id,
         userData.accountType
       )
 
-      // Criar perfil
-      const profileData: ProfileInsert = {
+      // Criar perfil — tenta com marketing_consent, fallback sem
+      const baseProfileData: ProfileInsert = {
         id: authData.user.id,
         name: userData.name,
         email: userData.email,
@@ -153,17 +182,49 @@ class AuthService {
         plan: 'free'
       }
 
-      const { data: profile, error: profileError } = await supabase
+      let profile: Profile | null = null
+
+      // Tentar com campos de marketing consent
+      const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .insert(profileData)
+        .insert({
+          ...baseProfileData,
+          marketing_consent: userData.marketingConsent ?? false,
+          marketing_consent_at: userData.marketingConsent ? new Date().toISOString() : null
+        } as ProfileInsert)
         .select()
         .single()
 
       if (profileError) {
-        logSupabaseOperation('Profile creation failed', null, profileError)
-        // Limpar usuário do auth se perfil falhou
-        await supabase.auth.admin.deleteUser(authData.user.id)
-        throw handleSupabaseError(profileError)
+        // Se coluna não existe (migration 101 não aplicada), tentar sem
+        if (profileError.message?.includes('column') ||
+            profileError.message?.includes('marketing_consent') ||
+            profileError.code === '42703') {
+          logSupabaseOperation('Retrying profile insert without marketing fields', null, profileError)
+          const { data: fallbackData, error: fallbackError } = await supabase
+            .from('profiles')
+            .insert(baseProfileData)
+            .select()
+            .single()
+
+          if (fallbackError) {
+            logSupabaseOperation('Profile creation failed', null, fallbackError)
+            await this.cleanupOrphanAuth(supabase)
+            throw new Error(fallbackError.message || 'Erro ao criar perfil')
+          }
+          profile = fallbackData as Profile
+        } else {
+          logSupabaseOperation('Profile creation failed', null, profileError)
+          await this.cleanupOrphanAuth(supabase)
+          throw new Error(profileError.message || 'Erro ao criar perfil')
+        }
+      } else {
+        profile = profileData as Profile
+      }
+
+      if (!profile) {
+        await this.cleanupOrphanAuth(supabase)
+        throw new Error('Erro ao criar perfil do usuário')
       }
 
       const authUser: AuthUser = {
@@ -313,6 +374,21 @@ class AuthService {
     } catch (error) {
       logSupabaseOperation('Check suspension error', null, error);
       return false;
+    }
+  }
+
+  // Limpar usuario orfao (criado no auth mas sem perfil) via Edge Function
+  private async cleanupOrphanAuth(client: Awaited<ReturnType<typeof getSupabaseClient>>): Promise<void> {
+    try {
+      const { data: { session } } = await client.auth.getSession()
+      if (!session) return
+
+      await client.functions.invoke('cleanup-orphan-auth', {
+        headers: { Authorization: `Bearer ${session.access_token}` }
+      })
+    } catch (err) {
+      // Falha no cleanup nao deve mascarar o erro original
+      logSupabaseOperation('Cleanup orphan auth failed (non-fatal)', null, err)
     }
   }
 

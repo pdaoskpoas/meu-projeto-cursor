@@ -15,7 +15,6 @@ import { boostService } from '@/services/boostService';
 import { useToast } from '@/hooks/use-toast';
 import EditAnimalModal from '@/components/forms/animal/EditAnimalModal';
 import BoostCounter from '@/components/dashboard/BoostCounter';
-import BoostPlansModal from '@/components/BoostPlansModal';
 import PurchaseBoostsModal from '@/components/payment/PurchaseBoostsModal';
 import BoostCountdown from '@/components/BoostCountdown';
 import { useUserBoosts } from '@/hooks/useUserBoosts';
@@ -60,9 +59,9 @@ const AnimalsPage = () => {
   const [loading, setLoading] = useState(true);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [animalToEdit, setAnimalToEdit] = useState<UserAnimal | null>(null);
-  const [isBoostPlansModalOpen, setIsBoostPlansModalOpen] = useState(false);
   const [isBoostCheckoutOpen, setIsBoostCheckoutOpen] = useState(false);
-  const [selectedBoostQty, setSelectedBoostQty] = useState<number>(1);
+  const [boostTargetAnimalId, setBoostTargetAnimalId] = useState<string | undefined>(undefined);
+  const [boostTargetAnimalName, setBoostTargetAnimalName] = useState<string | undefined>(undefined);
   const [isAddAnimalModalOpen, setIsAddAnimalModalOpen] = useState(false);
   const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'expired' | 'paused'>('all');
   const { boosts, refreshBoosts } = useUserBoosts();
@@ -254,40 +253,52 @@ const AnimalsPage = () => {
     }
   };
 
-  const handleBoostAnimal = async (animalId: string) => {
+  const handleBoostAnimal = async (animal: UserAnimal) => {
     if (!user?.id) return;
-    
-    if (boosts.total === 0) {
-      setIsBoostPlansModalOpen(true);
+
+    // Bloquear re-turbinar animal já turbinado
+    if (animal.is_boosted && animal.boost_expires_at && new Date(animal.boost_expires_at) > new Date()) {
+      const expiresDate = new Date(animal.boost_expires_at).toLocaleString('pt-BR');
+      toast({
+        title: 'Animal já turbinado',
+        description: `"${animal.name}" já está turbinado até ${expiresDate}. Aguarde o término.`,
+        variant: 'destructive'
+      });
       return;
     }
-    
+
+    if (boosts.total === 0) {
+      // Sem créditos: abre modal de compra com animal pré-selecionado
+      setBoostTargetAnimalId(animal.id);
+      setBoostTargetAnimalName(animal.name);
+      setIsBoostCheckoutOpen(true);
+      return;
+    }
+
     try {
-      // Usar boostService compartilhado (eventos + animais)
-      const result = await boostService.boostAnimal(user.id, animalId);
-      
+      const result = await boostService.boostAnimal(user.id, animal.id);
+
       if (result.success) {
-        toast({ 
+        toast({
           title: 'Animal Turbinado!',
           description: result.message
         });
         refreshBoosts();
-        
-        // Recarregar lista
+
         const userAnimals = await animalService.getUserAnimals(user.id);
         setAnimals(userAnimals);
       } else {
-        toast({ 
+        toast({
           title: 'Não foi possível turbinar',
           description: result.message,
-          variant: 'destructive' 
+          variant: 'destructive'
         });
       }
     } catch (error: unknown) {
-      toast({ 
-        title: 'Erro ao turbinar', 
-        description: error?.message || 'Tente novamente',
-        variant: 'destructive' 
+      toast({
+        title: 'Erro ao turbinar',
+        description: (error as Error)?.message || 'Tente novamente',
+        variant: 'destructive'
       });
     }
   };
@@ -345,7 +356,11 @@ const AnimalsPage = () => {
           <BoostCounter
             availableBoosts={boosts.total}
             showBuyButton={true}
-            onBuyClick={() => setIsBoostPlansModalOpen(true)}
+            onBuyClick={() => {
+              setBoostTargetAnimalId(undefined);
+              setBoostTargetAnimalName(undefined);
+              setIsBoostCheckoutOpen(true);
+            }}
           />
         </div>
 
@@ -574,33 +589,26 @@ const AnimalsPage = () => {
                         </Button>
                         
                         {/* Botão de boost - sempre visível quando ativo */}
-                        <Button 
-                          size="sm" 
+                        <Button
+                          size="sm"
+                          disabled={animal.is_boosted && !!animal.boost_expires_at && new Date(animal.boost_expires_at) > new Date()}
                           className={`${
-                            animal.is_boosted 
-                              ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 animate-pulse' 
+                            animal.is_boosted
+                              ? 'bg-gradient-to-r from-purple-600 to-pink-600 opacity-70 cursor-not-allowed'
                               : 'bg-purple-600 hover:bg-purple-700'
                           } text-white flex items-center`}
-                          onClick={() => {
-                            if (boosts.total === 0) {
-                              // Sem créditos: abre modal de compra
-                              setIsBoostPlansModalOpen(true);
-                            } else {
-                              // Com créditos: turbina
-                              handleBoostAnimal(animal.id);
-                            }
-                          }}
+                          onClick={() => handleBoostAnimal(animal)}
                           title={
-                            boosts.total === 0 
-                              ? 'Comprar créditos' 
-                              : animal.is_boosted 
-                                ? 'Adicionar mais 24h de destaque' 
-                                : 'Turbinar anúncio por 24h'
+                            animal.is_boosted && animal.boost_expires_at && new Date(animal.boost_expires_at) > new Date()
+                              ? `Turbinado até ${new Date(animal.boost_expires_at).toLocaleString('pt-BR')}`
+                              : boosts.total === 0
+                                ? 'Comprar turbinar'
+                                : 'Turbinar anúncio'
                           }
                         >
                           <Zap className="h-4 w-4 mr-1" />
                           <span className="text-xs font-medium">
-                            {animal.is_boosted ? '+24h' : 'Turbinar'}
+                            {animal.is_boosted ? 'Turbinado' : 'Turbinar'}
                           </span>
                         </Button>
                       </>
@@ -652,25 +660,13 @@ const AnimalsPage = () => {
           />
         )}
 
-        {/* Modal de compra de boosts */}
-        <BoostPlansModal
-          isOpen={isBoostPlansModalOpen}
-          onClose={() => setIsBoostPlansModalOpen(false)}
-          onSelectPlan={(plan) => {
-            const quantities = { single: 1, popular: 5, prime: 10 };
-            setSelectedBoostQty(quantities[plan]);
-            setIsBoostPlansModalOpen(false);
-            setIsBoostCheckoutOpen(true);
-          }}
-          type="animal"
-        />
-
+        {/* Modal de compra de turbinar (duração) */}
         <PurchaseBoostsModal
           isOpen={isBoostCheckoutOpen}
           onClose={() => setIsBoostCheckoutOpen(false)}
           userId={user?.id || ''}
-          initialQuantity={selectedBoostQty}
-          lockQuantity
+          animalId={boostTargetAnimalId}
+          animalName={boostTargetAnimalName}
           onSuccess={() => {
             refreshBoosts();
             setIsBoostCheckoutOpen(false);

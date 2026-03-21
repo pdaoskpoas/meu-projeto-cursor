@@ -27,7 +27,9 @@ interface User {
   isSuspended?: boolean;
   suspensionDate?: string;
   suspensionReason?: string;
-  availableBoosts?: number; // Impulsionamentos disponíveis
+  availableBoosts?: number;
+  marketingConsent?: boolean;
+  phone?: string;
 }
 
 interface AuthContextType {
@@ -48,6 +50,7 @@ interface RegisterData {
   email: string;
   phone: string;
   password: string;
+  marketingConsent?: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -81,7 +84,9 @@ const mapProfileToUser = (profile: Profile): User => {
     avatar: profile.avatar_url ?? undefined,
     cpf: profile.cpf ?? undefined,
     isSuspended: profile.is_suspended ?? undefined,
-    availableBoosts: profile.available_boosts ?? undefined
+    availableBoosts: profile.available_boosts ?? undefined,
+    marketingConsent: profile.marketing_consent ?? false,
+    phone: profile.phone ?? undefined
   };
 };
 
@@ -212,7 +217,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         phone: userData.phone,
         accountType: userData.accountType,
         propertyName: userData.propertyName,
-        propertyType: userData.propertyType
+        propertyType: userData.propertyType,
+        marketingConsent: userData.marketingConsent
       });
 
       if (created?.profile) {
@@ -220,8 +226,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return true;
       }
       return false;
-    } catch {
-      return false;
+    } catch (error) {
+      throw error;
     } finally {
       setIsLoading(false);
     }

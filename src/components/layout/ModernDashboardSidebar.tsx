@@ -206,7 +206,7 @@ export function ModernDashboardSidebar() {
           icon: Settings
         },
         { 
-          title: "Ajuda", 
+          title: "Central de Ajuda", 
           url: "/ajuda", 
           icon: HelpCircle
         }
@@ -244,8 +244,10 @@ export function ModernDashboardSidebar() {
                 {user?.plan && user.plan !== 'free' && (
                   <Badge variant="secondary" className={`text-[10px] px-1.5 py-0 h-4 border ${
                     user.plan === 'vip' ? 'bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700 border-purple-200' :
-                    user.plan === 'ultra' ? 'bg-orange-100 text-orange-700 border-orange-200' :
-                    user.plan === 'pro' ? 'bg-blue-100 text-blue-700 border-blue-200' :
+                    user.plan === 'elite' ? 'bg-purple-100 text-purple-700 border-purple-200' :
+                    user.plan === 'haras' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' :
+                    user.plan === 'criador' ? 'bg-orange-100 text-orange-700 border-orange-200' :
+                    user.plan === 'essencial' ? 'bg-blue-100 text-blue-700 border-blue-200' :
                     'bg-green-100 text-green-700 border-green-200'
                   }`}>
                     {user.plan.toUpperCase()}

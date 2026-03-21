@@ -39,7 +39,6 @@ import { log, captureError, logEvent } from '@/utils/logger';
 import { supabase } from '@/lib/supabase';
 import { logAdminAction } from '@/services/adminAuditService';
 import { PaywallModal } from './PaywallModal';
-import PayIndividualModal from '@/components/payment/PayIndividualModal';
 import { ensureActiveSession } from '@/services/sessionService';
 
 interface StepReviewProps {
@@ -66,10 +65,8 @@ export const StepReview: React.FC<StepReviewProps> = ({
   const navigate = useNavigate();
   const effectiveUserId = actingUserId || user?.id;
   
-  // ✅ Estado para controlar o modal de paywall
+  // Estado para controlar o modal de paywall
   const [showPaywallModal, setShowPaywallModal] = useState(false);
-  const [showIndividualPaymentModal, setShowIndividualPaymentModal] = useState(false);
-  const [individualPaymentInfo, setIndividualPaymentInfo] = useState<{ id: string; name: string } | null>(null);
   const publishLockRef = React.useRef(false);
   
   // ✅ Referência para controlar se o componente está montado
@@ -248,9 +245,10 @@ export const StepReview: React.FC<StepReviewProps> = ({
       console.log('🔐 Validando sessão e buscando perfil em paralelo...');
       let userProfile: { property_name: string | null; account_type: string } | null = null;
 
-      // ensureActiveSession agora verifica se sessão é fresca antes de forçar refresh
-      // e usa mutex para evitar refreshes simultâneos — normalmente retorna instantâneo
-      const sessionPromise = ensureActiveSession({ forceRefresh: true, timeoutMs: 15000 });
+      // Não forçar refresh — apenas verificar se sessão existe e é válida.
+      // O auth listener já mantém a sessão atualizada via TOKEN_REFRESHED.
+      // forceRefresh causava timeouts quando múltiplos refreshes concorriam.
+      const sessionPromise = ensureActiveSession({ forceRefresh: false });
 
       const profilePromise = (async () => {
         if (actingProfile) {
@@ -370,8 +368,7 @@ export const StepReview: React.FC<StepReviewProps> = ({
         haras_id: userProfile?.account_type === 'institutional' ? effectiveUserId : null,
         haras_name: userProfile?.property_name || null,
         // Se não tem fotos, criar já ativo direto (evita round-trip extra do updateAnimal)
-        ad_status: formData.photos.files.length > 0 ? 'paused' : 'active',
-        is_individual_paid: false
+        ad_status: formData.photos.files.length > 0 ? 'paused' : 'active'
       };
 
       console.log('📝 Dados do animal:', animalData);
@@ -835,112 +832,6 @@ export const StepReview: React.FC<StepReviewProps> = ({
     }
   };
 
-  const buildAnimalPayload = (
-    shareCode: string,
-    userProfile: { property_name: string | null; account_type: string } | null
-  ) => ({
-    share_code: shareCode,
-    name: formData.basicInfo.name,
-    breed: formData.basicInfo.breed,
-    gender: formData.basicInfo.gender,
-    birth_date: formData.basicInfo.birth_date,
-    coat: formData.basicInfo.coat,
-    category: formData.basicInfo.category,
-    current_city: formData.location.current_city,
-    current_state: formData.location.current_state,
-    father_name: formData.genealogy.father_name,
-    mother_name: formData.genealogy.mother_name,
-    paternal_grandfather_name: formData.genealogy.paternal_grandfather_name,
-    paternal_grandmother_name: formData.genealogy.paternal_grandmother_name,
-    maternal_grandfather_name: formData.genealogy.maternal_grandfather_name,
-    maternal_grandmother_name: formData.genealogy.maternal_grandmother_name,
-    paternal_gg_father_name: formData.genealogy.paternal_gg_father_name,
-    paternal_gg_mother_name: formData.genealogy.paternal_gg_mother_name,
-    paternal_gm_father_name: formData.genealogy.paternal_gm_father_name,
-    paternal_gm_mother_name: formData.genealogy.paternal_gm_mother_name,
-    maternal_gg_father_name: formData.genealogy.maternal_gg_father_name,
-    maternal_gg_mother_name: formData.genealogy.maternal_gg_mother_name,
-    maternal_gm_father_name: formData.genealogy.maternal_gm_father_name,
-    maternal_gm_mother_name: formData.genealogy.maternal_gm_mother_name,
-    description: formData.extras.description,
-    allow_messages: formData.publishConfig.allow_messages,
-    auto_renew: formData.publishConfig.auto_renew,
-    owner_id: effectiveUserId,
-    haras_id: userProfile?.account_type === 'institutional' ? effectiveUserId : null,
-    haras_name: userProfile?.property_name || null,
-    ad_status: 'paused',
-    is_individual_paid: false
-  });
-
-  // Publicar pagamento individual (R$ 29,90/mês) - chamado do modal
-  const handlePublishIndividual = async () => {
-    if (!effectiveUserId) return;
-    setShowPaywallModal(false);
-    safeDispatch({ type: 'SET_SUBMITTING', payload: true });
-
-    try {
-      await ensureActiveSession({ forceRefresh: true, timeoutMs: 12000 });
-
-      const shareCode = `${Math.random().toString(36).substring(2, 8).toUpperCase()}-${new Date().getFullYear().toString().slice(-2)}`;
-      const { data: profileResult } = await supabase
-        .from('profiles')
-        .select('property_name, account_type')
-        .eq('id', effectiveUserId)
-        .single();
-
-      const animalData = buildAnimalPayload(shareCode, profileResult || null);
-      const newAnimal = await animalService.createAnimal(animalData);
-
-      if (formData.photos.files.length > 0) {
-        abortControllerRef.current = new AbortController();
-        const uploadTimeout = UPLOAD_TIMEOUT_PER_IMAGE * formData.photos.files.length;
-
-        const uploadedUrls = await withTimeout(
-          uploadMultiplePhotos(
-            formData.photos.files,
-            effectiveUserId,
-            newAnimal.id,
-            (current, total, retrying) => {
-              safeDispatch({
-                type: 'SET_UPLOAD_PROGRESS',
-                payload: {
-                  current,
-                  total,
-                  retrying,
-                  message: retrying
-                    ? 'Tentando novamente...'
-                    : (total === 1 ? 'Enviando imagem...' : `Enviando imagem ${current} de ${total}...`)
-                }
-              });
-            },
-            { signal: abortControllerRef.current.signal }
-          ),
-          uploadTimeout,
-          'O upload está demorando muito. Verifique sua conexão e tente novamente.',
-          abortControllerRef.current
-        );
-
-        await animalService.updateAnimal(newAnimal.id, {
-          images: uploadedUrls
-        });
-      }
-
-      setIndividualPaymentInfo({ id: newAnimal.id, name: newAnimal.name });
-      setShowIndividualPaymentModal(true);
-    } catch (error) {
-      console.error('Erro ao preparar anúncio individual:', error);
-      toast({
-        title: 'Erro ao preparar pagamento',
-        description: 'Não foi possível preparar seu anúncio. Tente novamente.',
-        variant: 'destructive'
-      });
-    } finally {
-      safeDispatch({ type: 'SET_SUBMITTING', payload: false });
-      safeDispatch({ type: 'SET_UPLOAD_PROGRESS', payload: null });
-      abortControllerRef.current = null;
-    }
-  };
-
   // Fazer upgrade do plano - chamado do modal
   const handleUpgradePlan = () => {
     setShowPaywallModal(false);
@@ -1348,36 +1239,12 @@ export const StepReview: React.FC<StepReviewProps> = ({
       </div>
 
       {!isAdminMode && (
-        <>
-          {/* Modal de Paywall para usuários FREE */}
-          <PaywallModal
-            isOpen={showPaywallModal}
-            onClose={() => setShowPaywallModal(false)}
-            onSelectIndividual={handlePublishIndividual}
-            onSelectPlan={handleUpgradePlan}
-          />
-
-          {individualPaymentInfo && (
-            <PayIndividualModal
-              isOpen={showIndividualPaymentModal}
-              onClose={() => setShowIndividualPaymentModal(false)}
-              userId={effectiveUserId || ''}
-              type="animal"
-              contentId={individualPaymentInfo.id}
-              contentName={individualPaymentInfo.name}
-              onSuccess={() => {
-                setShowIndividualPaymentModal(false);
-                sessionStorage.removeItem('animalDraft');
-                sessionStorage.removeItem('animalDraft_timestamp');
-                toast({
-                  title: 'Anúncio publicado!',
-                  description: 'Seu pagamento foi confirmado com sucesso.',
-                });
-                navigate('/dashboard/animals');
-              }}
-            />
-          )}
-        </>
+        <PaywallModal
+          isOpen={showPaywallModal}
+          onClose={() => setShowPaywallModal(false)}
+          onSelectPlan={handleUpgradePlan}
+          isQuotaExceeded={scenario === 'quota_exceeded'}
+        />
       )}
     </Card>
   );

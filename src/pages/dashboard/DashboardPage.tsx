@@ -156,8 +156,10 @@ const DashboardPage = () => {
                       {user?.plan && user.plan !== 'free' && (
                         <Badge className={`border-0 shadow-md ${
                           user.plan === 'vip' ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white' :
-                          user.plan === 'ultra' ? 'bg-gradient-to-r from-orange-400 to-red-500 text-white' :
-                          user.plan === 'pro' ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white' :
+                          user.plan === 'elite' ? 'bg-gradient-to-r from-purple-400 to-indigo-500 text-white' :
+                          user.plan === 'haras' ? 'bg-gradient-to-r from-emerald-400 to-teal-500 text-white' :
+                          user.plan === 'criador' ? 'bg-gradient-to-r from-orange-400 to-red-500 text-white' :
+                          user.plan === 'essencial' ? 'bg-gradient-to-r from-blue-400 to-blue-600 text-white' :
                           'bg-gradient-to-r from-green-400 to-emerald-500 text-white'
                         }`}>
                           <Crown className="h-3 w-3 mr-1" />
