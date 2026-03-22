@@ -92,10 +92,16 @@ const EventsPage = () => {
 
   const handleCreateClick = async () => {
     if (!user) return;
-    
+
+    // Sem plano ativo: abrir modal direto (o overlay de bloqueio cuida do aviso)
+    if (!user.hasActivePlan) {
+      setShowCreateModal(true);
+      return;
+    }
+
     try {
       const limitCheck = await eventLimitsService.checkEventLimit(user.id);
-      
+
       if (limitCheck.can_create) {
         setShowCreateModal(true);
       } else {

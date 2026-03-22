@@ -1,19 +1,21 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { 
-  Users, 
-  UserPlus, 
-  Search, 
-  Award, 
-  CheckCircle, 
-  Clock, 
-  X, 
+import { useNavigate } from 'react-router-dom';
+import {
+  Users,
+  UserPlus,
+  Search,
+  Award,
+  CheckCircle,
+  Clock,
+  X,
   Copy,
   AlertTriangle,
   Loader2,
   Check,
   XCircle,
   Edit,
-  Trash2
+  Trash2,
+  Lock
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -30,7 +32,11 @@ import { partnershipService } from '@/services/partnershipService';
 const SocietyPage = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  
+  const navigate = useNavigate();
+
+  const planBlocked = !user?.hasActivePlan;
+  const isVip = user?.plan === 'vip';
+
   // Estados
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
@@ -379,65 +385,67 @@ const SocietyPage = () => {
           </Button>
         }
       >
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Código Público */}
-          <div className="lg:col-span-1">
-            <Card className="bg-white shadow-lg">
-              <div className="p-6 border-b border-gray-200">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                    <Award className="h-5 w-5 text-blue-600" />
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-semibold text-gray-900">Seu Código Público</h2>
-                    <p className="text-sm text-gray-600">Compartilhe com parceiros</p>
+        <div className={`grid grid-cols-1 ${isVip ? 'lg:grid-cols-3' : ''} gap-8`}>
+          {/* Código Público - Apenas para VIP */}
+          {isVip && (
+            <div className="lg:col-span-1">
+              <Card className="bg-white shadow-lg">
+                <div className="p-6 border-b border-gray-200">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                      <Award className="h-5 w-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <h2 className="text-xl font-semibold text-gray-900">Seu Código Público</h2>
+                      <p className="text-sm text-gray-600">Compartilhe com parceiros</p>
+                    </div>
                   </div>
                 </div>
-              </div>
-              
-              <div className="p-6 space-y-4">
-                <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-6 text-center border border-blue-200">
-                  <div className="text-3xl font-bold text-blue-900 font-mono tracking-wider mb-2">
-                    {user?.publicCode || 'N/A'}
+
+                <div className="p-6 space-y-4">
+                  <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-6 text-center border border-blue-200">
+                    <div className="text-3xl font-bold text-blue-900 font-mono tracking-wider mb-2">
+                      {user?.publicCode || 'N/A'}
+                    </div>
+                    <p className="text-sm text-blue-700 mb-4">Para sociedades e parcerias</p>
+                    <Button
+                      onClick={handleCopyCode}
+                      variant="outline"
+                      className="border-blue-300 text-blue-700 hover:bg-blue-50"
+                    >
+                      <Copy className="h-4 w-4 mr-2" />
+                      Copiar Código
+                    </Button>
                   </div>
-                  <p className="text-sm text-blue-700 mb-4">Para sociedades e parcerias</p>
-                  <Button 
-                    onClick={handleCopyCode}
-                    variant="outline" 
-                    className="border-blue-300 text-blue-700 hover:bg-blue-50"
-                  >
-                    <Copy className="h-4 w-4 mr-2" />
-                    Copiar Código
-                  </Button>
+
+                  <div className="space-y-3">
+                    <p className="text-sm font-semibold text-gray-700">Como funciona:</p>
+                    <ul className="space-y-2 text-sm text-gray-600">
+                      <li className="flex items-start space-x-2">
+                        <div className="w-1.5 h-1.5 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
+                        <span>Compartilhe seu código com parceiros</span>
+                      </li>
+                      <li className="flex items-start space-x-2">
+                        <div className="w-1.5 h-1.5 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
+                        <span>Animais aparecem nos perfis dos sócios ativos</span>
+                      </li>
+                      <li className="flex items-start space-x-2">
+                        <div className="w-1.5 h-1.5 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
+                        <span>Máximo de 10 sócios por animal</span>
+                      </li>
+                      <li className="flex items-start space-x-2">
+                        <div className="w-1.5 h-1.5 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
+                        <span>Apenas sócios com plano ativo são exibidos</span>
+                      </li>
+                    </ul>
+                  </div>
                 </div>
-                
-                <div className="space-y-3">
-                  <p className="text-sm font-semibold text-gray-700">Como funciona:</p>
-                  <ul className="space-y-2 text-sm text-gray-600">
-                    <li className="flex items-start space-x-2">
-                      <div className="w-1.5 h-1.5 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
-                      <span>Compartilhe seu código com parceiros</span>
-                    </li>
-                    <li className="flex items-start space-x-2">
-                      <div className="w-1.5 h-1.5 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
-                      <span>Animais aparecem nos perfis dos sócios ativos</span>
-                    </li>
-                    <li className="flex items-start space-x-2">
-                      <div className="w-1.5 h-1.5 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
-                      <span>Máximo de 10 sócios por animal</span>
-                    </li>
-                    <li className="flex items-start space-x-2">
-                      <div className="w-1.5 h-1.5 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
-                      <span>Apenas sócios com plano ativo são exibidos</span>
-                    </li>
-                  </ul>
-                </div>
-              </div>
-            </Card>
-          </div>
+              </Card>
+            </div>
+          )}
 
           {/* Conteúdo Principal */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className={`${isVip ? 'lg:col-span-2' : ''} space-y-6`}>
             {/* Busca e Filtros */}
             <Card className="bg-white shadow-lg">
               <div className="p-6">
@@ -676,7 +684,7 @@ const SocietyPage = () => {
         {/* Modal Nova Sociedade */}
         {isAddModalOpen && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-3xl p-8 max-w-lg w-full shadow-2xl">
+            <div className="bg-white rounded-3xl p-8 max-w-lg w-full shadow-2xl relative">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-2xl font-bold text-gray-900">Nova Sociedade</h3>
                 <Button
@@ -688,99 +696,143 @@ const SocietyPage = () => {
                   <X className="h-5 w-5" />
                 </Button>
               </div>
-              
-              <div className="space-y-6">
-                {/* Selecionar Animal */}
-                <div>
-                  <label className="text-sm font-medium text-gray-700 mb-2 block">
-                    Selecionar Animal
-                  </label>
-                  <Select value={selectedAnimal} onValueChange={setSelectedAnimal}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Escolha um animal" />
-                    </SelectTrigger>
-                    <SelectContent side="bottom" align="start" avoidCollisions={false}>
-                      {userAnimals.filter(a => !a.is_partnership).map(animal => (
-                        <SelectItem key={animal.id} value={animal.id}>
-                          {animal.name} - {animal.breed}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Apenas animais próprios podem ter sociedades
-                  </p>
+
+              <div className="relative">
+                <div className={planBlocked ? 'blur-[2px] pointer-events-none select-none opacity-60' : ''}>
+                  <div className="space-y-6">
+                    {/* Selecionar Animal */}
+                    <div>
+                      <label className="text-sm font-medium text-gray-700 mb-2 block">
+                        Selecionar Animal
+                      </label>
+                      <Select value={selectedAnimal} onValueChange={setSelectedAnimal}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Escolha um animal" />
+                        </SelectTrigger>
+                        <SelectContent side="bottom" align="start" avoidCollisions={false}>
+                          {userAnimals.filter(a => !a.is_partnership).map(animal => (
+                            <SelectItem key={animal.id} value={animal.id}>
+                              {animal.name} - {animal.breed}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Apenas animais próprios podem ter sociedades
+                      </p>
+                    </div>
+
+                    {/* Código do Parceiro */}
+                    <div>
+                      <label className="text-sm font-medium text-gray-700 mb-2 block">
+                        Código do Parceiro
+                      </label>
+                      <Input
+                        placeholder="Ex: HER2024"
+                        value={partnerCode}
+                        onChange={(e) => setPartnerCode(e.target.value.toUpperCase())}
+                        className="font-mono"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        Digite o código público do parceiro
+                      </p>
+                    </div>
+
+                    {/* Percentual */}
+                    <div>
+                      <label className="text-sm font-medium text-gray-700 mb-2 block">
+                        Percentual de Participação (%)
+                      </label>
+                      <Input
+                        type="number"
+                        min="1"
+                        max="100"
+                        placeholder="50"
+                        value={percentage}
+                        onChange={(e) => setPercentage(e.target.value)}
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        Defina a participação do sócio (1-100%)
+                      </p>
+                    </div>
+
+                    {/* Alerta */}
+                    <Alert>
+                      <AlertTriangle className="h-4 w-4" />
+                      <AlertDescription className="text-sm">
+                        O parceiro precisa ter plano ativo para o animal aparecer no perfil dele.
+                      </AlertDescription>
+                    </Alert>
+
+                    {/* Botões */}
+                    <div className="flex justify-end space-x-3">
+                      <Button
+                        variant="outline"
+                        onClick={() => setIsAddModalOpen(false)}
+                        disabled={sending}
+                      >
+                        Cancelar
+                      </Button>
+                      <Button
+                        onClick={handleSendInvite}
+                        disabled={sending}
+                        className="bg-purple-600 hover:bg-purple-700"
+                      >
+                        {sending ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Enviando...
+                          </>
+                        ) : (
+                          <>
+                            <UserPlus className="h-4 w-4 mr-2" />
+                            Enviar Convite
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </div>
                 </div>
 
-                {/* Código do Parceiro */}
-                <div>
-                  <label className="text-sm font-medium text-gray-700 mb-2 block">
-                    Código do Parceiro
-                  </label>
-                  <Input
-                    placeholder="Ex: HER2024"
-                    value={partnerCode}
-                    onChange={(e) => setPartnerCode(e.target.value.toUpperCase())}
-                    className="font-mono"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Digite o código público do parceiro
-                  </p>
-                </div>
-
-                {/* Percentual */}
-                <div>
-                  <label className="text-sm font-medium text-gray-700 mb-2 block">
-                    Percentual de Participação (%)
-                  </label>
-                  <Input
-                    type="number"
-                    min="1"
-                    max="100"
-                    placeholder="50"
-                    value={percentage}
-                    onChange={(e) => setPercentage(e.target.value)}
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Defina a participação do sócio (1-100%)
-                  </p>
-                </div>
-
-                {/* Alerta */}
-                <Alert>
-                  <AlertTriangle className="h-4 w-4" />
-                  <AlertDescription className="text-sm">
-                    O parceiro precisa ter plano ativo para o animal aparecer no perfil dele.
-                  </AlertDescription>
-                </Alert>
-                
-                {/* Botões */}
-                <div className="flex justify-end space-x-3">
-                  <Button 
-                    variant="outline" 
-                    onClick={() => setIsAddModalOpen(false)}
-                    disabled={sending}
-                  >
-                    Cancelar
-                  </Button>
-                  <Button 
-                    onClick={handleSendInvite}
-                    disabled={sending}
-                    className="bg-purple-600 hover:bg-purple-700"
-                  >
-                    {sending ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Enviando...
-                      </>
-                    ) : (
-                      <>
-                        <UserPlus className="h-4 w-4 mr-2" />
-                        Enviar Convite
-                      </>
-                    )}
-                  </Button>
-                </div>
+                {/* Overlay de bloqueio - sem plano ativo */}
+                {planBlocked && (
+                  <div className="absolute inset-0 flex items-center justify-center z-10">
+                    <div className="bg-white/95 backdrop-blur-sm border-2 border-blue-200 rounded-2xl shadow-2xl p-6 sm:p-8 max-w-md mx-4 text-center">
+                      <div className="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
+                        <Lock className="h-8 w-8 text-blue-600" />
+                      </div>
+                      <h3 className="text-xl font-bold text-gray-900 mb-2">
+                        Plano necessário para criar sociedades
+                      </h3>
+                      <p className="text-gray-600 mb-6 text-sm leading-relaxed">
+                        Para criar sociedades e parcerias, é necessário ter um plano ativo. Escolha o plano ideal para você e comece agora!
+                      </p>
+                      <div className="space-y-3">
+                        <Button
+                          onClick={() => {
+                            setIsAddModalOpen(false);
+                            navigate('/planos');
+                          }}
+                          className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-base gap-2"
+                        >
+                          Ver Planos
+                        </Button>
+                        <div className="flex items-center justify-center gap-2 text-xs text-gray-500">
+                          <Badge variant="secondary" className="text-xs font-normal">
+                            A partir de R$ 33,25/mês
+                          </Badge>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          onClick={() => setIsAddModalOpen(false)}
+                          className="w-full text-gray-500 hover:text-gray-700 text-sm"
+                        >
+                          Voltar
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>

@@ -7,12 +7,17 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Lock, Crown } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { WizardProvider, useWizard } from './WizardContext';
 import { WizardProgress } from './shared/WizardProgress';
 import { StepSkeleton } from './shared/StepSkeleton';
 import { CancelDialog } from './shared/CancelDialog';
 import { useAutoSave } from './hooks/useAutoSave';
 import { useAuth } from '@/contexts/AuthContext';
+import { usePlanQuota } from '@/hooks/usePlanQuota';
 import { prefetchUserPlanQuota, clearPlanCache } from '@/services/planService';
 import { ensureActiveSession } from '@/services/sessionService';
 import { StepBasicInfo } from './steps/StepBasicInfo';
@@ -49,7 +54,11 @@ const WizardContent: React.FC<{
   actingProfile?: { property_name?: string | null; account_type?: string } | null;
   isAdminMode?: boolean;
   adminUserId?: string;
-}> = ({ onClose, isOpen, onSuccess, actingUserId, actingProfile, isAdminMode, adminUserId }) => {
+  planBlocked: boolean;
+  planLoading: boolean;
+  isQuotaExceeded: boolean;
+  onNavigateToPlans: () => void;
+}> = ({ onClose, isOpen, onSuccess, actingUserId, actingProfile, isAdminMode, adminUserId, planBlocked, planLoading, isQuotaExceeded, onNavigateToPlans }) => {
   const { state, dispatch } = useWizard();
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const handleAutoSaved = useCallback(() => {
@@ -143,15 +152,23 @@ const WizardContent: React.FC<{
 
   return (
     <>
-      <DialogContent 
+      <DialogContent
         className="max-w-5xl w-[calc(100vw-1rem)] sm:w-[calc(100vw-2rem)] md:w-[calc(100vw-4rem)] lg:w-full max-h-[95dvh] overflow-y-auto p-4 sm:p-6 lg:p-8"
         onInteractOutside={(e) => {
           e.preventDefault();
-          handleCloseAttempt();
+          if (planBlocked) {
+            onClose();
+          } else {
+            handleCloseAttempt();
+          }
         }}
         onEscapeKeyDown={(e) => {
           e.preventDefault();
-          handleCloseAttempt();
+          if (planBlocked) {
+            onClose();
+          } else {
+            handleCloseAttempt();
+          }
         }}
       >
         <DialogHeader>
@@ -168,25 +185,80 @@ const WizardContent: React.FC<{
         />
 
         {/* Indicador de Auto-save */}
-        {state.lastSaved && (
+        {!planBlocked && state.lastSaved && (
           <div className="text-xs text-gray-500 text-right -mt-2">
             ✓ Salvo automaticamente há{' '}
             {Math.floor((Date.now() - state.lastSaved.getTime()) / 1000)}s
           </div>
         )}
 
-        {/* Step Atual */}
-        <div className="mt-4">
-          {renderCurrentStep()}
+        {/* Step Atual - com overlay de bloqueio quando sem plano */}
+        <div className="mt-4 relative">
+          {/* Conteúdo do formulário (visível mas bloqueado quando sem plano) */}
+          <div className={planBlocked ? 'blur-[2px] pointer-events-none select-none opacity-60' : ''}>
+            {renderCurrentStep()}
+          </div>
+
+          {/* Overlay de bloqueio - exibido quando usuário não tem plano ativo */}
+          {planBlocked && !planLoading && (
+            <div className="absolute inset-0 flex items-center justify-center z-10">
+              <div className="bg-white/95 backdrop-blur-sm border-2 border-blue-200 rounded-2xl shadow-2xl p-6 sm:p-8 max-w-md mx-4 text-center">
+                <div className="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
+                  {isQuotaExceeded ? (
+                    <Crown className="h-8 w-8 text-blue-600" />
+                  ) : (
+                    <Lock className="h-8 w-8 text-blue-600" />
+                  )}
+                </div>
+
+                <h3 className="text-xl font-bold text-gray-900 mb-2">
+                  {isQuotaExceeded
+                    ? 'Limite de animais atingido'
+                    : 'Plano necessário para cadastrar'}
+                </h3>
+
+                <p className="text-gray-600 mb-6 text-sm leading-relaxed">
+                  {isQuotaExceeded
+                    ? 'Você atingiu o limite de animais do seu plano atual. Faça upgrade para cadastrar mais animais.'
+                    : 'Para cadastrar e publicar seus animais, é necessário ter um plano ativo. Escolha o plano ideal para você e comece agora!'}
+                </p>
+
+                <div className="space-y-3">
+                  <Button
+                    onClick={onNavigateToPlans}
+                    className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-base gap-2"
+                  >
+                    {isQuotaExceeded ? 'Fazer Upgrade' : 'Ver Planos'}
+                  </Button>
+
+                  <div className="flex items-center justify-center gap-2 text-xs text-gray-500">
+                    <Badge variant="secondary" className="text-xs font-normal">
+                      A partir de R$ 33,25/mês
+                    </Badge>
+                  </div>
+
+                  <Button
+                    variant="ghost"
+                    onClick={onClose}
+                    className="w-full text-gray-500 hover:text-gray-700 text-sm"
+                  >
+                    Voltar
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </DialogContent>
 
       {/* Dialog de Cancelamento */}
-      <CancelDialog
-        isOpen={showCancelDialog}
-        onConfirm={handleConfirmClose}
-        onCancel={handleCancelClose}
-      />
+      {!planBlocked && (
+        <CancelDialog
+          isOpen={showCancelDialog}
+          onConfirm={handleConfirmClose}
+          onCancel={handleCancelClose}
+        />
+      )}
     </>
   );
 };
@@ -205,20 +277,33 @@ export const NewAnimalWizard: React.FC<NewAnimalWizardProps> = ({
   adminUserId
 }) => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const effectiveUserId = actingUserId || user?.id;
 
-  if (!isOpen) {
-    return null;
-  }
+  // Verificar plano assim que o modal abrir
+  const { quota, loading: planLoading } = usePlanQuota({
+    userId: effectiveUserId,
+    enabled: isOpen && !!effectiveUserId
+  });
 
-  // ✅ PRE-FETCH: Carregar plano em background quando modal abrir
+  // Determinar se o wizard deve ficar bloqueado
+  const planBlocked = !planLoading && !!quota && (
+    quota.plan === 'free' || !quota.planIsValid || quota.remaining <= 0
+  );
+  const isQuotaExceeded = !planLoading && !!quota && quota.planIsValid && quota.remaining <= 0;
+
+  const handleNavigateToPlans = () => {
+    onClose();
+    navigate('/planos');
+  };
+
+  // PRE-FETCH: Carregar plano em background quando modal abrir
+  // Deve ficar ANTES do early return para respeitar a regra de hooks do React
   useEffect(() => {
     if (isOpen && effectiveUserId) {
-      console.log('📂 [Wizard] Modal aberto - preparando sessão e plano...');
+      console.log('[Wizard] Modal aberto - preparando sessão e plano...');
       clearPlanCache();
 
-      // Apenas verifica/garante sessão (sem forçar refresh se ainda válida)
-      // O sessionService já tem mutex e verifica se sessão é fresca
       const warmUpWizardSession = async () => {
         try {
           await ensureActiveSession({ timeoutMs: 10000 });
@@ -230,12 +315,10 @@ export const NewAnimalWizard: React.FC<NewAnimalWizardProps> = ({
 
       void warmUpWizardSession();
 
-      // Checar sessão a cada 3 minutos (não força refresh — sessionService decide)
       const sessionInterval = window.setInterval(() => {
         void warmUpWizardSession();
       }, 3 * 60 * 1000);
 
-      // Ao voltar à aba/foco, apenas verificar sessão
       const handleVisibilityChange = () => {
         if (document.visibilityState === 'visible') {
           void warmUpWizardSession();
@@ -251,8 +334,12 @@ export const NewAnimalWizard: React.FC<NewAnimalWizardProps> = ({
     }
   }, [isOpen, effectiveUserId]);
 
+  if (!isOpen) {
+    return null;
+  }
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={planBlocked ? onClose : undefined}>
       <WizardProvider>
         <WizardContent
           onClose={onClose}
@@ -262,6 +349,10 @@ export const NewAnimalWizard: React.FC<NewAnimalWizardProps> = ({
           actingProfile={actingProfile}
           isAdminMode={isAdminMode}
           adminUserId={adminUserId}
+          planBlocked={planBlocked}
+          planLoading={planLoading}
+          isQuotaExceeded={isQuotaExceeded}
+          onNavigateToPlans={handleNavigateToPlans}
         />
       </WizardProvider>
     </Dialog>

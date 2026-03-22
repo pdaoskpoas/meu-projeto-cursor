@@ -1,13 +1,16 @@
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import StepWizard, { WizardStep } from '@/components/forms/StepWizard';
 import EventBasicInfoStep from '@/components/events/steps/EventBasicInfoStep';
 import EventDateLocationStep from '@/components/events/steps/EventDateLocationStep';
 import EventDetailsStep from '@/components/events/steps/EventDetailsStep';
 import EventReviewStep from '@/components/events/steps/EventReviewStep';
-import { Calendar, MapPin, FileText, CheckCircle } from 'lucide-react';
+import { Calendar, MapPin, FileText, CheckCircle, Lock } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { logUploadMetric } from '@/utils/perfMetrics';
@@ -37,8 +40,11 @@ export interface EventFormData {
 const CreateEventModal: React.FC<CreateEventModalProps> = ({ isOpen, onClose, onSuccess }) => {
   const { toast } = useToast();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
+
+  const planBlocked = !user?.hasActivePlan;
   const uploadRetryEnabled = import.meta.env.VITE_EVENT_UPLOAD_RETRY === 'true';
   const draftLoadedRef = useRef(false);
 
@@ -431,52 +437,97 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ isOpen, onClose, on
     handleCloseAttempt();
   };
 
+  const handleNavigateToPlans = () => {
+    onClose();
+    navigate('/planos');
+  };
+
   if (!isOpen) return null;
 
   return (
     <>
-      <Dialog open={isOpen} onOpenChange={handleCloseAttempt}>
+      <Dialog open={isOpen} onOpenChange={planBlocked ? onClose : handleCloseAttempt}>
         <DialogContent className="max-w-4xl max-h-[85vh] p-0 gap-0 flex flex-col">
           <DialogHeader className="px-6 pt-6 pb-4 shrink-0">
             <DialogTitle>Criar Novo Evento</DialogTitle>
           </DialogHeader>
-          
-          <div className="flex-1 overflow-y-auto px-6">
-            <StepWizard
-              steps={steps}
-              onComplete={async () => {}} // Publicação é feita dentro do EventReviewStep
-              onCancel={handleCancel}
-              isSubmitting={isSubmitting}
-            />
+
+          <div className="flex-1 overflow-y-auto px-6 relative">
+            <div className={planBlocked ? 'blur-[2px] pointer-events-none select-none opacity-60' : ''}>
+              <StepWizard
+                steps={steps}
+                onComplete={async () => {}}
+                onCancel={handleCancel}
+                isSubmitting={isSubmitting}
+              />
+            </div>
+
+            {planBlocked && (
+              <div className="absolute inset-0 flex items-center justify-center z-10">
+                <div className="bg-white/95 backdrop-blur-sm border-2 border-blue-200 rounded-2xl shadow-2xl p-6 sm:p-8 max-w-md mx-4 text-center">
+                  <div className="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
+                    <Lock className="h-8 w-8 text-blue-600" />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">
+                    Plano necessário para criar eventos
+                  </h3>
+                  <p className="text-gray-600 mb-6 text-sm leading-relaxed">
+                    Para criar e publicar eventos, é necessário ter um plano ativo. Escolha o plano ideal para você e comece agora!
+                  </p>
+                  <div className="space-y-3">
+                    <Button
+                      onClick={handleNavigateToPlans}
+                      className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-base gap-2"
+                    >
+                      Ver Planos
+                    </Button>
+                    <div className="flex items-center justify-center gap-2 text-xs text-gray-500">
+                      <Badge variant="secondary" className="text-xs font-normal">
+                        A partir de R$ 33,25/mês
+                      </Badge>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      onClick={onClose}
+                      className="w-full text-gray-500 hover:text-gray-700 text-sm"
+                    >
+                      Voltar
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </DialogContent>
       </Dialog>
 
       {/* Dialog de confirmação de cancelamento */}
-      <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Deseja cancelar a criação do evento?</AlertDialogTitle>
-            <AlertDialogDescription>
-              As informações inseridas durante o preenchimento serão perdidas e não poderão ser recuperadas.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel 
-              onClick={handleContinueEditing}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
-            >
-              Continuar Editando
-            </AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={handleConfirmCancel}
-              className="bg-red-600 hover:bg-red-700 text-white"
-            >
-              Cancelar Evento
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {!planBlocked && (
+        <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Deseja cancelar a criação do evento?</AlertDialogTitle>
+              <AlertDialogDescription>
+                As informações inseridas durante o preenchimento serão perdidas e não poderão ser recuperadas.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel
+                onClick={handleContinueEditing}
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                Continuar Editando
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleConfirmCancel}
+                className="bg-red-600 hover:bg-red-700 text-white"
+              >
+                Cancelar Evento
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
 
     </>
   );
