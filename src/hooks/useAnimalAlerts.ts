@@ -36,35 +36,40 @@ export const useAnimalAlerts = () => {
       try {
         setLoading(true);
 
-        // Buscar animais pausados
-        const { count: pausedCount } = await runResilientRequest(
-          async () =>
-            supabase
-              .from('animals')
-              .select('*', { count: 'exact', head: true })
-              .eq('owner_id', user.id)
-              .eq('ad_status', 'paused'),
-          {
-            timeoutMs: 12000,
-            errorMessage: 'Falha ao buscar alertas de animais pausados.',
-            requestKey: `animal-alerts:paused:${user.id}`
-          }
-        );
+        // ✅ OTIMIZAÇÃO: Buscar pausados e expirados em paralelo (são independentes)
+        const [_resPaused, _resExpired] = await Promise.allSettled([
+          runResilientRequest(
+            async () =>
+              supabase
+                .from('animals')
+                .select('*', { count: 'exact', head: true })
+                .eq('owner_id', user.id)
+                .eq('ad_status', 'paused'),
+            {
+              timeoutMs: 12000,
+              errorMessage: 'Falha ao buscar alertas de animais pausados.',
+              requestKey: `animal-alerts:paused:${user.id}`
+            }
+          ),
+          runResilientRequest(
+            async () =>
+              supabase
+                .from('animals')
+                .select('*', { count: 'exact', head: true })
+                .eq('owner_id', user.id)
+                .eq('ad_status', 'expired'),
+            {
+              timeoutMs: 12000,
+              errorMessage: 'Falha ao buscar alertas de animais expirados.',
+              requestKey: `animal-alerts:expired:${user.id}`
+            }
+          )
+        ]);
 
-        // Buscar animais expirados
-        const { count: expiredCount } = await runResilientRequest(
-          async () =>
-            supabase
-              .from('animals')
-              .select('*', { count: 'exact', head: true })
-              .eq('owner_id', user.id)
-              .eq('ad_status', 'expired'),
-          {
-            timeoutMs: 12000,
-            errorMessage: 'Falha ao buscar alertas de animais expirados.',
-            requestKey: `animal-alerts:expired:${user.id}`
-          }
-        );
+        const pausedCount = _resPaused.status === 'fulfilled' ? _resPaused.value.count : 0;
+        const expiredCount = _resExpired.status === 'fulfilled' ? _resExpired.value.count : 0;
+        if (_resPaused.status === 'rejected') console.warn('[useAnimalAlerts] paused query failed:', _resPaused.reason);
+        if (_resExpired.status === 'rejected') console.warn('[useAnimalAlerts] expired query failed:', _resExpired.reason);
 
         // Soma total de alertas (pausados + expirados)
         const total = (pausedCount || 0) + (expiredCount || 0);

@@ -21,6 +21,7 @@ export interface DashboardStats {
   
   // Estado de carregamento
   loading: boolean;
+  coreLoaded: boolean;
   error: string | null;
 }
 
@@ -56,6 +57,7 @@ export const useDashboardStats = () => {
     availableBoosts: 0,
     recentActivities: [],
     loading: true,
+    coreLoaded: false,
     error: null,
   });
 
@@ -130,85 +132,107 @@ export const useDashboardStats = () => {
           new Date(a.boost_expires_at) > new Date()
         ).length || 0;
 
-        let monthlyImpressions = 0;
-        let monthlyClicks = 0;
-        let monthlyFavorites = 0;
-        let monthlyMessages = 0;
-
-        if (animalIds.length > 0 || conversationIds.length > 0) {
-          const metricsPromises = [];
-
-          if (animalIds.length > 0) {
-            metricsPromises.push(
-              supabase
-                .from('impressions')
-                .select('*', { count: 'exact', head: true })
-                .in('content_id', animalIds)
-                .eq('content_type', 'animal')
-                .gte('created_at', startOfMonthISO),
-              supabase
-                .from('clicks')
-                .select('*', { count: 'exact', head: true })
-                .in('content_id', animalIds)
-                .eq('content_type', 'animal')
-                .gte('created_at', startOfMonthISO),
-              supabase
-                .from('favorites')
-                .select('*', { count: 'exact', head: true })
-                .in('animal_id', animalIds)
-                .gte('created_at', startOfMonthISO)
-            );
-          } else {
-            metricsPromises.push(
-              Promise.resolve({ count: 0, error: null }),
-              Promise.resolve({ count: 0, error: null }),
-              Promise.resolve({ count: 0, error: null })
-            );
-          }
-
-          if (conversationIds.length > 0) {
-            metricsPromises.push(
-              supabase
-                .from('messages')
-                .select('*', { count: 'exact', head: true })
-                .in('conversation_id', conversationIds)
-                .neq('sender_id', user.id)
-                .gte('created_at', startOfMonthISO)
-            );
-          } else {
-            metricsPromises.push(Promise.resolve({ count: 0, error: null }));
-          }
-
-          const _metricsResults = await Promise.allSettled(metricsPromises);
-
-          const _resImpressions = _metricsResults[0];
-          const _resClicks = _metricsResults[1];
-          const _resFavorites = _metricsResults[2];
-          const _resMessages = _metricsResults[3];
-
-          const { count: impressionsCount, error: impressionsError } = _resImpressions?.status === 'fulfilled' ? _resImpressions.value : { count: 0, error: null };
-          const { count: clicksCount, error: clicksError } = _resClicks?.status === 'fulfilled' ? _resClicks.value : { count: 0, error: null };
-          const { count: favoritesCount, error: favoritesError } = _resFavorites?.status === 'fulfilled' ? _resFavorites.value : { count: 0, error: null };
-          const { count: messagesCount, error: messagesError } = _resMessages?.status === 'fulfilled' ? _resMessages.value : { count: 0, error: null };
-          if (_resImpressions?.status === 'rejected') console.warn('[useDashboardStats] impressions query failed:', _resImpressions.reason);
-          if (_resClicks?.status === 'rejected') console.warn('[useDashboardStats] clicks query failed:', _resClicks.reason);
-          if (_resFavorites?.status === 'rejected') console.warn('[useDashboardStats] favorites query failed:', _resFavorites.reason);
-          if (_resMessages?.status === 'rejected') console.warn('[useDashboardStats] messages query failed:', _resMessages.reason);
-
-          if (impressionsError) throw impressionsError;
-          if (clicksError) throw clicksError;
-          if (favoritesError) throw favoritesError;
-          if (messagesError) throw messagesError;
-
-          monthlyImpressions = impressionsCount || 0;
-          monthlyClicks = clicksCount || 0;
-          monthlyFavorites = favoritesCount || 0;
-          monthlyMessages = messagesCount || 0;
+        // ✅ RENDERIZAÇÃO PROGRESSIVA: exibir dados core enquanto métricas carregam
+        if (requestId === requestIdRef.current) {
+          setStats(prev => ({
+            ...prev,
+            totalAnimals: totalAnimals || 0,
+            featuredAnimals: featuredAnimals || 0,
+            availableBoosts,
+            coreLoaded: true,
+          }));
         }
 
-        // Passa os animais já carregados para evitar query extra
         const animalNamesMap = new Map(userAnimals?.map(a => [a.id, a.name]) || []);
-        const recentActivities = await fetchRecentActivities(user.id, animalIds, animalNamesMap);
+
+        // ✅ OTIMIZAÇÃO: Executar métricas E atividades recentes EM PARALELO
+        // Ambas dependem apenas do Stage 1 (animais/conversas) — são independentes entre si
+        const [metrics, recentActivities] = await Promise.all([
+          // Stage 2: Métricas do mês
+          (async () => {
+            let monthlyImpressions = 0;
+            let monthlyClicks = 0;
+            let monthlyFavorites = 0;
+            let monthlyMessages = 0;
+
+            if (animalIds.length > 0 || conversationIds.length > 0) {
+              const metricsPromises = [];
+
+              if (animalIds.length > 0) {
+                metricsPromises.push(
+                  supabase
+                    .from('impressions')
+                    .select('*', { count: 'exact', head: true })
+                    .in('content_id', animalIds)
+                    .eq('content_type', 'animal')
+                    .gte('created_at', startOfMonthISO),
+                  supabase
+                    .from('clicks')
+                    .select('*', { count: 'exact', head: true })
+                    .in('content_id', animalIds)
+                    .eq('content_type', 'animal')
+                    .gte('created_at', startOfMonthISO),
+                  supabase
+                    .from('favorites')
+                    .select('*', { count: 'exact', head: true })
+                    .in('animal_id', animalIds)
+                    .gte('created_at', startOfMonthISO)
+                );
+              } else {
+                metricsPromises.push(
+                  Promise.resolve({ count: 0, error: null }),
+                  Promise.resolve({ count: 0, error: null }),
+                  Promise.resolve({ count: 0, error: null })
+                );
+              }
+
+              if (conversationIds.length > 0) {
+                metricsPromises.push(
+                  supabase
+                    .from('messages')
+                    .select('*', { count: 'exact', head: true })
+                    .in('conversation_id', conversationIds)
+                    .neq('sender_id', user.id)
+                    .gte('created_at', startOfMonthISO)
+                );
+              } else {
+                metricsPromises.push(Promise.resolve({ count: 0, error: null }));
+              }
+
+              const _metricsResults = await Promise.allSettled(metricsPromises);
+
+              const _resImpressions = _metricsResults[0];
+              const _resClicks = _metricsResults[1];
+              const _resFavorites = _metricsResults[2];
+              const _resMessages = _metricsResults[3];
+
+              const { count: impressionsCount, error: impressionsError } = _resImpressions?.status === 'fulfilled' ? _resImpressions.value : { count: 0, error: null };
+              const { count: clicksCount, error: clicksError } = _resClicks?.status === 'fulfilled' ? _resClicks.value : { count: 0, error: null };
+              const { count: favoritesCount, error: favoritesError } = _resFavorites?.status === 'fulfilled' ? _resFavorites.value : { count: 0, error: null };
+              const { count: messagesCount, error: messagesError } = _resMessages?.status === 'fulfilled' ? _resMessages.value : { count: 0, error: null };
+              if (_resImpressions?.status === 'rejected') console.warn('[useDashboardStats] impressions query failed:', _resImpressions.reason);
+              if (_resClicks?.status === 'rejected') console.warn('[useDashboardStats] clicks query failed:', _resClicks.reason);
+              if (_resFavorites?.status === 'rejected') console.warn('[useDashboardStats] favorites query failed:', _resFavorites.reason);
+              if (_resMessages?.status === 'rejected') console.warn('[useDashboardStats] messages query failed:', _resMessages.reason);
+
+              if (impressionsError) throw impressionsError;
+              if (clicksError) throw clicksError;
+              if (favoritesError) throw favoritesError;
+              if (messagesError) throw messagesError;
+
+              monthlyImpressions = impressionsCount || 0;
+              monthlyClicks = clicksCount || 0;
+              monthlyFavorites = favoritesCount || 0;
+              monthlyMessages = messagesCount || 0;
+            }
+
+            return { monthlyImpressions, monthlyClicks, monthlyFavorites, monthlyMessages };
+          })(),
+          // Stage 3: Atividades recentes (passa conversationIds para evitar query duplicada)
+          fetchRecentActivities(user.id, animalIds, animalNamesMap, conversationIds)
+        ]);
+
+        const { monthlyImpressions, monthlyClicks, monthlyFavorites, monthlyMessages } = metrics;
 
         const nextStats: DashboardStats = {
           monthlyImpressions: monthlyImpressions || 0,
@@ -220,6 +244,7 @@ export const useDashboardStats = () => {
           availableBoosts,
           recentActivities,
           loading: false,
+          coreLoaded: true,
           error: null,
         };
 
@@ -255,7 +280,7 @@ export const useDashboardStats = () => {
     }
   }, [user?.id]);
 
-  const fetchRecentActivities = async (userId: string, existingAnimalIds: string[], existingNamesMap?: Map<string, string>): Promise<RecentActivity[]> => {
+  const fetchRecentActivities = async (userId: string, existingAnimalIds: string[], existingNamesMap?: Map<string, string>, existingConversationIds?: string[]): Promise<RecentActivity[]> => {
     const activities: RecentActivity[] = [];
 
     try {
@@ -266,14 +291,15 @@ export const useDashboardStats = () => {
       // Reutilizar dados já carregados (evita query extra)
       const animalIds = existingAnimalIds;
       const animalNamesMap = existingNamesMap || new Map<string, string>();
+      const conversationIds = existingConversationIds || [];
 
-      // ✅ OTIMIZAÇÃO: Executar todas as queries de atividades em paralelo
+      // ✅ OTIMIZAÇÃO: Executar todas as queries de atividades em paralelo (incluindo mensagens)
       const [
         _resRecentImpressions,
         _resRecentFavorites,
-        _resUserConversations,
         _resRecentAnimals,
-        _resTicketNotifications
+        _resTicketNotifications,
+        _resRecentMessages
       ] = await Promise.allSettled([
         // Impressões (apenas se houver animais)
         animalIds.length > 0
@@ -298,12 +324,6 @@ export const useDashboardStats = () => {
               .limit(5)
           : Promise.resolve({ data: null }),
 
-        // Conversas
-        supabase
-          .from('conversations')
-          .select('id, animal_id')
-          .eq('animal_owner_id', userId),
-
         // Animais recém-criados
         supabase
           .from('animals')
@@ -321,25 +341,42 @@ export const useDashboardStats = () => {
           .eq('type', 'ticket_response')
           .gte('created_at', sevenDaysAgo.toISOString())
           .order('created_at', { ascending: false })
-          .limit(5)
+          .limit(5),
+
+        // ✅ Mensagens recentes (agora em paralelo — usa conversationIds já carregados do Stage 1)
+        conversationIds.length > 0
+          ? supabase
+              .from('messages')
+              .select(`
+                created_at,
+                content,
+                conversation_id,
+                conversations!inner(animal_id)
+              `)
+              .in('conversation_id', conversationIds)
+              .neq('sender_id', userId)
+              .gte('created_at', sevenDaysAgo.toISOString())
+              .order('created_at', { ascending: false })
+              .limit(5)
+          : Promise.resolve({ data: null })
       ]);
 
       const recentImpressionsResult = _resRecentImpressions.status === 'fulfilled' ? _resRecentImpressions.value : { data: null };
       const recentFavoritesResult = _resRecentFavorites.status === 'fulfilled' ? _resRecentFavorites.value : { data: null };
-      const userConversationsResult = _resUserConversations.status === 'fulfilled' ? _resUserConversations.value : { data: null };
       const recentAnimalsResult = _resRecentAnimals.status === 'fulfilled' ? _resRecentAnimals.value : { data: null };
       const ticketNotificationsResult = _resTicketNotifications.status === 'fulfilled' ? _resTicketNotifications.value : { data: null };
+      const recentMessagesResult = _resRecentMessages.status === 'fulfilled' ? _resRecentMessages.value : { data: null };
       if (_resRecentImpressions.status === 'rejected') console.warn('[useDashboardStats] recent impressions query failed:', _resRecentImpressions.reason);
       if (_resRecentFavorites.status === 'rejected') console.warn('[useDashboardStats] recent favorites query failed:', _resRecentFavorites.reason);
-      if (_resUserConversations.status === 'rejected') console.warn('[useDashboardStats] user conversations query failed:', _resUserConversations.reason);
       if (_resRecentAnimals.status === 'rejected') console.warn('[useDashboardStats] recent animals query failed:', _resRecentAnimals.reason);
       if (_resTicketNotifications.status === 'rejected') console.warn('[useDashboardStats] ticket notifications query failed:', _resTicketNotifications.reason);
+      if (_resRecentMessages.status === 'rejected') console.warn('[useDashboardStats] recent messages query failed:', _resRecentMessages.reason);
 
       const { data: recentImpressions } = recentImpressionsResult;
       const { data: recentFavorites } = recentFavoritesResult;
-      const { data: userConversationsForActivities } = userConversationsResult;
       const { data: recentAnimals } = recentAnimalsResult;
       const { data: ticketNotifications } = ticketNotificationsResult;
+      const { data: recentMessages } = recentMessagesResult;
 
       // Processar impressões
       if (recentImpressions && animalIds.length > 0) {
@@ -389,29 +426,13 @@ export const useDashboardStats = () => {
         });
       }
 
-      // Processar mensagens (se houver conversas, buscar mensagens em paralelo com o resto)
-      if (userConversationsForActivities && userConversationsForActivities.length > 0) {
-        const conversationIds = userConversationsForActivities.map(conv => conv.id);
-        
-        const { data: recentMessages } = await supabase
-          .from('messages')
-          .select(`
-            created_at, 
-            content, 
-            conversation_id,
-            conversations!inner(animal_id)
-          `)
-          .in('conversation_id', conversationIds)
-          .neq('sender_id', userId)
-          .gte('created_at', sevenDaysAgo.toISOString())
-          .order('created_at', { ascending: false })
-          .limit(5);
-
-        recentMessages?.forEach(msg => {
+      // Processar mensagens (resultado já disponível do batch paralelo)
+      if (recentMessages) {
+        recentMessages.forEach(msg => {
           const conversation = msg.conversations as Record<string, unknown> | null;
           const animalId = conversation?.animal_id;
           const animalName = animalId ? animalNamesMap.get(animalId) : undefined;
-          
+
           activities.push({
             id: `message-${msg.created_at}`,
             type: 'message',

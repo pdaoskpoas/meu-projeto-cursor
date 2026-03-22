@@ -391,7 +391,7 @@ const AdminHarasManagerModal: React.FC<AdminHarasManagerModalProps> = ({
                           </TableCell>
                           <TableCell>{animal.breed}</TableCell>
                           <TableCell>
-                            {animal.birth_date ? new Date(animal.birth_date).toLocaleDateString('pt-BR') : '-'}
+                            {animal.birth_date ? (() => { const [y, m, d] = animal.birth_date.split('-').map(Number); return new Date(y, m - 1, d).toLocaleDateString('pt-BR'); })() : '-'}
                           </TableCell>
                           <TableCell>
                             <Button

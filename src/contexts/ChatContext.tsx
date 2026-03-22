@@ -38,6 +38,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const isLoadingConversationsRef = useRef(false);
   const conversationsRequestIdRef = useRef(0);
   const conversationsRef = useRef<ChatConversation[]>([]);
+  const pendingRealtimeLoadRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Refs para acesso estável dentro de callbacks memoizados
   const userRef = useRef(user);
@@ -119,6 +120,18 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
       isLoadingConversationsRef.current = false;
     }
   }, [user?.id]);
+
+  // Debounce para recarregamentos disparados por realtime
+  // Coalesce múltiplos eventos em uma única chamada (janela de 2s)
+  const scheduleRealtimeLoad = useCallback(() => {
+    if (pendingRealtimeLoadRef.current) {
+      clearTimeout(pendingRealtimeLoadRef.current);
+    }
+    pendingRealtimeLoadRef.current = setTimeout(() => {
+      pendingRealtimeLoadRef.current = null;
+      loadConversations();
+    }, 2000);
+  }, [loadConversations]);
 
   // Carregar conversas ao montar e quando usuário mudar
   useEffect(() => {
@@ -208,15 +221,29 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       setMessages(prev => [...prev, formatted]);
 
-      // Atualizar lista de conversas
-      await loadConversations();
+      // Atualização local incremental (evita reload completo)
+      // O realtime debounced garante consistência eventual com o backend
+      setConversations(prev => {
+        const updated = prev.map(c =>
+          c.id === conv.id
+            ? { ...c, lastMessage: content, lastMessageTime: formatted.timestamp }
+            : c
+        );
+        // Mover conversa atualizada para o topo da lista
+        const idx = updated.findIndex(c => c.id === conv.id);
+        if (idx > 0) {
+          const [moved] = updated.splice(idx, 1);
+          updated.unshift(moved);
+        }
+        return updated;
+      });
 
       // Disparar evento para atualizar contador
       window.dispatchEvent(new Event('forceUpdateUnreadCounts'));
     } catch (error: unknown) {
       toast.error(error instanceof Error ? error.message : 'Erro ao enviar mensagem');
     }
-  }, [loadConversations]);
+  }, []);
 
   // Iniciar conversa (buscar ou criar)
   const startConversation = useCallback(async (
@@ -270,11 +297,16 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     try {
       await messageService.markAsRead(conversationId, userRef.current.id);
-      await loadConversations();
+      // Atualização local: zerar unreadCount sem reload completo
+      const prevUnread = conversationsRef.current.find(c => c.id === conversationId)?.unreadCount || 0;
+      setConversations(prev => prev.map(c =>
+        c.id === conversationId ? { ...c, unreadCount: 0 } : c
+      ));
+      setUnreadCount(prev => Math.max(0, prev - prevUnread));
     } catch {
       // silently handle
     }
-  }, [loadConversations]);
+  }, []);
 
   // Fechar conversa
   const closeConversation = useCallback(() => {
@@ -376,7 +408,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
             previous?.interested_user_id === user.id;
 
           if (isRelevant) {
-            loadConversations();
+            scheduleRealtimeLoad();
           }
         }
       )
@@ -394,7 +426,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
           );
 
           if (isRelevantConversation || newMessage?.sender_id === user.id) {
-            loadConversations();
+            scheduleRealtimeLoad();
           }
         }
       )
@@ -405,9 +437,13 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
 
     return () => {
+      if (pendingRealtimeLoadRef.current) {
+        clearTimeout(pendingRealtimeLoadRef.current);
+        pendingRealtimeLoadRef.current = null;
+      }
       subscription.unsubscribe();
     };
-  }, [user?.id, loadConversations]);
+  }, [user?.id, scheduleRealtimeLoad]);
 
   const value = useMemo(() => ({
     conversations,

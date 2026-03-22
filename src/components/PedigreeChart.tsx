@@ -16,6 +16,18 @@ interface PedigreeChartProps {
     paternalGrandmother?: string | null;
     maternalGrandfather?: string | null;
     maternalGrandmother?: string | null;
+    // Bisavós paternos (lado do avô paterno)
+    paternalGgFather?: string | null;
+    paternalGgMother?: string | null;
+    // Bisavós paternos (lado da avó paterna)
+    paternalGmFather?: string | null;
+    paternalGmMother?: string | null;
+    // Bisavós maternos (lado do avô materno)
+    maternalGgFather?: string | null;
+    maternalGgMother?: string | null;
+    // Bisavós maternos (lado da avó materna)
+    maternalGmFather?: string | null;
+    maternalGmMother?: string | null;
   };
 }
 
@@ -25,10 +37,20 @@ const PedigreeChart: React.FC<PedigreeChartProps> = ({ horse }) => {
         name: horse.father,
         gender: 'Macho',
         father: horse.paternalGrandfather
-          ? { name: horse.paternalGrandfather, gender: 'Macho' }
+          ? {
+              name: horse.paternalGrandfather,
+              gender: 'Macho',
+              father: horse.paternalGgFather ? { name: horse.paternalGgFather, gender: 'Macho' } : undefined,
+              mother: horse.paternalGgMother ? { name: horse.paternalGgMother, gender: 'Fêmea' } : undefined,
+            }
           : undefined,
         mother: horse.paternalGrandmother
-          ? { name: horse.paternalGrandmother, gender: 'Fêmea' }
+          ? {
+              name: horse.paternalGrandmother,
+              gender: 'Fêmea',
+              father: horse.paternalGmFather ? { name: horse.paternalGmFather, gender: 'Macho' } : undefined,
+              mother: horse.paternalGmMother ? { name: horse.paternalGmMother, gender: 'Fêmea' } : undefined,
+            }
           : undefined,
       }
     : undefined;
@@ -38,10 +60,20 @@ const PedigreeChart: React.FC<PedigreeChartProps> = ({ horse }) => {
         name: horse.mother,
         gender: 'Fêmea',
         father: horse.maternalGrandfather
-          ? { name: horse.maternalGrandfather, gender: 'Macho' }
+          ? {
+              name: horse.maternalGrandfather,
+              gender: 'Macho',
+              father: horse.maternalGgFather ? { name: horse.maternalGgFather, gender: 'Macho' } : undefined,
+              mother: horse.maternalGgMother ? { name: horse.maternalGgMother, gender: 'Fêmea' } : undefined,
+            }
           : undefined,
         mother: horse.maternalGrandmother
-          ? { name: horse.maternalGrandmother, gender: 'Fêmea' }
+          ? {
+              name: horse.maternalGrandmother,
+              gender: 'Fêmea',
+              father: horse.maternalGmFather ? { name: horse.maternalGmFather, gender: 'Macho' } : undefined,
+              mother: horse.maternalGmMother ? { name: horse.maternalGmMother, gender: 'Fêmea' } : undefined,
+            }
           : undefined,
       }
     : undefined;

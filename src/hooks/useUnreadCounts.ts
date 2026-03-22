@@ -33,71 +33,75 @@ export const useUnreadCounts = () => {
     diagnostics.debug('hook-unread-counts', 'Fetching unread counts', { userId: user.id });
 
     try {
-      // 1) Buscar conversas do usuário
-      const { data: conversations, error: conversationsError } = await runResilientRequest(
-        async () =>
-          supabase
-            .from('conversations')
-            .select('id')
-            .or(`animal_owner_id.eq.${user.id},interested_user_id.eq.${user.id}`),
-        {
-          timeoutMs: 12000,
-          errorMessage: 'Falha ao carregar conversas nao lidas.',
-          requestKey: `unread-counts:conversations:${user.id}`
-        }
-      );
+      // ✅ OTIMIZAÇÃO: Executar notifications em paralelo com a cadeia conversations→messages
+      // (notifications é independente e não precisa esperar as conversas)
+      const [_resMessagesChain, _resNotifications] = await Promise.allSettled([
+        // Branch A: conversations → messages (cascata necessária)
+        (async () => {
+          const { data: conversations, error: conversationsError } = await runResilientRequest(
+            async () =>
+              supabase
+                .from('conversations')
+                .select('id')
+                .or(`animal_owner_id.eq.${user.id},interested_user_id.eq.${user.id}`),
+            {
+              timeoutMs: 12000,
+              errorMessage: 'Falha ao carregar conversas nao lidas.',
+              requestKey: `unread-counts:conversations:${user.id}`
+            }
+          );
+          if (conversationsError) throw conversationsError;
+          const conversationIds = conversations?.map(c => c.id) || [];
+          if (conversationIds.length === 0) return 0;
 
-      if (conversationsError) throw conversationsError;
+          const { data: unreadMessages, error: unreadMessagesError } = await runResilientRequest(
+            async () =>
+              supabase
+                .from('messages')
+                .select('conversation_id')
+                .in('conversation_id', conversationIds)
+                .neq('sender_id', user.id)
+                .is('read_at', null),
+            {
+              timeoutMs: 12000,
+              errorMessage: 'Falha ao carregar mensagens nao lidas.',
+              requestKey: `unread-counts:messages:${user.id}`
+            }
+          );
+          if (unreadMessagesError) throw unreadMessagesError;
+          return new Set((unreadMessages || []).map(msg => msg.conversation_id)).size;
+        })(),
 
-      const conversationIds = conversations?.map(c => c.id) || [];
+        // Branch B: notifications (independente)
+        (async () => {
+          const { count, error } = await runResilientRequest(
+            async () =>
+              supabase
+                .from('notifications')
+                .select('*', { count: 'exact', head: true })
+                .eq('user_id', user.id)
+                .eq('is_read', false)
+                .neq('type', 'message_received'),
+            {
+              timeoutMs: 12000,
+              errorMessage: 'Falha ao carregar notificacoes nao lidas.',
+              requestKey: `unread-counts:notifications:${user.id}`
+            }
+          );
+          if (error) throw error;
+          return count || 0;
+        })()
+      ]);
 
-      let unreadConversations = 0;
-      if (conversationIds.length > 0) {
-        // 2) Buscar mensagens não lidas em lote e contar conversas únicas
-        const { data: unreadMessages, error: unreadMessagesError } = await runResilientRequest(
-          async () =>
-            supabase
-              .from('messages')
-              .select('conversation_id')
-              .in('conversation_id', conversationIds)
-              .neq('sender_id', user.id)
-              .is('read_at', null),
-          {
-            timeoutMs: 12000,
-            errorMessage: 'Falha ao carregar mensagens nao lidas.',
-            requestKey: `unread-counts:messages:${user.id}`
-          }
-        );
-
-        if (unreadMessagesError) throw unreadMessagesError;
-        unreadConversations = new Set((unreadMessages || []).map(msg => msg.conversation_id)).size;
-      }
-
-      // 3) Convites de sociedade pendentes atualmente não existem nesse fluxo
-      const pendingPartnerships = 0;
-
-      // 4) Notificações não lidas (sem mensagens, contador próprio)
-      const { count: unreadNotifications, error: unreadNotificationsError } = await runResilientRequest(
-        async () =>
-          supabase
-            .from('notifications')
-            .select('*', { count: 'exact', head: true })
-            .eq('user_id', user.id)
-            .eq('is_read', false)
-            .neq('type', 'message_received'),
-        {
-          timeoutMs: 12000,
-          errorMessage: 'Falha ao carregar notificacoes nao lidas.',
-          requestKey: `unread-counts:notifications:${user.id}`
-        }
-      );
-
-      if (unreadNotificationsError) throw unreadNotificationsError;
+      const unreadConversations = _resMessagesChain.status === 'fulfilled' ? _resMessagesChain.value : 0;
+      const unreadNotifications = _resNotifications.status === 'fulfilled' ? _resNotifications.value : 0;
+      if (_resMessagesChain.status === 'rejected') console.warn('[useUnreadCounts] messages chain failed:', _resMessagesChain.reason);
+      if (_resNotifications.status === 'rejected') console.warn('[useUnreadCounts] notifications failed:', _resNotifications.reason);
 
       setCounts({
         messages: unreadConversations,
-        notifications: unreadNotifications || 0,
-        partnerships: pendingPartnerships || 0
+        notifications: unreadNotifications,
+        partnerships: 0
       });
     } catch (error) {
       diagnostics.warn('hook-unread-counts', 'Fetch failed', error);

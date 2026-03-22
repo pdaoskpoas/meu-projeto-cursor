@@ -29,6 +29,7 @@ const DashboardPage = () => {
     availableBoosts,
     recentActivities,
     loading: statsLoading,
+    coreLoaded,
     error: statsError,
     refreshStats
   } = useDashboardStats();
@@ -255,7 +256,7 @@ const DashboardPage = () => {
                       Meus Animais
                     </h3>
                     <p className="text-4xl font-extrabold text-blue-600 mb-1">
-                      {statsLoading ? '...' : totalAnimals}
+                      {statsLoading && !coreLoaded ? '...' : totalAnimals}
                     </p>
                     <p className="text-sm text-gray-600">
                       {totalAnimals === 1 ? 'animal cadastrado' : 'animais cadastrados'}
@@ -300,7 +301,7 @@ const DashboardPage = () => {
                       Turbinar Disponíveis
                     </h3>
                     <p className="text-4xl font-extrabold text-purple-600 mb-1">
-                      {statsLoading ? '...' : availableBoosts}
+                      {statsLoading && !coreLoaded ? '...' : availableBoosts}
                     </p>
                     <p className="text-sm text-gray-600">
                       {availableBoosts === 1 ? 'crédito disponível' : 'créditos disponíveis'}
@@ -370,7 +371,7 @@ const DashboardPage = () => {
               </div>
               <p className="text-xs text-gray-600 font-medium mb-1">Em Destaque</p>
               <p className="text-2xl lg:text-3xl font-bold text-gray-900">
-                {statsLoading ? '...' : featuredAnimals}
+                {statsLoading && !coreLoaded ? '...' : featuredAnimals}
               </p>
             </Card>
           </div>

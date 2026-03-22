@@ -962,7 +962,10 @@ export const StepReview: React.FC<StepReviewProps> = ({
                 <span className="text-gray-600">Nascimento:</span>
                 <p className="font-medium flex items-center gap-1">
                   <Calendar className="h-3 w-3" />
-                  {new Date(formData.basicInfo.birth_date).toLocaleDateString('pt-BR')}
+                  {(() => {
+                    const [y, m, d] = formData.basicInfo.birth_date.split('-').map(Number);
+                    return new Date(y, m - 1, d).toLocaleDateString('pt-BR');
+                  })()}
                 </p>
               </div>
               <div>
