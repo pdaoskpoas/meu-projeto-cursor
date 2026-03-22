@@ -58,7 +58,7 @@ export function PurchasePlanModal({
 
   // Estados
   const [selectedPlan, setSelectedPlan] = useState<CheckoutPlanId>('criador');
-  const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
+  const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('annual');
   const [billingType, setBillingType] = useState<'PIX' | 'CREDIT_CARD' | 'BOLETO'>('PIX');
   const [installments, setInstallments] = useState<number>(1);
   const [loading, setLoading] = useState(false);
@@ -156,10 +156,17 @@ export function PurchasePlanModal({
                       </div>
 
                       <div className="text-2xl font-bold text-primary mb-2">
-                        R$ {formatPrice(billingCycle === 'monthly' ? p.monthlyPrice : p.annualTotal)}
-                        <span className="text-sm text-gray-500 font-normal">
-                          /{billingCycle === 'monthly' ? 'mês' : 'ano'}
-                        </span>
+                        {billingCycle === 'monthly' ? (
+                          <>
+                            R$ {formatPrice(p.monthlyPrice)}
+                            <span className="text-sm text-gray-500 font-normal">/mês</span>
+                          </>
+                        ) : (
+                          <>
+                            12x de R$ {formatPrice(p.annualTotal / 12)}
+                            <span className="text-sm text-gray-500 font-normal">/ano</span>
+                          </>
+                        )}
                       </div>
 
                       <div className="text-sm text-gray-600 mb-2">
@@ -327,11 +334,21 @@ export function PurchasePlanModal({
               <div className="space-y-1 text-sm">
                 <div className="flex justify-between">
                   <span>Plano {plan.name} ({billingCycle === 'monthly' ? 'Mensal' : 'Anual'})</span>
-                  <span className="font-semibold">R$ {formatPrice(price)}</span>
+                  {billingCycle === 'annual' ? (
+                    <span className="font-semibold">12x de R$ {formatPrice(price / 12)}</span>
+                  ) : (
+                    <span className="font-semibold">R$ {formatPrice(price)}</span>
+                  )}
                 </div>
-                {billingCycle === 'annual' && billingType === 'CREDIT_CARD' && installments > 1 && (
+                {billingCycle === 'annual' && (
+                  <div className="flex justify-between text-gray-500 text-xs">
+                    <span>Total à vista:</span>
+                    <span>R$ {formatPrice(price)}</span>
+                  </div>
+                )}
+                {billingCycle === 'annual' && billingType === 'CREDIT_CARD' && installments > 1 && installments !== 12 && (
                   <div className="flex justify-between text-gray-600">
-                    <span>Parcelamento:</span>
+                    <span>Parcelamento no cartão:</span>
                     <span>{installments}x de R$ {formatPrice(installmentPrice)}</span>
                   </div>
                 )}

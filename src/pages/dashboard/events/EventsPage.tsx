@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { Suspense, useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Calendar, Plus, Search, Filter, Eye, MousePointerClick, Edit, Trash2, Zap, RefreshCw, Clock, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -10,9 +10,11 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import ModernDashboardWrapper from '@/components/layout/ModernDashboardWrapper';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import CreateEventModal from '@/components/events/CreateEventModal';
 import BoostCountdown from '@/components/BoostCountdown';
-import PurchaseBoostsModal from '@/components/payment/PurchaseBoostsModal';
+
+// Lazy load de modais pesados
+const CreateEventModal = React.lazy(() => import('@/components/events/CreateEventModal'));
+const PurchaseBoostsModal = React.lazy(() => import('@/components/payment/PurchaseBoostsModal'));
 import { eventLimitsService } from '@/services/eventLimitsService';
 import { boostService } from '@/services/boostService';
 import { supabase } from '@/lib/supabase';
@@ -534,22 +536,26 @@ const EventsPage = () => {
         )}
 
         {/* Modal de Criação */}
-        <CreateEventModal
-          isOpen={showCreateModal}
-          onClose={() => setShowCreateModal(false)}
-          onSuccess={handleCreateSuccess}
-        />
+        <Suspense fallback={null}>
+          <CreateEventModal
+            isOpen={showCreateModal}
+            onClose={() => setShowCreateModal(false)}
+            onSuccess={handleCreateSuccess}
+          />
+        </Suspense>
 
         {/* Modal de compra de turbinar (duração) */}
-        <PurchaseBoostsModal
-          isOpen={showBoostCheckout}
-          onClose={() => setShowBoostCheckout(false)}
-          userId={user?.id || ''}
-          onSuccess={() => {
-            refreshBoosts();
-            setShowBoostCheckout(false);
-          }}
-        />
+        <Suspense fallback={null}>
+          <PurchaseBoostsModal
+            isOpen={showBoostCheckout}
+            onClose={() => setShowBoostCheckout(false)}
+            userId={user?.id || ''}
+            onSuccess={() => {
+              refreshBoosts();
+              setShowBoostCheckout(false);
+            }}
+          />
+        </Suspense>
       </ModernDashboardWrapper>
     </ProtectedRoute>
   );

@@ -8,6 +8,7 @@ interface RegisterData {
   accountType: 'personal' | 'institutional';
   propertyName?: string;
   propertyType?: 'haras' | 'fazenda' | 'cte' | 'central-reproducao';
+  cep?: string;
   cpf: string;
   email: string;
   phone: string;
@@ -75,6 +76,7 @@ export const useRegister = (): UseRegisterReturn => {
         accountType,
         propertyName: accountType === 'institutional' ? propertyName : undefined,
         propertyType: accountType === 'institutional' ? propertyType : undefined,
+        cep: accountType === 'institutional' ? data.cep : undefined,
         cpf,
         email,
         phone,

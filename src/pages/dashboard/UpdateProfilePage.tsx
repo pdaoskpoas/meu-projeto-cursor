@@ -25,7 +25,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfileUpdate } from '@/hooks/useProfileUpdate';
-import { buscarCep, UF_TO_ESTADO } from '@/services/cepService';
+import { UF_TO_ESTADO } from '@/services/cepService';
 
 interface FormData {
   country: string;
@@ -35,7 +35,6 @@ interface FormData {
   founded_year: string;
   owner_name: string;
   bio: string;
-  cep: string;
   instagram: string;
   // Novos campos para conversão institucional
   wantsToConvert: boolean;
@@ -57,7 +56,6 @@ const UpdateProfilePage = () => {
     founded_year: '',
     owner_name: '',
     bio: '',
-    cep: '',
     instagram: '',
     wantsToConvert: false,
     property_type: '',
@@ -66,7 +64,6 @@ const UpdateProfilePage = () => {
 
   const [errors, setErrors] = useState<Partial<FormData>>({});
   const [isInitialLoad, setIsInitialLoad] = useState(true);
-  const [isFetchingCep, setIsFetchingCep] = useState(false);
 
   const isInstitutional = user?.accountType === 'institutional';
   
@@ -103,36 +100,6 @@ const UpdateProfilePage = () => {
     }
   };
 
-  // Buscar CEP automaticamente
-  const handleCepChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    let value = e.target.value.replace(/\D/g, ''); // Remove não-dígitos
-    
-    // Formata o CEP
-    if (value.length > 5) {
-      value = `${value.slice(0, 5)}-${value.slice(5, 8)}`;
-    }
-    
-    updateFormField('cep', value);
-    
-    // Se completou 8 dígitos, busca o CEP
-    const cepLimpo = value.replace(/\D/g, '');
-    if (cepLimpo.length === 8) {
-      setIsFetchingCep(true);
-      const result = await buscarCep(value);
-      setIsFetchingCep(false);
-      
-      if (result.success && result.data) {
-        const estadoCompleto = UF_TO_ESTADO[result.data.uf];
-        if (estadoCompleto) {
-          updateFormField('state', estadoCompleto);
-          updateFormField('city', result.data.localidade);
-        }
-      } else if (result.error) {
-        setErrors(prev => ({ ...prev, cep: result.error }));
-      }
-    }
-  };
-
   // Carregar dados existentes
   useEffect(() => {
     const loadProfile = async () => {
@@ -150,7 +117,6 @@ const UpdateProfilePage = () => {
           founded_year: data.founded_year || '',
           owner_name: data.owner_name || '',
           bio: data.bio || '',
-          cep: data.cep || '',
           instagram: data.instagram || '',
           wantsToConvert: false,
           property_type: user?.propertyType || '',
@@ -229,7 +195,6 @@ const UpdateProfilePage = () => {
           founded_year: formData.founded_year,
           owner_name: formData.owner_name,
           bio: formData.bio,
-          cep: formData.cep,
           instagram: formData.instagram,
         },
         {}
@@ -287,7 +252,6 @@ const UpdateProfilePage = () => {
       state: formData.state,
       city: formData.city,
       avatar_url: formData.avatar_url,
-      cep: formData.cep,
       instagram: formData.instagram.replace('@', ''), // Remove @ se o usuário digitou
       // Campos institucionais (somente se tiver plano ativo)
       founded_year: hasActivePlan ? formData.founded_year : '',
@@ -310,7 +274,7 @@ const UpdateProfilePage = () => {
 
     if (success) {
       setTimeout(() => {
-        navigate('/dashboard/settings');
+        navigate('/dashboard');
       }, 1500);
     }
   };
@@ -334,7 +298,7 @@ const UpdateProfilePage = () => {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => navigate('/dashboard/settings')}
+            onClick={() => navigate('/dashboard')}
             className="shrink-0"
           >
             <ArrowLeft className="h-5 w-5" />
@@ -502,50 +466,6 @@ const UpdateProfilePage = () => {
             </CardContent>
           </Card>
         )}
-
-        {/* CEP Section - Busca Automática */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-3">
-              <MapPin className="h-6 w-6 text-blue-600" />
-              CEP (Busca Automática)
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Alert>
-              <Info className="h-4 w-4" />
-              <AlertDescription>
-                Digite seu CEP e o sistema preencherá automaticamente o Estado e a Cidade.
-              </AlertDescription>
-            </Alert>
-
-            <div className="space-y-2">
-              <Label>CEP</Label>
-              <div className="relative">
-                <Input
-                  placeholder="00000-000"
-                  value={formData.cep}
-                  onChange={handleCepChange}
-                  maxLength={9}
-                  className={errors.cep ? 'border-red-500' : ''}
-                  disabled={isFetchingCep}
-                />
-                {isFetchingCep && (
-                  <Loader2 className="h-4 w-4 animate-spin absolute right-3 top-1/2 -translate-y-1/2 text-blue-600" />
-                )}
-              </div>
-              {errors.cep && (
-                <p className="text-sm text-red-500 flex items-center gap-1">
-                  <AlertCircle className="h-3 w-3" />
-                  {errors.cep}
-                </p>
-              )}
-              <p className="text-xs text-slate-500">
-                Exemplo: 01310-100 (Av. Paulista, São Paulo - SP)
-              </p>
-            </div>
-          </CardContent>
-        </Card>
 
         {/* Localização Capturada pelo CEP */}
         {(formData.state || formData.city) && (
@@ -759,7 +679,7 @@ const UpdateProfilePage = () => {
         <div className="flex gap-4">
           <Button
             variant="outline"
-            onClick={() => navigate('/dashboard/settings')}
+            onClick={() => navigate('/dashboard')}
             className="flex-1"
             disabled={loading}
           >

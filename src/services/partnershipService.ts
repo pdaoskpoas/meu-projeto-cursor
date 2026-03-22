@@ -41,7 +41,7 @@ interface UserAnimalsCacheEntry {
   timestamp: number
 }
 
-const USER_ANIMALS_CACHE_TTL_MS = 30 * 1000
+const USER_ANIMALS_CACHE_TTL_MS = 2 * 60 * 1000 // 2 minutos - reduz chamadas duplicadas entre páginas
 const userAnimalsCache = new Map<string, UserAnimalsCacheEntry>()
 const userAnimalsInFlight = new Map<string, Promise<Record<string, unknown>[]>>()
 

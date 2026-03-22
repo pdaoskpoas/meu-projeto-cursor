@@ -6,10 +6,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { animalService } from '@/services/animalService';
 import { animalTitlesService } from '@/services/animalTitlesService';
-import { Loader2, CheckCircle2, X } from 'lucide-react';
+import { Loader2, CheckCircle2, X, Building2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { uploadMultiplePhotos } from '@/components/animal/NewAnimalWizard/utils/uploadWithRetry';
 import EditAnimalPhotosSection from '@/components/forms/animal/EditAnimalPhotosSection';
@@ -78,8 +79,11 @@ const EditAnimalModal: React.FC<EditAnimalModalProps> = ({
   const { toast } = useToast();
   const { user } = useAuth();
   const effectiveUploaderId = uploaderId || user?.id;
+  const isInstitutional = user?.accountType === 'institutional';
+  const profileCep = user?.cep || '';
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [cep, setCep] = useState('');
+  const [useProfileCep, setUseProfileCep] = useState(false);
   const [loadingCep, setLoadingCep] = useState(false);
   const [cepError, setCepError] = useState('');
   const [newAward, setNewAward] = useState<Partial<AnimalAward>>({
@@ -220,6 +224,19 @@ const EditAnimalModal: React.FC<EditAnimalModalProps> = ({
     const cleanCep = formatted.replace(/\D/g, '');
     if (cleanCep.length === 8) {
       fetchCep(formatted);
+    }
+  };
+
+  const handleToggleProfileCep = (checked: boolean) => {
+    setUseProfileCep(checked);
+    setCepError('');
+
+    if (checked && profileCep) {
+      setCep(profileCep);
+      fetchCep(profileCep);
+    } else {
+      setCep('');
+      setFormData(prev => ({ ...prev, currentCity: '', currentState: '', cep: '' }));
     }
   };
 
@@ -485,7 +502,29 @@ const EditAnimalModal: React.FC<EditAnimalModalProps> = ({
           {/* LOCALIZAÇÃO */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold border-b pb-2">Localização</h3>
-            
+
+            {isInstitutional && profileCep && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-start gap-2">
+                    <Building2 className="h-4 w-4 text-blue-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-semibold text-blue-900">
+                        Usar CEP do perfil institucional
+                      </p>
+                      <p className="text-xs text-blue-700">
+                        CEP: <span className="font-mono font-semibold">{profileCep}</span>
+                      </p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={useProfileCep}
+                    onCheckedChange={handleToggleProfileCep}
+                  />
+                </div>
+              </div>
+            )}
+
             <div>
               <Label htmlFor="cep">CEP *</Label>
               <div className="relative">
@@ -496,6 +535,7 @@ const EditAnimalModal: React.FC<EditAnimalModalProps> = ({
                   onChange={(e) => handleCepChange(e.target.value)}
                   maxLength={9}
                   className={cepError ? 'border-red-500' : ''}
+                  disabled={useProfileCep || loadingCep}
                 />
                 {loadingCep && (
                   <Loader2 className="absolute right-3 top-3 h-4 w-4 animate-spin text-gray-400" />
@@ -505,9 +545,15 @@ const EditAnimalModal: React.FC<EditAnimalModalProps> = ({
                 )}
               </div>
               {cepError && <p className="text-sm text-red-500 mt-1">{cepError}</p>}
-              <p className="text-xs text-gray-500 mt-1">
-                💡 Digite o CEP e os campos abaixo serão preenchidos automaticamente
-              </p>
+              {useProfileCep ? (
+                <p className="text-xs text-blue-600 mt-1">
+                  Usando o CEP do perfil institucional. Desmarque para informar outro.
+                </p>
+              ) : (
+                <p className="text-xs text-gray-500 mt-1">
+                  Digite o CEP e os campos abaixo serão preenchidos automaticamente
+                </p>
+              )}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

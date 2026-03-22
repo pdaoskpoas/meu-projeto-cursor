@@ -1,13 +1,14 @@
 // src/components/animal/NewAnimalWizard/steps/StepLocation.tsx
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, ArrowRight, Loader2, MapPin, CheckCircle2 } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { ArrowLeft, ArrowRight, Loader2, MapPin, CheckCircle2, Building2 } from 'lucide-react';
 import { useWizard } from '../WizardContext';
-import { useDebouncedUpdate } from '../hooks/useDebouncedUpdate';
+import { useAuth } from '@/contexts/AuthContext';
 import type { LocationData } from '@/types/animal';
 
 interface ViaCEPResponse {
@@ -22,23 +23,30 @@ interface ViaCEPResponse {
 
 export const StepLocation: React.FC = () => {
   const { state, dispatch } = useWizard();
+  const { user } = useAuth();
   const { location } = state.formData;
 
+  const isInstitutional = user?.accountType === 'institutional';
+  const profileCep = user?.cep || '';
+
   const [cep, setCep] = useState('');
+  const [useProfileCep, setUseProfileCep] = useState(false);
   const [loadingCep, setLoadingCep] = useState(false);
   const [cepError, setCepError] = useState('');
   const [errors, setErrors] = useState<Partial<Record<keyof LocationData, string>>>({});
+  const hasInitialized = useRef(false);
 
-  // Debounced update para o reducer
-  const debouncedUpdate = useDebouncedUpdate(
-    (field: keyof LocationData, value: string) => {
-      dispatch({
-        type: 'UPDATE_LOCATION',
-        payload: { [field]: value }
-      });
-    },
-    200
-  );
+  // Na montagem, se for institucional e tiver CEP no perfil, pré-preencher
+  useEffect(() => {
+    if (hasInitialized.current) return;
+    hasInitialized.current = true;
+
+    if (isInstitutional && profileCep) {
+      setUseProfileCep(true);
+      setCep(profileCep);
+      fetchCep(profileCep);
+    }
+  }, [isInstitutional, profileCep]);
 
   // Validar campos
   const validate = (): boolean => {
@@ -71,7 +79,6 @@ export const StepLocation: React.FC = () => {
 
   // Buscar CEP na API ViaCEP
   const fetchCep = async (cepValue: string) => {
-    // Remover caracteres não numéricos
     const cleanCep = cepValue.replace(/\D/g, '');
 
     if (cleanCep.length !== 8) {
@@ -91,7 +98,6 @@ export const StepLocation: React.FC = () => {
         return;
       }
 
-      // Atualizar cidade e estado
       dispatch({
         type: 'UPDATE_LOCATION',
         payload: {
@@ -101,7 +107,7 @@ export const StepLocation: React.FC = () => {
       });
 
       setCepError('');
-    } catch (error) {
+    } catch {
       setCepError('Erro ao buscar CEP. Tente novamente.');
     } finally {
       setLoadingCep(false);
@@ -109,17 +115,32 @@ export const StepLocation: React.FC = () => {
   };
 
   const handleCepChange = (value: string) => {
-    // Aplicar máscara: 00000-000
     let formatted = value.replace(/\D/g, '');
     if (formatted.length > 5) {
       formatted = `${formatted.slice(0, 5)}-${formatted.slice(5, 8)}`;
     }
     setCep(formatted);
 
-    // Buscar automaticamente quando tiver 8 dígitos
     const cleanCep = formatted.replace(/\D/g, '');
     if (cleanCep.length === 8) {
       fetchCep(formatted);
+    }
+  };
+
+  // Toggle: usar CEP do perfil ou digitar manualmente
+  const handleToggleProfileCep = (checked: boolean) => {
+    setUseProfileCep(checked);
+    setCepError('');
+
+    if (checked && profileCep) {
+      setCep(profileCep);
+      fetchCep(profileCep);
+    } else {
+      setCep('');
+      dispatch({
+        type: 'UPDATE_LOCATION',
+        payload: { current_city: '', current_state: '' }
+      });
     }
   };
 
@@ -133,11 +154,6 @@ export const StepLocation: React.FC = () => {
     dispatch({ type: 'PREV_STEP' });
   };
 
-  const updateField = (field: keyof LocationData, value: string) => {
-    // Atualizar localmente
-    debouncedUpdate(field, value);
-  };
-
   return (
     <Card className="p-6">
       <div className="space-y-6">
@@ -147,9 +163,32 @@ export const StepLocation: React.FC = () => {
             Localização Atual
           </h2>
           <p className="text-sm text-gray-600 mt-1">
-            Informe o CEP para preenchimento automático
+            Informe onde o animal está localizado
           </p>
         </div>
+
+        {/* Toggle para usar CEP do perfil institucional */}
+        {isInstitutional && profileCep && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-start gap-3">
+                <Building2 className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-semibold text-blue-900">
+                    Usar localização do perfil institucional
+                  </p>
+                  <p className="text-xs text-blue-700 mt-0.5">
+                    CEP cadastrado: <span className="font-mono font-semibold">{profileCep}</span>
+                  </p>
+                </div>
+              </div>
+              <Switch
+                checked={useProfileCep}
+                onCheckedChange={handleToggleProfileCep}
+              />
+            </div>
+          </div>
+        )}
 
         {/* CEP */}
         <div className="space-y-2">
@@ -164,6 +203,7 @@ export const StepLocation: React.FC = () => {
               onChange={(e) => handleCepChange(e.target.value)}
               maxLength={9}
               className={cepError ? 'border-red-500' : ''}
+              disabled={useProfileCep || loadingCep}
             />
             {loadingCep && (
               <Loader2 className="absolute right-3 top-3 h-4 w-4 animate-spin text-gray-400" />
@@ -175,12 +215,18 @@ export const StepLocation: React.FC = () => {
           {cepError && (
             <p className="text-sm text-red-500">{cepError}</p>
           )}
-          <p className="text-xs text-gray-500">
-            💡 Digite o CEP e os campos abaixo serão preenchidos automaticamente
-          </p>
+          {useProfileCep ? (
+            <p className="text-xs text-blue-600">
+              Usando o CEP do seu perfil institucional. Desmarque acima para informar outro.
+            </p>
+          ) : (
+            <p className="text-xs text-gray-500">
+              Digite o CEP e os campos abaixo serão preenchidos automaticamente
+            </p>
+          )}
         </div>
 
-        {/* Cidade (preenchido automaticamente - SOMENTE LEITURA) */}
+        {/* Cidade */}
         <div className="space-y-2">
           <Label htmlFor="city">
             Cidade <span className="text-red-500">*</span>
@@ -196,12 +242,9 @@ export const StepLocation: React.FC = () => {
           {errors.current_city && (
             <p className="text-sm text-red-500">{errors.current_city}</p>
           )}
-          <p className="text-xs text-gray-500">
-            🔒 Campo preenchido automaticamente
-          </p>
         </div>
 
-        {/* Estado (preenchido automaticamente - SOMENTE LEITURA) */}
+        {/* Estado */}
         <div className="space-y-2">
           <Label htmlFor="state">
             Estado <span className="text-red-500">*</span>
@@ -218,9 +261,6 @@ export const StepLocation: React.FC = () => {
           {errors.current_state && (
             <p className="text-sm text-red-500">{errors.current_state}</p>
           )}
-          <p className="text-xs text-gray-500">
-            🔒 Campo preenchido automaticamente
-          </p>
         </div>
 
         {/* Info adicional */}

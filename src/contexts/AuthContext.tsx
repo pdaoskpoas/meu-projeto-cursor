@@ -30,6 +30,7 @@ interface User {
   availableBoosts?: number;
   marketingConsent?: boolean;
   phone?: string;
+  cep?: string;
 }
 
 interface AuthContextType {
@@ -46,6 +47,7 @@ interface RegisterData {
   accountType: 'personal' | 'institutional';
   propertyName?: string;
   propertyType?: 'haras' | 'fazenda' | 'cte' | 'central-reproducao';
+  cep?: string;
   cpf: string;
   email: string;
   phone: string;
@@ -86,7 +88,8 @@ const mapProfileToUser = (profile: Profile): User => {
     isSuspended: profile.is_suspended ?? undefined,
     availableBoosts: profile.available_boosts ?? undefined,
     marketingConsent: profile.marketing_consent ?? false,
-    phone: profile.phone ?? undefined
+    phone: profile.phone ?? undefined,
+    cep: profile.cep ?? undefined
   };
 };
 
@@ -218,6 +221,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         accountType: userData.accountType,
         propertyName: userData.propertyName,
         propertyType: userData.propertyType,
+        cep: userData.cep,
         marketingConsent: userData.marketingConsent
       });
 

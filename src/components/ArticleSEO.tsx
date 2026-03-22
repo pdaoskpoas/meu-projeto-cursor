@@ -81,7 +81,7 @@ const ArticleSEO: React.FC<ArticleSEOProps> = ({
             "name": "Cavalaria Digital",
             "logo": {
               "@type": "ImageObject",
-              "url": `${siteUrl}/logo.png`
+              "url": `${siteUrl}/logo.png.png`
             }
           },
           "mainEntityOfPage": {

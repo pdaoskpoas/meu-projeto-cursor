@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { Suspense, useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Plus, Eye, Edit3, Trash2, MapPin, Trophy, Zap, RefreshCw, Clock, AlertTriangle } from 'lucide-react';
 import { Card } from '@/components/ui/card';
@@ -13,12 +13,16 @@ import { animalService } from '@/services/animalService';
 import { partnershipService } from '@/services/partnershipService';
 import { boostService } from '@/services/boostService';
 import { useToast } from '@/hooks/use-toast';
-import EditAnimalModal from '@/components/forms/animal/EditAnimalModal';
 import BoostCounter from '@/components/dashboard/BoostCounter';
-import PurchaseBoostsModal from '@/components/payment/PurchaseBoostsModal';
 import BoostCountdown from '@/components/BoostCountdown';
 import { useUserBoosts } from '@/hooks/useUserBoosts';
-import { NewAnimalWizard } from '@/components/animal/NewAnimalWizard';
+
+// Lazy load de modais pesados - carregam sob demanda
+const EditAnimalModal = React.lazy(() => import('@/components/forms/animal/EditAnimalModal'));
+const PurchaseBoostsModal = React.lazy(() => import('@/components/payment/PurchaseBoostsModal'));
+const NewAnimalWizard = React.lazy(() =>
+  import('@/components/animal/NewAnimalWizard').then(m => ({ default: m.NewAnimalWizard }))
+);
 import { runResilientRequest } from '@/services/resilientRequestService';
 import { getDetailedAge } from '@/utils/animalAge';
 import mangalargaImg from '@/assets/mangalarga.jpg';
@@ -644,6 +648,7 @@ const AnimalsPage = () => {
 
         {/* Modal de editar animal */}
         {animalToEdit && (
+          <Suspense fallback={null}>
           <EditAnimalModal
             isOpen={isEditModalOpen}
             onClose={() => {
@@ -658,9 +663,11 @@ const AnimalsPage = () => {
               }
             }}
           />
+          </Suspense>
         )}
 
         {/* Modal de compra de turbinar (duração) */}
+        <Suspense fallback={null}>
         <PurchaseBoostsModal
           isOpen={isBoostCheckoutOpen}
           onClose={() => setIsBoostCheckoutOpen(false)}
@@ -672,6 +679,7 @@ const AnimalsPage = () => {
             setIsBoostCheckoutOpen(false);
           }}
         />
+        </Suspense>
 
         <Dialog open={showDeleteModal} onOpenChange={setShowDeleteModal}>
           <DialogContent className="max-w-lg">
@@ -734,6 +742,7 @@ const AnimalsPage = () => {
         </Dialog>
 
         {/* Wizard de Adicionar Animal */}
+        <Suspense fallback={null}>
         <NewAnimalWizard
           isOpen={isAddAnimalModalOpen}
           onClose={() => setIsAddAnimalModalOpen(false)}
@@ -748,6 +757,7 @@ const AnimalsPage = () => {
             });
           }}
         />
+        </Suspense>
       </ModernDashboardWrapper>
     </ProtectedRoute>
   );

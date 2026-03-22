@@ -12,7 +12,7 @@ import { CHECKOUT_PLANS, type CheckoutBillingCycle } from '@/constants/checkoutP
 const PlansPage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'annual'>('monthly');
+  const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'annual'>('annual');
 
   const handleSelectPlan = (planId: string) => {
     toast({

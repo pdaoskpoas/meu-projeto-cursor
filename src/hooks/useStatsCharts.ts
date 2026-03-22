@@ -195,7 +195,7 @@ export const useStatsCharts = (activePeriod: 'all' | 'month' | 'year') => {
           topAnimals: performanceData
         };
       }, {
-        timeoutMs: 45000,
+        timeoutMs: 15000,
         errorMessage: 'O carregamento dos gráficos demorou demais.',
         requestKey: `stats-charts:${user.id}:${activePeriod}`
       });

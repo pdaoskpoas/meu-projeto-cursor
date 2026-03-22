@@ -66,7 +66,7 @@ export const useUserBoosts = () => {
           .eq('id', user.id)
           .single(),
         {
-          timeoutMs: 45000,
+          timeoutMs: 10000,
           errorMessage: 'O carregamento dos créditos demorou demais.',
           requestKey: `user-boosts:${user.id}`
         }

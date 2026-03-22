@@ -228,7 +228,7 @@ export const useUserStats = () => {
 
         return nextStats;
       }, {
-        timeoutMs: 45000,
+        timeoutMs: 15000,
         errorMessage: 'O carregamento das estatísticas demorou demais.',
         requestKey: `user-stats:${user.id}`
       });

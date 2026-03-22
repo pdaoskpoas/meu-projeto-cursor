@@ -703,7 +703,10 @@ const CheckoutPage = () => {
                         {cycle === 'annual' && 'Anual (12x sem juros)'}
                       </p>
                       <p className="text-xs">
-                        Total R$ {getPlanPrice(selectedPlan, cycle).toFixed(2).replace('.', ',')}
+                        {cycle === 'annual'
+                          ? `12x de R$ ${(getPlanPrice(selectedPlan, cycle) / 12).toFixed(2).replace('.', ',')} · Total R$ ${getPlanPrice(selectedPlan, cycle).toFixed(2).replace('.', ',')}`
+                          : `R$ ${getPlanPrice(selectedPlan, cycle).toFixed(2).replace('.', ',')} /mês`
+                        }
                       </p>
                     </button>
                   ))}
@@ -711,19 +714,24 @@ const CheckoutPage = () => {
 
                 <div className="mt-6 rounded-lg bg-gray-50 p-4 space-y-1">
                   <p className="text-sm text-gray-600">Resumo</p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    R$ {formatPrice(finalTotal)}
-                  </p>
+                  {billingCycle === 'annual' && paymentMethod === 'CREDIT_CARD' ? (
+                    <>
+                      <p className="text-2xl font-bold text-gray-900">
+                        12x de R$ {formatPrice(finalTotal / 12)}
+                      </p>
+                      <p className="text-xs text-gray-500">sem juros no cartão</p>
+                      <p className="text-xs text-gray-500">Total: R$ {formatPrice(finalTotal)}</p>
+                    </>
+                  ) : (
+                    <p className="text-2xl font-bold text-gray-900">
+                      R$ {formatPrice(finalTotal)}
+                    </p>
+                  )}
                   {isPixDiscountActive && (
                     <>
                       <p className="text-xs text-gray-500">Subtotal R$ {formatPrice(baseTotal)}</p>
                       <p className="text-xs text-green-700">Desconto PIX (3%)</p>
                     </>
-                  )}
-                  {billingCycle === 'annual' && paymentMethod === 'CREDIT_CARD' && (
-                    <p className="text-xs text-gray-500">
-                      {getInstallmentCount(billingCycle)}x sem juros no cartão
-                    </p>
                   )}
                 </div>
               </div>

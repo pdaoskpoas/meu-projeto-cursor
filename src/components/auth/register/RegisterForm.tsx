@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Eye, EyeOff, AlertCircle } from 'lucide-react';
+import { Eye, EyeOff, AlertCircle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -8,11 +8,13 @@ import AccountTypeSelector from '../AccountTypeSelector';
 import PropertyTypeSelector from '../PropertyTypeSelector';
 import TermsAcceptance from '../TermsAcceptance';
 import { useFormValidation } from '@/hooks/useFormValidation';
+import { buscarCep, UF_TO_ESTADO } from '@/services/cepService';
 
 interface RegisterFormData {
   name: string;
   propertyName: string;
   propertyType: '' | 'haras' | 'fazenda' | 'cte' | 'central-reproducao';
+  cep: string;
   cpf: string;
   email: string;
   phone: string;
@@ -34,6 +36,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSubmit, isSubmitting, cla
     name: '',
     propertyName: '',
     propertyType: '' as RegisterFormData['propertyType'],
+    cep: '',
     cpf: '',
     email: '',
     phone: '',
@@ -41,6 +44,8 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSubmit, isSubmitting, cla
     confirmPassword: ''
   });
   const [showPassword, setShowPassword] = useState(false);
+  const [isFetchingCep, setIsFetchingCep] = useState(false);
+  const [cepLocation, setCepLocation] = useState<{ city: string; state: string } | null>(null);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [marketingConsent, setMarketingConsent] = useState(false);
@@ -49,12 +54,13 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSubmit, isSubmitting, cla
     name: { required: true, minLength: 2 },
     propertyName: { required: accountType === 'institutional', minLength: 2 },
     propertyType: { required: accountType === 'institutional' },
+    cep: { required: accountType === 'institutional', pattern: /^\d{5}-\d{3}$/ },
     cpf: { required: true, pattern: /^\d{3}\.\d{3}\.\d{3}-\d{2}$/ },
     email: { required: true, pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/ },
     phone: { required: true, pattern: /^\(\d{2}\) \d{4,5}-\d{4}$/ },
     password: { required: true, minLength: 8 },
-    confirmPassword: { 
-      required: true, 
+    confirmPassword: {
+      required: true,
       custom: (value: string) => value === formData.password ? null : 'Senhas não coincidem'
     }
   };
@@ -86,6 +92,37 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSubmit, isSubmitting, cla
       });
     } catch (error) {
       console.error('Erro no registro:', error);
+    }
+  };
+
+  const formatCep = (value: string) => {
+    const numbers = value.replace(/\D/g, '');
+    if (numbers.length > 5) {
+      return `${numbers.slice(0, 5)}-${numbers.slice(5, 8)}`;
+    }
+    return numbers;
+  };
+
+  const handleCepChange = async (value: string) => {
+    const formatted = formatCep(value);
+    handleInputChange('cep', formatted);
+
+    const cepLimpo = formatted.replace(/\D/g, '');
+    if (cepLimpo.length === 8) {
+      setIsFetchingCep(true);
+      const result = await buscarCep(formatted);
+      setIsFetchingCep(false);
+
+      if (result.success && result.data) {
+        const estadoCompleto = UF_TO_ESTADO[result.data.uf];
+        if (estadoCompleto) {
+          setCepLocation({ city: result.data.localidade, state: estadoCompleto });
+        }
+      } else {
+        setCepLocation(null);
+      }
+    } else {
+      setCepLocation(null);
     }
   };
 
@@ -121,8 +158,10 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSubmit, isSubmitting, cla
               setFormData(prev => ({
                 ...prev,
                 propertyName: '',
-                propertyType: ''
+                propertyType: '',
+                cep: ''
               }));
+              setCepLocation(null);
             }
           }}
         />
@@ -198,6 +237,39 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSubmit, isSubmitting, cla
                 selectedType={formData.propertyType}
                 onTypeSelect={(type) => handleInputChange('propertyType', type)}
               />
+
+              <div>
+                <div className="relative">
+                  <Input
+                    placeholder="CEP (00000-000)"
+                    inputMode="numeric"
+                    value={formData.cep}
+                    onChange={(e) => handleCepChange(e.target.value)}
+                    maxLength={9}
+                    className={`h-12 bg-white border border-slate-300 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 rounded-lg transition-all ${
+                      errors.cep ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''
+                    }`}
+                    disabled={isFetchingCep}
+                  />
+                  {isFetchingCep && (
+                    <Loader2 className="h-4 w-4 animate-spin absolute right-3 top-1/2 -translate-y-1/2 text-blue-600" />
+                  )}
+                </div>
+                {errors.cep ? (
+                  <div className="flex items-center gap-2 mt-1.5">
+                    <AlertCircle className="h-4 w-4 text-red-500" />
+                    <span className="text-sm text-red-500">{errors.cep}</span>
+                  </div>
+                ) : cepLocation ? (
+                  <p className="text-xs text-green-600 mt-1.5">
+                    {cepLocation.city} - {cepLocation.state}
+                  </p>
+                ) : (
+                  <p className="text-xs text-slate-500 mt-1.5">
+                    Localização da propriedade
+                  </p>
+                )}
+              </div>
             </>
           )}
 

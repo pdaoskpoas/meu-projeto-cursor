@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { Suspense, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Plus, Users, Eye, TrendingUp, Bell, ExternalLink, BarChart3, Crown, Calendar, Award, Activity, Zap, Heart, MessageSquare, Clock, UserCog, MapPin, RefreshCw, HelpCircle } from 'lucide-react';
 import { Card } from '@/components/ui/card';
@@ -8,8 +8,9 @@ import ModernDashboardWrapper from '@/components/layout/ModernDashboardWrapper';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { useAuth } from '@/contexts/AuthContext';
 import { SuspensionNotice } from '@/components/SuspensionNotice';
-import BoostPlansModal from '@/components/BoostPlansModal';
-import PurchaseBoostsModal from '@/components/payment/PurchaseBoostsModal';
+// Lazy load de modais pesados
+const BoostPlansModal = React.lazy(() => import('@/components/BoostPlansModal'));
+const PurchaseBoostsModal = React.lazy(() => import('@/components/payment/PurchaseBoostsModal'));
 import { animalService } from '@/services/animalService';
 import { useToast } from '@/hooks/use-toast';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
@@ -472,29 +473,31 @@ const DashboardPage = () => {
       </ModernDashboardWrapper>
       
       {/* Modal de Compra de Turbinares */}
-      <BoostPlansModal
-        isOpen={showBoostPlansModal}
-        onClose={() => setShowBoostPlansModal(false)}
-        onSelectPlan={(plan) => {
-          const quantities = { single: 1, popular: 5, prime: 10 };
-          setSelectedBoostQty(quantities[plan]);
-          setShowBoostPlansModal(false);
-          setShowBoostCheckout(true);
-        }}
-        type="animal"
-      />
+      <Suspense fallback={null}>
+        <BoostPlansModal
+          isOpen={showBoostPlansModal}
+          onClose={() => setShowBoostPlansModal(false)}
+          onSelectPlan={(plan) => {
+            const quantities = { single: 1, popular: 5, prime: 10 };
+            setSelectedBoostQty(quantities[plan]);
+            setShowBoostPlansModal(false);
+            setShowBoostCheckout(true);
+          }}
+          type="animal"
+        />
 
-      <PurchaseBoostsModal
-        isOpen={showBoostCheckout}
-        onClose={() => setShowBoostCheckout(false)}
-        userId={user?.id || ''}
-        initialQuantity={selectedBoostQty}
-        lockQuantity
-        onSuccess={() => {
-          refreshStats();
-          setShowBoostCheckout(false);
-        }}
-      />
+        <PurchaseBoostsModal
+          isOpen={showBoostCheckout}
+          onClose={() => setShowBoostCheckout(false)}
+          userId={user?.id || ''}
+          initialQuantity={selectedBoostQty}
+          lockQuantity
+          onSuccess={() => {
+            refreshStats();
+            setShowBoostCheckout(false);
+          }}
+        />
+      </Suspense>
     </ProtectedRoute>
   );
 };
