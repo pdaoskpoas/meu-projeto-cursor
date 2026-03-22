@@ -2,26 +2,6 @@
   "framework": "vite",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
-  "redirects": [
-    {
-      "source": "/:path*",
-      "has": [{ "type": "host", "value": "www.vitrinedocavalo.com.br" }],
-      "destination": "https://vitrinedocavalo.com.br/:path*",
-      "permanent": true
-    },
-    {
-      "source": "/:path*",
-      "has": [{ "type": "host", "value": "vitrinedocavalo.com" }],
-      "destination": "https://vitrinedocavalo.com.br/:path*",
-      "permanent": true
-    },
-    {
-      "source": "/:path*",
-      "has": [{ "type": "host", "value": "www.vitrinedocavalo.com" }],
-      "destination": "https://vitrinedocavalo.com.br/:path*",
-      "permanent": true
-    }
-  ],
   "headers": [
     {
       "source": "/(.*)",
