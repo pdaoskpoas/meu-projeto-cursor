@@ -3,6 +3,7 @@ import HeroSection from '@/components/homepage/HeroSection';
 import SectionContainer from '@/components/homepage/SectionContainer';
 import LazySection from '@/components/ui/LazySection';
 import FavoritesProviderBoundary from '@/components/FavoritesProviderBoundary';
+const WhyChooseUsSection = lazy(() => import('@/components/homepage/WhyChooseUsSection'));
 const SponsorsCarousel = lazy(() => import('@/components/SponsorsCarousel'));
 const FeaturedCarousel = lazy(() => import('@/components/FeaturedCarousel'));
 const MostViewedCarousel = lazy(() => import('@/components/MostViewedCarousel'));
@@ -25,6 +26,13 @@ const Index = () => {
         </Suspense>
       </LazySection>
       
+      {/* Seção "Por que a Vitrine do Cavalo?" */}
+      <LazySection minHeight="400px">
+        <Suspense fallback={<div className="min-h-[400px]" />}>
+          <WhyChooseUsSection />
+        </Suspense>
+      </LazySection>
+
       {/* Bloco de Animais - Carrosséis relacionados com espaçamento tight */}
       <FavoritesProviderBoundary>
         <LazySection minHeight="400px">
