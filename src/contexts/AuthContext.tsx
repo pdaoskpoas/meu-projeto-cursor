@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import React, { createContext, useCallback, useContext, useState, useEffect } from 'react';
+import React, { createContext, useCallback, useContext, useState, useEffect, useMemo, useRef } from 'react';
 import { authService } from '@/services/authService';
 import type { Profile } from '@/types/supabase';
 import { formatNameUppercase } from '@/utils/nameFormat';
@@ -97,6 +97,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Ref para acesso estável ao user dentro de callbacks memoizados
+  const userRef = useRef(user);
+  userRef.current = user;
+
   useEffect(() => {
     let unsub: { data: { subscription: { unsubscribe: () => void } } } | null = null;
     let cancelled = false;
@@ -185,7 +189,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, []);
 
-  const login = async (email: string, password: string): Promise<User | null> => {
+  const login = useCallback(async (email: string, password: string): Promise<User | null> => {
     try {
       setIsLoading(true);
       const authUser = await authService.login({ email, password });
@@ -200,16 +204,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  const logout = () => {
-    authService.logout().finally(() => {
-      setUser(null);
-      // 🔒 Não usar localStorage para dados sensíveis - Supabase Auth gerencia sessão
-    });
-  };
+  const logout = useCallback(async () => {
+    setUser(null);
+    try {
+      await authService.logout();
+    } catch {
+      // Logout local já foi feito — erro no signOut remoto não impede a saída
+    }
+  }, []);
 
-  const register = async (userData: RegisterData): Promise<boolean> => {
+  const register = useCallback(async (userData: RegisterData): Promise<boolean> => {
     try {
       setIsLoading(true);
       const created = await authService.register({
@@ -235,7 +241,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   const refreshUser = useCallback(async (): Promise<User | null> => {
     try {
@@ -254,14 +260,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (error) {
       console.warn('[AuthContext] Falha temporária ao atualizar usuário. Mantendo estado atual.', error);
       // Preserva user atual em vez de forçar null — evita logout fantasma por timeout.
-      return user;
+      return userRef.current;
     } finally {
       setIsLoading(false);
     }
-  }, [user]);
+  }, []);
+
+  const value = useMemo(() => ({
+    user, login, logout, register, refreshUser, isLoading
+  }), [user, login, logout, register, refreshUser, isLoading]);
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, register, refreshUser, isLoading }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );

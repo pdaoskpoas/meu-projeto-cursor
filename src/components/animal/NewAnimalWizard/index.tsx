@@ -301,7 +301,6 @@ export const NewAnimalWizard: React.FC<NewAnimalWizardProps> = ({
   // Deve ficar ANTES do early return para respeitar a regra de hooks do React
   useEffect(() => {
     if (isOpen && effectiveUserId) {
-      console.log('[Wizard] Modal aberto - preparando sessão e plano...');
       clearPlanCache();
 
       const warmUpWizardSession = async () => {
@@ -309,7 +308,7 @@ export const NewAnimalWizard: React.FC<NewAnimalWizardProps> = ({
           await ensureActiveSession({ timeoutMs: 10000 });
           await prefetchUserPlanQuota(effectiveUserId);
         } catch (error) {
-          console.warn('[Wizard] Erro ao manter sessão ativa (não crítico):', error);
+          // Erro não crítico — sessão será tentada novamente
         }
       };
 

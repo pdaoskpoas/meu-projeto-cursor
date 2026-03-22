@@ -65,36 +65,23 @@ const AnimalPage = () => {
     let mounted = true;
     (async () => {
       if (!id) {
-        console.log('[AnimalPage] ID não fornecido');
         setIsLoading(false);
         return;
       }
-      
-      console.log('[AnimalPage] Buscando animal com ID:', id);
+
       setIsLoading(true);
       
       try {
         const a = await animalService.getAnimalById(id);
         
-        if (!mounted) {
-          console.log('[AnimalPage] Componente desmontado, abortando');
-          return;
-        }
-        
+        if (!mounted) return;
+
         if (!a) {
-          console.log('[AnimalPage] Animal não encontrado ou sem permissão para visualizar');
           if (mounted) {
             setIsLoading(false);
           }
           return;
         }
-        
-        console.log('[AnimalPage] Animal carregado com sucesso:', {
-          id: a.id,
-          name: a.name,
-          ad_status: a.ad_status,
-          images_count: a.images?.length || 0
-        });
         
         // Determinar nome correto do proprietário baseado no tipo de conta
         const ownerAccountType = a.owner_account_type ?? 'personal';
@@ -167,14 +154,7 @@ const AnimalPage = () => {
           
           setIsLoading(false);
         }
-      } catch (error: unknown) {
-        console.error('[AnimalPage] Erro ao carregar animal:', {
-          id,
-          error: error?.message || error,
-          code: error?.code,
-          details: error?.details
-        });
-        
+      } catch {
         if (mounted) {
           setHorseDb(null);
           setPartners([]);

@@ -50,7 +50,6 @@ const UpgradeToInstitutionalPage = lazy(() => import("./pages/dashboard/UpgradeT
 const UpdateProfilePage = lazy(() => import("./pages/dashboard/UpdateProfilePage"));
 const MessagesPage = lazy(() => import("./pages/dashboard/MessagesPage"));
 const FavoritosPage = lazy(() => import("./pages/dashboard/FavoritosPage"));
-const TestUploadPage = lazy(() => import("./pages/TestUploadPage"));
 const HelpPage = lazy(() => import("./pages/dashboard/HelpPage"));
 const SocietyPage = lazy(() => import("./pages/dashboard/SocietyPage"));
 const AboutPage = lazy(() => import("./pages/AboutPage"));
@@ -186,8 +185,7 @@ const App = () => (
                       <Route path="/publicar/:draftId" element={<PublishDraftPage />} />
                       <Route path="/publicar-animal" element={<PublishAnimalPage />} />
                       <Route path="/admin" element={<AdminProtectedRoute><AdminPage /></AdminProtectedRoute>} />
-                      <Route path="/test-upload" element={<TestUploadPage />} />
-                      {/* Rota curta para haras - DEVE ficar antes do 404 */}
+{/* Rota curta para haras - DEVE ficar antes do 404 */}
                       <Route path="/:propertyName/:code" element={<ShortHarasRedirect />} />
                       <Route path="*" element={<NotFound />} />
                       </Routes>

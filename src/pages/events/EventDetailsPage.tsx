@@ -95,8 +95,7 @@ const EventDetailsPage: React.FC = () => {
           (item) => !isEventExpired(item)
         );
         setOtherEvents(activeOthers);
-      } catch (error: unknown) {
-        console.error('Erro ao carregar evento:', error);
+      } catch {
         toast({
           title: 'Erro',
           description: 'Não foi possível carregar o evento.',

@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef, useMemo, ReactNode } from 'react';
 import { toast } from 'sonner';
 import { useAuth } from './AuthContext';
 import { favoritesService, type FavoriteAnimalData } from '@/services/favoritesService';
@@ -33,115 +33,104 @@ export const FavoritesProvider: React.FC<FavoritesProviderProps> = ({ children }
   const [favorites, setFavorites] = useState<FavoriteAnimalData[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Carrega os favoritos do Supabase quando o usuário fizer login
-  const showToast = useCallback((message: string) => {
-    toast(message);
-  }, []);
+  // Refs para acesso estável dentro de callbacks memoizados
+  const userRef = useRef(user);
+  userRef.current = user;
+  const favoritesRef = useRef(favorites);
+  favoritesRef.current = favorites;
 
   const loadFavorites = useCallback(async () => {
     setIsLoading(true);
     try {
       const data = await favoritesService.getUserFavorites();
       setFavorites(data);
-    } catch (error) {
-      console.error('Erro ao carregar favoritos:', error);
-      showToast('Erro ao carregar favoritos');
+    } catch {
+      toast('Erro ao carregar favoritos');
     } finally {
       setIsLoading(false);
     }
-  }, [showToast]);
+  }, []);
 
+  // Depender de user?.id (primitivo) em vez do objeto user inteiro
+  const userId = user?.id;
   useEffect(() => {
-    if (user) {
+    if (userId) {
       loadFavorites();
     } else {
-      // Limpa favoritos quando usuário fizer logout
       setFavorites([]);
     }
-  }, [user, loadFavorites]);
+  }, [userId, loadFavorites]);
 
-  
-
-  const addToFavorites = async (animalId: string) => {
-    // Verifica se usuário está autenticado
-    if (!user) {
-      showToast('Você precisa estar logado para adicionar favoritos');
+  const addToFavorites = useCallback(async (animalId: string) => {
+    if (!userRef.current) {
+      toast('Você precisa estar logado para adicionar favoritos');
       return;
     }
 
-    // Verifica se já está nos favoritos
-    if (favorites.some(fav => fav.id === animalId)) {
-      showToast('Este animal já está nos seus favoritos');
+    if (favoritesRef.current.some(fav => fav.id === animalId)) {
+      toast('Este animal já está nos seus favoritos');
       return;
     }
 
     try {
       const result = await favoritesService.addFavorite(animalId);
-      
+
       if (result.success) {
-        // Recarrega a lista de favoritos para obter os dados atualizados
         await loadFavorites();
-        
-        // Busca o animal na lista atualizada
         const updatedFavorites = await favoritesService.getUserFavorites();
         const animal = updatedFavorites.find(fav => fav.id === animalId);
         const animalName = animal?.name || 'Animal';
-        
-        showToast(`${animalName} adicionado aos favoritos`);
+        toast(`${animalName} adicionado aos favoritos`);
       } else {
-        showToast(result.error || 'Erro ao adicionar favorito');
+        toast(result.error || 'Erro ao adicionar favorito');
       }
-    } catch (error) {
-      console.error('Erro ao adicionar favorito:', error);
-      showToast('Erro ao adicionar favorito');
+    } catch {
+      toast('Erro ao adicionar favorito');
     }
-  };
+  }, [loadFavorites]);
 
-  const removeFromFavorites = async (animalId: string) => {
-    // Verifica se usuário está autenticado
-    if (!user) {
-      showToast('Você precisa estar logado');
+  const removeFromFavorites = useCallback(async (animalId: string) => {
+    if (!userRef.current) {
+      toast('Você precisa estar logado');
       return;
     }
 
-    const animalToRemove = favorites.find(fav => fav.id === animalId);
+    const animalToRemove = favoritesRef.current.find(fav => fav.id === animalId);
     if (!animalToRemove) {
       return;
     }
 
     try {
       const result = await favoritesService.removeFavorite(animalId);
-      
+
       if (result.success) {
-        // Remove localmente para feedback imediato
         setFavorites(prev => prev.filter(fav => fav.id !== animalId));
-        showToast(`${animalToRemove.name} removido dos favoritos`);
+        toast(`${animalToRemove.name} removido dos favoritos`);
       } else {
-        showToast(result.error || 'Erro ao remover favorito');
+        toast(result.error || 'Erro ao remover favorito');
       }
-    } catch (error) {
-      console.error('Erro ao remover favorito:', error);
-      showToast('Erro ao remover favorito');
+    } catch {
+      toast('Erro ao remover favorito');
     }
-  };
+  }, []);
 
-  const isFavorite = (animalId: string) => {
-    return favorites.some(fav => fav.id === animalId);
-  };
+  const isFavorite = useCallback((animalId: string) => {
+    return favoritesRef.current.some(fav => fav.id === animalId);
+  }, []);
 
-  const toggleFavorite = async (animalId: string) => {
-    if (isFavorite(animalId)) {
+  const toggleFavorite = useCallback(async (animalId: string) => {
+    if (favoritesRef.current.some(fav => fav.id === animalId)) {
       await removeFromFavorites(animalId);
     } else {
       await addToFavorites(animalId);
     }
-  };
+  }, [removeFromFavorites, addToFavorites]);
 
-  const refreshFavorites = async () => {
+  const refreshFavorites = useCallback(async () => {
     await loadFavorites();
-  };
+  }, [loadFavorites]);
 
-  const value: FavoritesContextType = {
+  const value = useMemo(() => ({
     favorites,
     isLoading,
     addToFavorites,
@@ -149,7 +138,7 @@ export const FavoritesProvider: React.FC<FavoritesProviderProps> = ({ children }
     toggleFavorite,
     isFavorite,
     refreshFavorites
-  };
+  }), [favorites, isLoading, addToFavorites, removeFromFavorites, toggleFavorite, isFavorite, refreshFavorites]);
 
   return (
     <FavoritesContext.Provider value={value}>

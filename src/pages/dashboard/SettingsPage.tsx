@@ -36,7 +36,7 @@ import PropertyTypeSelector from '@/components/auth/PropertyTypeSelector';
 import { formatPhone } from '@/utils/paymentValidation';
 
 const SettingsPage = () => {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const { toast } = useToast();
   
   const [personalData, setPersonalData] = useState({
@@ -462,7 +462,7 @@ const SettingsPage = () => {
         return;
       }
 
-      await supabase.auth.signOut();
+      await logout();
       navigate('/');
       toast({ title: 'Conta excluída', description: 'Sua conta e todos os dados foram removidos.' });
     } catch {

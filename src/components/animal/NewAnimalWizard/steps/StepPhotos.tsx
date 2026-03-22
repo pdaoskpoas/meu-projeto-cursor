@@ -34,14 +34,9 @@ export const StepPhotos: React.FC = () => {
   }, [photos.files, dispatch]);
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    console.log('[StepPhotos] handleFileSelect chamado');
     const files = Array.from(e.target.files || []);
-    console.log('[StepPhotos] Arquivos selecionados:', files.length, files);
-    
-    if (files.length === 0) {
-      console.log('[StepPhotos] Nenhum arquivo selecionado');
-      return;
-    }
+
+    if (files.length === 0) return;
 
     // Validar quantidade total
     const totalPhotos = photos.files.length + files.length;
@@ -59,24 +54,18 @@ export const StepPhotos: React.FC = () => {
     const validFiles: File[] = [];
     const invalidFiles: string[] = [];
 
-    console.log('[StepPhotos] Iniciando validação dos arquivos...');
     for (const file of files) {
-      console.log('[StepPhotos] Validando arquivo:', file.name, file.type, file.size);
       try {
         const validation = validateImageFile(file);
-        console.log('[StepPhotos] Resultado da validação:', validation);
         if (validation === true) {
           validFiles.push(file);
         } else {
           invalidFiles.push(`${file.name}: ${validation}`);
         }
-      } catch (error) {
-        console.error('[StepPhotos] Erro na validação:', error);
+      } catch {
         invalidFiles.push(`${file.name}: Erro na validação`);
       }
     }
-    console.log('[StepPhotos] Arquivos válidos:', validFiles.length);
-    console.log('[StepPhotos] Arquivos inválidos:', invalidFiles.length);
 
     // Mostrar erros se houver
     if (invalidFiles.length > 0) {
@@ -94,16 +83,12 @@ export const StepPhotos: React.FC = () => {
       setCompressionProgress('Comprimindo imagens...');
 
       try {
-        console.log('[StepPhotos] Iniciando compressão...');
-        // Comprimir imagens
         const compressedFiles = await compressMultipleImages(
           validFiles,
           (current, total) => {
-            console.log('[StepPhotos] Progresso compressão:', current, '/', total);
             setCompressionProgress(`Comprimindo imagem ${current} de ${total}...`);
           }
         );
-        console.log('[StepPhotos] Compressão concluída:', compressedFiles.length, 'arquivos');
 
         // Criar previews
         const newPreviews = compressedFiles.map(file => URL.createObjectURL(file));
@@ -123,8 +108,7 @@ export const StepPhotos: React.FC = () => {
           description: `${compressedFiles.length} imagem(ns) adicionada(s) com sucesso`,
         });
 
-      } catch (error) {
-        console.error('Erro ao processar imagens:', error);
+      } catch {
         toast({
           title: 'Erro ao processar imagens',
           description: 'Tente novamente com imagens menores',
@@ -200,10 +184,7 @@ export const StepPhotos: React.FC = () => {
                 type="button"
                 variant="outline"
                 className="w-full h-32 border-2 border-dashed"
-                onClick={() => {
-                  console.log('[StepPhotos] Botão de upload clicado');
-                  fileInputRef.current?.click();
-                }}
+                onClick={() => fileInputRef.current?.click()}
                 disabled={isCompressing}
               >
                 <div className="flex flex-col items-center gap-2">

@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { ChatMessage, ChatConversation } from '@/data/chatData';
 import { useAuth } from './AuthContext';
 import { messageService, MessageSendStatus } from '@/services/messageService';
@@ -39,6 +39,14 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const conversationsRequestIdRef = useRef(0);
   const conversationsRef = useRef<ChatConversation[]>([]);
 
+  // Refs para acesso estável dentro de callbacks memoizados
+  const userRef = useRef(user);
+  userRef.current = user;
+  const currentConversationRef = useRef(currentConversation);
+  currentConversationRef.current = currentConversation;
+  const sendStatusRef = useRef(sendStatus);
+  sendStatusRef.current = sendStatus;
+
   useEffect(() => {
     conversationsRef.current = conversations;
   }, [conversations]);
@@ -68,7 +76,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
           requestKey: `chat-conversations:${user.id}`
         }
       );
-      
+
       // Converter formato do service para formato do chat
       const formattedConvs: ChatConversation[] = convs.map(c => ({
         id: c.id,
@@ -85,7 +93,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isActive: c.is_active,
         isTemporary: c.is_temporary
       }));
-      
+
       // Filtrar conversas temporárias para o proprietário
       const filtered = formattedConvs.filter(conv => {
         if (conv.animalOwnerId === user.id) {
@@ -102,7 +110,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUnreadCount(total);
     } catch (error) {
       if (isStaleRequestError(error) || requestId !== conversationsRequestIdRef.current) return;
-      console.error('Erro ao carregar conversas:', error);
+      // erro ao carregar conversas
       toast.error('Erro ao carregar conversas');
     } finally {
       if (requestId === conversationsRequestIdRef.current) {
@@ -111,12 +119,12 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
       isLoadingConversationsRef.current = false;
     }
   }, [user?.id]);
-  
+
   // Carregar conversas ao montar e quando usuário mudar
   useEffect(() => {
     loadConversations();
   }, [loadConversations]);
-  
+
   // Buscar mensagens quando conversa atual mudar
   useEffect(() => {
     if (!currentConversation || !user?.id) {
@@ -124,11 +132,11 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setSendStatus(null);
       return;
     }
-    
+
     const loadMessages = async () => {
       try {
         const msgs = await messageService.getMessages(currentConversation.id, user.id);
-        
+
         // Converter formato
         const formatted: ChatMessage[] = msgs.map(m => ({
           id: m.id,
@@ -140,170 +148,170 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
           read: !!m.read_at,
           type: m.type
         }));
-        
+
         setMessages(formatted);
-        
+
         // Verificar status de envio
         const status = await messageService.canSendMessage(currentConversation.id);
         setSendStatus(status);
-        
+
         // REMOVIDO: Não marcar automaticamente como lidas aqui
         // As mensagens só devem ser marcadas como lidas quando o usuário
         // explicitamente clicar para abrir a conversa na interface (MessagesPage)
-      } catch (error) {
-        console.error('Erro ao carregar mensagens:', error);
+      } catch {
+        // silently handle message loading errors
       }
     };
-    
+
     loadMessages();
   }, [currentConversation, user?.id]);
 
   // Abrir uma conversa
-  const openConversation = (conversationId: string) => {
-    const conversation = conversations.find(conv => conv.id === conversationId);
+  const openConversation = useCallback((conversationId: string) => {
+    const conversation = conversationsRef.current.find(conv => conv.id === conversationId);
     if (conversation) {
       setCurrentConversation(conversation);
     }
-  };
+  }, []);
 
   // Enviar mensagem
-  const sendMessage = async (content: string) => {
-    if (!currentConversation || !user?.id) return;
-    
+  const sendMessage = useCallback(async (content: string) => {
+    const conv = currentConversationRef.current;
+    const currentUser = userRef.current;
+    if (!conv || !currentUser?.id) return;
+
     // Verificar se pode enviar
-    if (sendStatus && !sendStatus.canSend) {
-      toast.error(sendStatus.reason || 'Não é possível enviar mensagem');
+    const status = sendStatusRef.current;
+    if (status && !status.canSend) {
+      toast.error(status.reason || 'Não é possível enviar mensagem');
       return;
     }
-    
+
     try {
       const newMsg = await messageService.sendMessage(
-        currentConversation.id,
+        conv.id,
         content,
-        user.id
+        currentUser.id
       );
-      
+
       // Adicionar mensagem localmente (já aparece via realtime também)
       const formatted: ChatMessage = {
         id: newMsg.id,
         conversationId: newMsg.conversation_id,
         senderId: newMsg.sender_id,
-        senderName: user.name,
+        senderName: currentUser.name,
         content: newMsg.content,
         timestamp: newMsg.created_at,
         read: false,
         type: newMsg.type
       };
-      
+
       setMessages(prev => [...prev, formatted]);
-      
+
       // Atualizar lista de conversas
       await loadConversations();
-      
+
       // Disparar evento para atualizar contador
       window.dispatchEvent(new Event('forceUpdateUnreadCounts'));
     } catch (error: unknown) {
-      console.error('Erro ao enviar mensagem:', error);
-      toast.error(error.message || 'Erro ao enviar mensagem');
+      toast.error(error instanceof Error ? error.message : 'Erro ao enviar mensagem');
     }
-  };
+  }, [loadConversations]);
 
   // Iniciar conversa (buscar ou criar)
-  const startConversation = async (
-    animalId: string, 
-    animalName: string, 
-    animalOwnerId: string, 
+  const startConversation = useCallback(async (
+    animalId: string,
+    animalName: string,
+    animalOwnerId: string,
     animalOwnerName: string,
     isDirectMessage: boolean = false
   ): Promise<string> => {
-    if (!user?.id) return '';
+    if (!userRef.current?.id) return '';
 
     try {
       const conv = await messageService.getOrCreateConversation(
         animalId,
         animalOwnerId,
-        user.id,
+        userRef.current.id,
         isDirectMessage
       );
-      
+
       await loadConversations();
       return conv.id;
-    } catch (error) {
-      console.error('Erro ao criar conversa:', error);
+    } catch {
       toast.error('Erro ao iniciar conversa');
       return '';
     }
-  };
+  }, [loadConversations]);
 
   // Iniciar conversa temporária
-  const startTemporaryConversation = async (
-    animalId: string, 
-    animalName: string, 
-    animalOwnerId: string, 
+  const startTemporaryConversation = useCallback(async (
+    animalId: string,
+    animalName: string,
+    animalOwnerId: string,
     animalOwnerName: string
   ): Promise<string> => {
     return startConversation(animalId, animalName, animalOwnerId, animalOwnerName);
-  };
+  }, [startConversation]);
 
   // Iniciar conversa de haras
-  const startHarasConversation = async (
-    harasId: string, 
-    harasName: string, 
-    harasOwnerId: string, 
+  const startHarasConversation = useCallback(async (
+    harasId: string,
+    harasName: string,
+    harasOwnerId: string,
     harasOwnerName: string
   ): Promise<string> => {
     return startConversation(harasId, harasName, harasOwnerId, harasOwnerName);
-  };
+  }, [startConversation]);
 
   // Marcar como lido
-  const markAsRead = async (conversationId: string) => {
-    if (!user?.id) return;
-    
+  const markAsRead = useCallback(async (conversationId: string) => {
+    if (!userRef.current?.id) return;
+
     try {
-      await messageService.markAsRead(conversationId, user.id);
+      await messageService.markAsRead(conversationId, userRef.current.id);
       await loadConversations();
-    } catch (error) {
-      console.error('Erro ao marcar como lido:', error);
+    } catch {
+      // silently handle
     }
-  };
+  }, [loadConversations]);
 
   // Fechar conversa
-  const closeConversation = () => {
+  const closeConversation = useCallback(() => {
     setCurrentConversation(null);
     setMessages([]);
     setSendStatus(null);
-  };
-  
+  }, []);
+
   // Ocultar mensagem (soft delete)
-  const hideMessage = async (messageId: string) => {
-    if (!user?.id) return;
-    
+  const hideMessage = useCallback(async (messageId: string) => {
+    if (!userRef.current?.id) return;
+
     try {
-      await messageService.hideMessage(messageId, user.id);
-      
+      await messageService.hideMessage(messageId, userRef.current.id);
+
       // Remover mensagem localmente
       setMessages(prev => prev.filter(m => m.id !== messageId));
-      
+
       toast.success('Mensagem removida');
-    } catch (error) {
-      console.error('Erro ao remover mensagem:', error);
+    } catch {
       toast.error('Erro ao remover mensagem');
     }
-  };
-  
+  }, []);
+
   // Refresh manual das conversas
-  const refreshConversations = async () => {
+  const refreshConversations = useCallback(async () => {
     await loadConversations();
-  };
+  }, [loadConversations]);
 
   // ======================================================
   // REALTIME SUBSCRIPTIONS
   // ======================================================
-  
+
   // Subscription para novas mensagens na conversa atual
   useEffect(() => {
     if (!currentConversation?.id || !user?.id) return;
-    
+
     const subscription = supabase
       .channel(`conversation:${currentConversation.id}`)
       .on(
@@ -316,7 +324,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
         },
         (payload) => {
           const newMsg = payload.new as Record<string, unknown>;
-          
+
           // Só adiciona se não for nossa própria mensagem (já adicionamos localmente)
           if (newMsg.sender_id !== user.id) {
             const formatted: ChatMessage = {
@@ -329,14 +337,13 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
               read: false,
               type: newMsg.type
             };
-            
+
             setMessages(prev => [...prev, formatted]);
           }
         }
       )
       .subscribe((status, err) => {
         if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-          console.warn('[Chat] Subscription de mensagens falhou, tentando reconectar:', status, err);
           setTimeout(() => subscription.subscribe(), 2000);
         }
       });
@@ -345,11 +352,11 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
       subscription.unsubscribe();
     };
   }, [currentConversation?.id, user?.id]);
-  
+
   // Subscription global para atualizar lista de conversas
   useEffect(() => {
     if (!user?.id) return;
-    
+
     const subscription = supabase
       .channel(`conversations_updates_${user.id}`)
       .on(
@@ -393,7 +400,6 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
       )
       .subscribe((status, err) => {
         if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-          console.warn('[Chat] Subscription de conversas falhou, tentando reconectar:', status, err);
           setTimeout(() => subscription.subscribe(), 2000);
         }
       });
@@ -403,24 +409,42 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, [user?.id, loadConversations]);
 
+  const value = useMemo(() => ({
+    conversations,
+    currentConversation,
+    messages,
+    unreadCount,
+    sendStatus,
+    loading,
+    openConversation,
+    sendMessage,
+    startConversation,
+    startTemporaryConversation,
+    startHarasConversation,
+    markAsRead,
+    closeConversation,
+    hideMessage,
+    refreshConversations
+  }), [
+    conversations,
+    currentConversation,
+    messages,
+    unreadCount,
+    sendStatus,
+    loading,
+    openConversation,
+    sendMessage,
+    startConversation,
+    startTemporaryConversation,
+    startHarasConversation,
+    markAsRead,
+    closeConversation,
+    hideMessage,
+    refreshConversations
+  ]);
+
   return (
-    <ChatContext.Provider value={{
-      conversations,
-      currentConversation,
-      messages,
-      unreadCount,
-      sendStatus,
-      loading,
-      openConversation,
-      sendMessage,
-      startConversation,
-      startTemporaryConversation,
-      startHarasConversation,
-      markAsRead,
-      closeConversation,
-      hideMessage,
-      refreshConversations
-    }}>
+    <ChatContext.Provider value={value}>
       {children}
     </ChatContext.Provider>
   );

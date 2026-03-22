@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useRef } from 'react';
+import React, { useCallback, useState, useRef, useEffect } from 'react';
 import { Upload, X, Camera, Image as ImageIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -129,9 +129,19 @@ const ImageUploadWithPreview: React.FC<ImageUploadWithPreviewProps> = ({
     });
   }, [images, onImagesChange, toast]);
 
-  // Preview da imagem
+  // Preview da imagem com cleanup de URLs para evitar memory leak
+  const objectUrlsRef = useRef<string[]>([]);
+
+  useEffect(() => {
+    return () => {
+      objectUrlsRef.current.forEach(url => URL.revokeObjectURL(url));
+    };
+  }, []);
+
   const getImagePreview = useCallback((file: File) => {
-    return URL.createObjectURL(file);
+    const url = URL.createObjectURL(file);
+    objectUrlsRef.current.push(url);
+    return url;
   }, []);
 
   return (

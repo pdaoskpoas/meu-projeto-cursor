@@ -31,39 +31,21 @@ const ProfilePage = () => {
       }
 
       try {
-        console.log('[ProfilePage] Buscando perfil com public_code:', publicCode);
-
         const { data, error: fetchError } = await supabase
           .from('public_profiles')
           .select('id, name, property_name, account_type')
           .eq('public_code', publicCode)
           .maybeSingle();
 
-        if (fetchError) {
-          console.error('[ProfilePage] Erro ao buscar perfil:', fetchError);
+        if (fetchError || !data) {
           setError(true);
           setLoading(false);
           return;
         }
-
-        if (!data) {
-          console.error('[ProfilePage] Perfil não encontrado para public_code:', publicCode);
-          setError(true);
-          setLoading(false);
-          return;
-        }
-
-        console.log('[ProfilePage] Perfil encontrado:', {
-          id: data.id,
-          name: data.name,
-          property_name: data.property_name,
-          account_type: data.account_type
-        });
 
         setUserId(data.id);
         setLoading(false);
-      } catch (err) {
-        console.error('[ProfilePage] Erro inesperado:', err);
+      } catch {
         setError(true);
         setLoading(false);
       }

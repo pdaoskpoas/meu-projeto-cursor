@@ -66,15 +66,11 @@ const EventsPage = () => {
   const loadEvents = useCallback(async () => {
     if (!user) return;
     
-    console.log('🔄 Recarregando lista de eventos...');
     setIsLoading(true);
     try {
       const data = await eventLimitsService.getUserEvents(user.id);
-      console.log('📊 Eventos carregados:', data);
-      console.log('📊 Total de eventos:', data?.length || 0);
       setEvents(data || []);
-    } catch (error) {
-      console.error('❌ Erro ao carregar eventos:', error);
+    } catch {
       toast({
         title: 'Erro ao carregar eventos',
         description: 'Não foi possível carregar seus eventos.',
@@ -82,7 +78,6 @@ const EventsPage = () => {
       });
     } finally {
       setIsLoading(false);
-      console.log('✅ Lista de eventos atualizada');
     }
   }, [toast, user]);
 
@@ -114,7 +109,6 @@ const EventsPage = () => {
         });
       }
     } catch (error) {
-      console.error('Erro ao verificar limites:', error);
       toast({
         title: 'Erro',
         description: 'Não foi possível verificar permissões. Tente novamente.',
@@ -141,30 +135,23 @@ const EventsPage = () => {
     }
 
     try {
-      console.log('🗑️ Iniciando exclusão do evento:', eventId);
-      console.log('👤 User ID:', user.id);
-      
       const result = await eventLimitsService.deleteEvent(eventId, user.id);
 
       if (!result.success) {
         throw new Error(result.error || 'Erro ao excluir evento');
       }
 
-      console.log('✅ Evento excluído com sucesso!');
-
       toast({
-        title: '✅ Evento excluído',
+        title: 'Evento excluído',
         description: 'O evento foi removido com sucesso.',
       });
 
-      // Recarregar lista de eventos
       await loadEvents();
     } catch (error: unknown) {
-      console.error('❌ Erro no handleDelete:', error);
-      toast({ 
+      toast({
         title: 'Erro ao excluir evento',
-        description: error.message || 'Erro desconhecido',
-        variant: 'destructive' 
+        description: error instanceof Error ? error.message : 'Erro desconhecido',
+        variant: 'destructive'
       });
     }
   };
@@ -208,7 +195,7 @@ const EventsPage = () => {
     } catch (error: unknown) {
       toast({
         title: 'Erro ao turbinar',
-        description: error.message,
+        description: error instanceof Error ? error.message : 'Erro desconhecido',
         variant: 'destructive',
       });
     }
