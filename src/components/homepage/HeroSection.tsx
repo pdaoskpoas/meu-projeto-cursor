@@ -1,7 +1,8 @@
 
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { TrendingUp, MapPin, Star, CheckCircle2 } from 'lucide-react';
+import { TrendingUp, MapPin, Star, CheckCircle2, Search } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { POPULAR_BREEDS } from '@/constants/breeds';
 
 const HeroSection: React.FC = () => {
@@ -69,6 +70,25 @@ const HeroSection: React.FC = () => {
                 <CheckCircle2 className="h-5 w-5 text-blue-600" />
                 <span>Painel intuitivo</span>
               </div>
+            </div>
+
+            {/* CTAs */}
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Button
+                size="lg"
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+                onClick={() => navigate('/buscar')}
+              >
+                <Search className="h-5 w-5 mr-2" />
+                Buscar animais
+              </Button>
+              <Button
+                size="lg"
+                className="bg-orange-500 hover:bg-orange-600 text-white border-orange-500"
+                onClick={() => navigate('/register')}
+              >
+                Cadastre seu animal
+              </Button>
             </div>
 
             {/* Popular Breeds */}
