@@ -82,9 +82,9 @@ const AppHeader: React.FC<AppHeaderProps> = ({ onToggleSidebar, sidebarOpen }) =
       <div className={`container mx-auto px-3 sm:px-4 ${isDashboardRoute && user ? '' : ''}`}>
         <div className="flex items-center justify-between h-16 lg:h-20">
           {/* Logo */}
-          <div className="flex min-w-0 items-center space-x-2 sm:space-x-4">
+          <div className="flex shrink-0 items-center space-x-2 sm:space-x-4">
             {/* Logo */}
-            <Link to="/" className="flex min-w-0 items-center space-x-2 sm:space-x-3">
+            <Link to="/" className="flex items-center space-x-2 sm:space-x-3">
               <div className="relative">
                 <img 
                   src="/logo.png.png" 
@@ -101,8 +101,8 @@ const AppHeader: React.FC<AppHeaderProps> = ({ onToggleSidebar, sidebarOpen }) =
                   <span className="text-2xl lg:text-3xl"></span>
                 </div>
               </div>
-              <div className="min-w-0">
-                <h1 className="truncate text-base sm:text-lg lg:text-2xl font-bold text-slate-900">
+              <div>
+                <h1 className="whitespace-nowrap text-base sm:text-lg lg:text-2xl font-bold text-slate-900">
                   Vitrine do Cavalo
                 </h1>
               </div>
@@ -178,7 +178,7 @@ const AppHeader: React.FC<AppHeaderProps> = ({ onToggleSidebar, sidebarOpen }) =
           </nav>
 
           {/* User Actions */}
-          <div className="flex shrink-0 items-center space-x-1.5 sm:space-x-3">
+          <div className="flex min-w-0 shrink items-center space-x-1.5 sm:space-x-3">
             {/* Ícone de busca rápida mobile */}
             <Button
               variant="ghost"
@@ -217,9 +217,9 @@ const AppHeader: React.FC<AppHeaderProps> = ({ onToggleSidebar, sidebarOpen }) =
                     <div className={`w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-semibold text-sm ${user.avatar ? 'hidden' : ''}`}>
                       {user.name?.charAt(0) || 'U'}
                     </div>
-                    <div className="hidden md:block text-left">
-                      <div className="text-sm font-semibold text-gray-900">{user.name}</div>
-                      <div className="text-xs text-gray-600">
+                    <div className="hidden md:block text-left max-w-[140px]">
+                      <div className="text-sm font-semibold text-gray-900 truncate">{user.name?.split(' ')[0]}</div>
+                      <div className="text-xs text-gray-600 truncate">
                         {user.accountType === 'institutional' ? user.propertyName : 'Conta Pessoal'}
                       </div>
                     </div>

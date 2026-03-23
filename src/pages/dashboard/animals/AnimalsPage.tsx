@@ -24,6 +24,8 @@ const NewAnimalWizard = React.lazy(() =>
   import('@/components/animal/NewAnimalWizard').then(m => ({ default: m.NewAnimalWizard }))
 );
 import { runResilientRequest } from '@/services/resilientRequestService';
+import { invalidateAnimalCaches } from '@/lib/queryClient';
+import { clearDashboardCache } from '@/hooks/useDashboardStats';
 import { getDetailedAge } from '@/utils/animalAge';
 import mangalargaImg from '@/assets/mangalarga.jpg';
 import thoroughbredImg from '@/assets/thoroughbred.jpg';
@@ -171,6 +173,8 @@ const AnimalsPage = () => {
       try {
         await partnershipService.leavePartnership(animal.partnership_id, user.id);
         toast({ title: 'Você saiu da sociedade', description: 'O animal foi removido do seu perfil.' });
+        clearDashboardCache();
+        invalidateAnimalCaches();
         const userAnimals = await partnershipService.getUserAnimalsWithPartnerships(user.id);
         setAnimals(userAnimals);
       } catch (error: unknown) {
@@ -208,6 +212,8 @@ const AnimalsPage = () => {
     try {
       await animalService.deleteAnimal(animalId);
       toast({ title: 'Animal excluído com sucesso!' });
+      clearDashboardCache();
+      invalidateAnimalCaches();
       const userAnimals = await animalService.getUserAnimals(user.id);
       setAnimals(userAnimals);
     } catch (error: unknown) {
@@ -246,6 +252,8 @@ const AnimalsPage = () => {
       setShowDeleteModal(false);
       setAnimalToDelete(null);
       setSelectedTransferPartner('');
+      clearDashboardCache();
+      invalidateAnimalCaches();
       const userAnimals = await partnershipService.getUserAnimalsWithPartnerships(user.id);
       setAnimals(userAnimals);
     } catch (error: unknown) {
@@ -657,7 +665,8 @@ const AnimalsPage = () => {
             }}
             animal={animalToEdit}
             onSuccess={() => {
-              // Recarregar lista após sucesso
+              clearDashboardCache();
+              invalidateAnimalCaches();
               if (user?.id) {
                 animalService.getUserAnimals(user.id).then(setAnimals);
               }

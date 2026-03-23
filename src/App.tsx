@@ -2,7 +2,8 @@ import { lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { queryClient } from "@/lib/queryClient";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import AppLayout from "@/components/layout/AppLayout";
@@ -55,21 +56,6 @@ const SocietyPage = lazy(() => import("./pages/dashboard/SocietyPage"));
 const AboutPage = lazy(() => import("./pages/AboutPage"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 60_000,              // 60s antes de considerar stale
-      gcTime: 5 * 60_000,             // 5 min de garbage collection
-      retry: 1,                        // apenas 1 retry (evita avalanche)
-      retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 10_000),
-      refetchOnWindowFocus: false,     // NÃO refazer ao voltar à aba
-      refetchOnReconnect: 'always',    // refazer quando reconectar rede
-    },
-    mutations: {
-      retry: 0,                        // mutations não devem ser retentadas automaticamente
-    },
-  },
-});
 
 const App = () => (
   <ErrorBoundary>

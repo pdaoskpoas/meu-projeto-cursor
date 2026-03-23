@@ -44,6 +44,11 @@ interface DashboardStatsCacheEntry {
 const dashboardStatsCache = new Map<string, DashboardStatsCacheEntry>();
 const DASHBOARD_STATS_CACHE_TTL_MS = 2 * 60 * 1000; // 2 minutos - dados do dashboard mudam pouco
 
+/** Limpa o cache do dashboard para forçar refetch na próxima visita */
+export const clearDashboardCache = () => {
+  dashboardStatsCache.clear();
+};
+
 export const useDashboardStats = () => {
   const { user } = useAuth();
   const requestIdRef = useRef(0);

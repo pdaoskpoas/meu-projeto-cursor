@@ -30,6 +30,8 @@ import { usePlanQuota } from '@/hooks/usePlanQuota';
 import { canPublish, getPlanStatusMessage, type PlanQuota } from '@/services/planService';
 import { animalService } from '@/services/animalService';
 import { clearPlanCache } from '@/services/planService';
+import { invalidateAnimalCaches } from '@/lib/queryClient';
+import { clearDashboardCache } from '@/hooks/useDashboardStats';
 import { uploadMultiplePhotos } from '../utils/uploadWithRetry';
 import { withTimeout, UPLOAD_TIMEOUT_PER_IMAGE } from '../utils/uploadTimeout';
 import { TOTAL_OPERATION_TIMEOUT_MS } from '@/config/uploadConstants';
@@ -372,16 +374,7 @@ export const StepReview: React.FC<StepReviewProps> = ({
       };
 
       console.log('📝 Dados do animal:', animalData);
-      const titlesData = (formData.extras.awards || []).map(award => ({
-        animal_id: null,
-        event_name: award.event_name,
-        event_date: award.event_date || null,
-        city: award.city || null,
-        state: award.state || null,
-        award: award.award,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }));
+      const titlesData: Array<Record<string, unknown>> = [];
       const useTransactionalRpc = import.meta.env.VITE_ANIMAL_CREATE_RPC === 'true';
       console.log('🔄 Criando animal no banco...');
       
@@ -449,32 +442,7 @@ export const StepReview: React.FC<StepReviewProps> = ({
           throw new Error('Animal criado mas sem ID retornado');
         }
         
-        // ✅ Salvar premiações se houver
-        if (!titlesHandledByTx && formData.extras.awards && formData.extras.awards.length > 0) {
-          console.log(`🏆 Salvando ${formData.extras.awards.length} premiação(ões)...`);
-          
-          // Mapear awards para o formato do banco
-          const titlesToInsert = titlesData.map(title => ({
-            ...title,
-            animal_id: newAnimal.id
-          }));
-          
-          const { error: titlesError } = await supabase
-            .from('animal_titles')
-            .insert(titlesToInsert);
-          
-          if (titlesError) {
-            console.error('❌ Erro ao salvar premiações:', titlesError);
-            // Não propagar erro - premiações são opcionais
-            toast({
-              title: 'Aviso',
-              description: 'As premiações não puderam ser salvas, mas o animal foi criado com sucesso.',
-              variant: 'default'
-            });
-          } else {
-            console.log(`✅ ${formData.extras.awards.length} premiação(ões) salva(s) com sucesso`);
-          }
-        }
+        // Premiações removidas - usuário pode incluir na descrição do anúncio
       } catch (createError: unknown) {
         if (timingInterval) clearInterval(timingInterval);
         console.error('❌ Erro ao criar animal:', createError);
@@ -679,9 +647,11 @@ export const StepReview: React.FC<StepReviewProps> = ({
         description: `${formData.basicInfo.name} está agora disponível para parcerias.`
       });
 
-      // ✅ CRÍTICO: Limpar cache do plano após publicação
-      console.log('🧹 Limpando cache do plano após publicação...');
+      // ✅ CRÍTICO: Limpar caches após publicação
+      console.log('🧹 Limpando caches após publicação...');
       clearPlanCache();
+      clearDashboardCache();
+      invalidateAnimalCaches();
 
       // Limpar dados do formulário
       sessionStorage.removeItem('animalDraft');
@@ -1066,8 +1036,8 @@ export const StepReview: React.FC<StepReviewProps> = ({
             </Card>
           )}
 
-          {/* Descrição e Premiações */}
-          {(formData.extras.description || formData.extras.awards.length > 0) && (
+          {/* Descrição */}
+          {formData.extras.description && (
             <Card className="p-4">
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-2">
@@ -1084,33 +1054,12 @@ export const StepReview: React.FC<StepReviewProps> = ({
                 </Button>
               </div>
               <div className="space-y-3 text-sm">
-                {formData.extras.description && (
-                  <div>
-                    <span className="text-gray-600 font-medium">Descrição:</span>
-                    <p className="text-gray-900 mt-1 p-2 bg-gray-50 rounded border border-gray-200">
-                      {formData.extras.description}
-                    </p>
-                  </div>
-                )}
-                {formData.extras.awards.length > 0 && (
-                  <div>
-                    <span className="text-gray-600 font-medium">Premiações ({formData.extras.awards.length}):</span>
-                    <div className="mt-2 space-y-2">
-                      {formData.extras.awards.map((award, index) => (
-                        <div key={index} className="p-2 bg-amber-50 rounded border border-amber-200">
-                          <p className="font-semibold text-amber-900">{award.event_name}</p>
-                          <p className="text-xs text-amber-800 mt-1">{award.award}</p>
-                          {award.event_date && (
-                            <p className="text-xs text-amber-700">📅 {award.event_date}</p>
-                          )}
-                          {award.city && award.state && (
-                            <p className="text-xs text-amber-700">📍 {award.city}/{award.state}</p>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                <div>
+                  <span className="text-gray-600 font-medium">Descrição:</span>
+                  <p className="text-gray-900 mt-1 p-2 bg-gray-50 rounded border border-gray-200">
+                    {formData.extras.description}
+                  </p>
+                </div>
               </div>
             </Card>
           )}
