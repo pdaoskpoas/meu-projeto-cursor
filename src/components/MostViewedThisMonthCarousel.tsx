@@ -16,6 +16,7 @@ import {
 import PhotoGallery from '@/components/PhotoGallery';
 import { getAge } from '@/utils/animalAge';
 import { getPlaceholderGallery } from '@/utils/animalCard';
+import CarouselSwipeIndicator from '@/components/ui/CarouselSwipeIndicator';
 
 // 🔒 Componente seguro: rastreia impressões via Supabase
 const AnimalImpressionTracker: React.FC<{ 
@@ -186,6 +187,7 @@ const MostViewedThisMonthCarousel = () => {
             </div>
           </Carousel>
           )}
+          <CarouselSwipeIndicator />
         </div>
       </div>
     </section>

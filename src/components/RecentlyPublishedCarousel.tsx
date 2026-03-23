@@ -20,6 +20,7 @@ import { supabase } from '@/lib/supabase';
 import { AnimalCardData, getPlaceholderGallery, mapAnimalRecordToCard, normalizeSupabaseImages } from '@/utils/animalCard';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { queryWithSession } from '@/lib/queryWithSession';
+import CarouselSwipeIndicator from '@/components/ui/CarouselSwipeIndicator';
 
 // Componente para rastrear impressões via Supabase Analytics
 const AnimalImpressionTracker: React.FC<{
@@ -249,6 +250,7 @@ const RecentlyPublishedCarousel = () => {
             </div>
           </Carousel>
           )}
+          <CarouselSwipeIndicator />
         </div>
       </div>
     </section>

@@ -16,6 +16,7 @@ import {
 import PhotoGallery from '@/components/PhotoGallery';
 import { getAge } from '@/utils/animalAge';
 import { getPlaceholderGallery, mapAnimalRecordToCard } from '@/utils/animalCard';
+import CarouselSwipeIndicator from '@/components/ui/CarouselSwipeIndicator';
 
 const TopMalesByMonthCarousel = () => {
   const navigate = useNavigate();
@@ -148,6 +149,7 @@ const TopMalesByMonthCarousel = () => {
             </div>
           </Carousel>
           )}
+          <CarouselSwipeIndicator />
         </div>
       </div>
     </section>

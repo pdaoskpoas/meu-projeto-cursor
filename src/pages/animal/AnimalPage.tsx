@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Eye, Award, Calendar, MapPin, Crown, Share2, Heart, Flag, Users } from 'lucide-react';
 import { formatNameUppercase } from '@/utils/nameFormat';
@@ -27,6 +27,8 @@ const AnimalPage = () => {
   const { id } = useParams();
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [showChatModal, setShowChatModal] = useState(false);
+  const [showStickyContact, setShowStickyContact] = useState(false);
+  const sidebarContactRef = useRef<HTMLDivElement>(null);
   const { canViewAnimalViews } = useViewPermissions();
   const { user } = useAuth();
   const { toggleFavorite, isFavorite } = useFavorites();
@@ -225,6 +227,26 @@ const AnimalPage = () => {
     });
   }, [horse, user?.id, currentPhotoIndex]);
 
+  // Determinar se o botão de contato deve ser exibido
+  const shouldShowContact = horse?.allowMessages && !(user && user.propertyId === horse?.harasId);
+
+  // Observer: esconde sticky bar quando o card de contato do sidebar está visível
+  useEffect(() => {
+    if (!shouldShowContact) return;
+    const el = sidebarContactRef.current;
+    if (!el) {
+      // Card de contato ainda não montou — manter sticky visível
+      setShowStickyContact(true);
+      return;
+    }
+    const observer = new IntersectionObserver(
+      ([entry]) => setShowStickyContact(!entry.isIntersecting),
+      { threshold: 0.3 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [shouldShowContact, horse]);
+
   // Estado de carregamento
   if (isLoading) {
     return (
@@ -253,7 +275,7 @@ const AnimalPage = () => {
   }
 
   return (
-    <main className="container mx-auto px-4 py-6 min-h-screen bg-background">
+    <main className={`container mx-auto px-4 py-6 min-h-screen bg-background ${shouldShowContact ? 'pb-24 lg:pb-6' : ''}`}>
       {/* Back Navigation */}
       <div className="mb-6">
         <Link to="/" className="inline-flex items-center space-x-2 text-blue-600 hover:text-blue-800 transition-colors">
@@ -428,7 +450,7 @@ const AnimalPage = () => {
         <div className="lg:col-span-1 space-y-6">
           {/* Contact */}
           {horse.allowMessages && (
-            <Card className="p-6">
+            <Card ref={sidebarContactRef} className="p-6">
               <h3 className="text-lg font-semibold mb-4">Interessado?</h3>
               <p className="text-gray-600 text-sm mb-4">
                 Entre em contato com o proprietário para mais informações.
@@ -540,6 +562,24 @@ const AnimalPage = () => {
           )}
         </div>
       </div>
+
+      {/* Sticky Contact Bar — mobile only, hidden when sidebar card is visible */}
+      {shouldShowContact && (
+        <div
+          className={`fixed bottom-0 left-0 right-0 z-40 lg:hidden transition-all duration-300 ${
+            showStickyContact
+              ? 'translate-y-0 opacity-100'
+              : 'translate-y-full opacity-0 pointer-events-none'
+          }`}
+        >
+          <div className="bg-white/95 backdrop-blur-sm border-t border-slate-200 shadow-[0_-2px_10px_rgba(0,0,0,0.06)] px-4 py-3">
+            <SendMessageButton
+              animal={horse}
+              onClick={() => analyticsService.recordClick('animal', horse.id, user?.id, { clickTarget: 'send_message_sticky' })}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Chat Modal */}
       <ChatModal

@@ -18,6 +18,7 @@ import PhotoGallery from '@/components/PhotoGallery';
 import { supabase } from '@/lib/supabase';
 import { AnimalCardData, getPlaceholderGallery, mapAnimalRecordToCard } from '@/utils/animalCard';
 import AnimalImpressionTracker from '@/components/tracking/AnimalImpressionTracker';
+import CarouselSwipeIndicator from '@/components/ui/CarouselSwipeIndicator';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { animalService } from '@/services/animalService';
 import { queryWithSession } from '@/lib/queryWithSession';
@@ -227,6 +228,7 @@ const FeaturedCarousel = () => {
             </div>
           </Carousel>
           )}
+          <CarouselSwipeIndicator />
         </div>
       </div>
     </section>
