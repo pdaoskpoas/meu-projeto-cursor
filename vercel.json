@@ -29,6 +29,30 @@
       ]
     }
   ],
+  "redirects": [
+    {
+      "source": "/:path(.*)",
+      "has": [
+        {
+          "type": "host",
+          "value": "vitrinedocavalo.com"
+        }
+      ],
+      "destination": "https://www.vitrinedocavalo.com.br/:path",
+      "permanent": true
+    },
+    {
+      "source": "/:path(.*)",
+      "has": [
+        {
+          "type": "host",
+          "value": "www.vitrinedocavalo.com"
+        }
+      ],
+      "destination": "https://www.vitrinedocavalo.com.br/:path",
+      "permanent": true
+    }
+  ],
   "rewrites": [
     {
       "source": "/(.*)",

@@ -1,64 +1,16 @@
 import { supabase } from '@/lib/supabase';
-import type { CheckoutBillingCycle, CheckoutPlanId } from '@/constants/checkoutPlans';
+import type { CheckoutBillingCycle, CheckoutPlanId, BoostDuration } from '@/constants/checkoutPlans';
 
-export interface CustomerPayload {
-  name: string;
-  email: string;
-  cpfCnpj: string;
-  mobilePhone?: string;
-}
+// ── Payment Link (checkout 100% hospedado no Asaas) ──
 
-export interface AddressPayload {
-  postalCode: string;
-  address: string;
-  addressNumber: string;
-  complement?: string;
-  province: string;
-  city: string;
-  state: string;
-}
+export type CreatePaymentLinkPayload =
+  | { purchaseType: 'plan'; planId: CheckoutPlanId; billingCycle: CheckoutBillingCycle }
+  | { purchaseType: 'boost'; boostDuration: BoostDuration; animalId?: string };
 
-export interface ProcessPaymentPayload {
-  userId: string;
-  planId: CheckoutPlanId;
-  billingCycle: CheckoutBillingCycle;
-  paymentMethod: 'CREDIT_CARD' | 'PIX' | 'BOLETO';
-  customer: CustomerPayload;
-  address: AddressPayload;
-}
-
-export interface ProcessPaymentResponse {
+export interface CreatePaymentLinkResponse {
   success: boolean;
-  status?: 'PENDING' | 'APPROVED' | 'REJECTED';
-  paymentId?: string;
-  subscriptionId?: string;
-  invoiceUrl?: string;
-  pixQrCode?: string;
-  pixCopyPaste?: string;
-  message?: string;
-}
-
-export interface CheckStatusResponse {
-  success: boolean;
-  status?: 'PENDING' | 'APPROVED' | 'REJECTED';
-  message?: string;
-}
-
-export interface BoostPaymentPayload {
-  userId: string;
-  duration: string;
-  animalId?: string;
-  billingType: 'PIX' | 'CREDIT_CARD' | 'BOLETO';
-  customer?: CustomerPayload;
-  address?: AddressPayload;
-}
-
-export interface BoostPaymentResponse {
-  success: boolean;
-  paymentId?: string;
-  invoiceUrl?: string;
-  pixQrCode?: string;
-  pixCopyPaste?: string;
+  paymentLinkUrl?: string;
+  paymentLinkId?: string;
   message?: string;
 }
 
@@ -66,6 +18,8 @@ export interface CancelSubscriptionResponse {
   success: boolean;
   message?: string;
 }
+
+// ── Helpers ──
 
 const extractErrorMessage = (error: unknown): string | null => {
   const err = error as { context?: { body?: unknown; status?: number } };
@@ -235,79 +189,32 @@ const invokeWithTimeout = async <T>(
   };
 };
 
-export const processPayment = async (
-  payload: ProcessPaymentPayload
-): Promise<ProcessPaymentResponse> => {
+// ── Public API ──
+
+export const createPaymentLink = async (
+  payload: CreatePaymentLinkPayload
+): Promise<CreatePaymentLinkResponse> => {
   try {
-    const { data, error } = await invokeWithTimeout<ProcessPaymentResponse>('process-payment', payload);
-
-    if (error) {
-      return {
-        success: false,
-        message: extractErrorMessage(error) || error.message || 'Erro ao processar pagamento.',
-      };
-    }
-
-    return data as ProcessPaymentResponse;
-  } catch (err) {
-    const message = err instanceof Error && err.message === 'TIMEOUT'
-      ? 'Tempo esgotado ao comunicar com o servidor. Tente novamente.'
-      : err instanceof Error
-        ? err.message
-        : 'Erro ao processar pagamento.';
-    return { success: false, message };
-  }
-};
-
-export const processBoostPayment = async (
-  payload: BoostPaymentPayload
-): Promise<BoostPaymentResponse> => {
-  try {
-    const { data, error } = await invokeWithTimeout<BoostPaymentResponse>('process-boost-payment', payload);
-
-    if (error) {
-      return {
-        success: false,
-        message: extractErrorMessage(error) || error.message || 'Erro ao processar pagamento.',
-      };
-    }
-
-    return data as BoostPaymentResponse;
-  } catch (err) {
-    const message = err instanceof Error && err.message === 'TIMEOUT'
-      ? 'Tempo esgotado ao comunicar com o servidor. Tente novamente.'
-      : err instanceof Error
-        ? err.message
-        : 'Erro ao processar pagamento.';
-    return { success: false, message };
-  }
-};
-
-export const checkPaymentStatus = async (
-  params: { paymentId?: string; subscriptionId?: string }
-): Promise<CheckStatusResponse> => {
-  try {
-    const { data, error } = await invokeWithTimeout<CheckStatusResponse>(
-      'check-payment-status',
-      params,
-      15000
+    const { data, error } = await invokeWithTimeout<CreatePaymentLinkResponse>(
+      'create-payment-link',
+      payload
     );
 
     if (error) {
       return {
         success: false,
-        message: extractErrorMessage(error) || error.message || 'Erro ao verificar status do pagamento.',
+        message: extractErrorMessage(error) || error.message || 'Erro ao gerar link de pagamento.',
       };
     }
 
-    return data as CheckStatusResponse;
+    return data as CreatePaymentLinkResponse;
   } catch (err) {
     const message =
       err instanceof Error && err.message === 'TIMEOUT'
-        ? 'Tempo esgotado ao verificar o pagamento. Tente novamente.'
+        ? 'Tempo esgotado ao comunicar com o servidor. Tente novamente.'
         : err instanceof Error
           ? err.message
-          : 'Erro ao verificar status do pagamento.';
+          : 'Erro ao gerar link de pagamento.';
     return { success: false, message };
   }
 };

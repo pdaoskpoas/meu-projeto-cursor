@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Calendar, User, Share2, TrendingUp, Eye, Heart, Clock, Tag, Loader2, Facebook, Twitter, Linkedin, Link as LinkIcon } from 'lucide-react';
+import { ArrowLeft, Calendar, User, Share2, TrendingUp, Eye, Heart, Tag, Loader2, Facebook, Twitter, Linkedin, Link as LinkIcon } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -135,7 +135,6 @@ const ArticlePage = () => {
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('pt-BR', {
-      day: '2-digit',
       month: 'long',
       year: 'numeric'
     });
@@ -262,16 +261,14 @@ const ArticlePage = () => {
               {/* Author Avatar */}
               <div className="flex items-center space-x-3">
                 <div className="w-12 h-12 bg-gradient-to-br from-orange-400 to-red-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
-                  {(article.authorName || 'A')[0].toUpperCase()}
+                  V
                 </div>
                 <div>
-                  <p className="font-semibold text-slate-900">{article.authorName || 'Admin'}</p>
-                  <div className="flex items-center space-x-2 text-sm text-slate-500">
+                  <p className="font-semibold text-slate-900">Vitrine do Cavalo</p>
+                  <div className="flex items-center text-sm text-slate-500">
                     <time dateTime={article.publishedAt || article.createdAt}>
                       {formatDate(article.publishedAt || article.createdAt)}
                     </time>
-                    <span>·</span>
-                    <span>{Math.ceil((article.content?.length || 0) / 1000) || 5} min de leitura</span>
                   </div>
                 </div>
               </div>

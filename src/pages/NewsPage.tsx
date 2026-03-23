@@ -56,7 +56,6 @@ const PopularArticleCard: React.FC<{ article: Article }> = ({ article }) => {
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('pt-BR', {
-      day: '2-digit',
       month: 'long',
       year: 'numeric'
     });
@@ -89,7 +88,7 @@ const PopularArticleCard: React.FC<{ article: Article }> = ({ article }) => {
           </div>
           <div className="flex items-center text-xs text-slate-500 mt-1">
             <User className="h-3 w-3 mr-1" />
-            {article.authorName || 'Admin'}
+            Vitrine do Cavalo
           </div>
         </div>
       </div>
@@ -138,7 +137,6 @@ const ArticleCardWithTracking: React.FC<{ article: Article }> = ({ article }) =>
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('pt-BR', {
-      day: '2-digit',
       month: 'long',
       year: 'numeric'
     });
@@ -177,7 +175,7 @@ const ArticleCardWithTracking: React.FC<{ article: Article }> = ({ article }) =>
             <div className="flex items-center gap-4 text-slate-500 text-sm">
               <div className="flex items-center">
                 <User className="h-4 w-4 mr-1" />
-                {article.authorName || 'Admin'}
+                Vitrine do Cavalo
               </div>
               <div className="flex items-center">
                 <Calendar className="h-4 w-4 mr-1" />
@@ -274,8 +272,7 @@ const NewsPage = () => {
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
+      month: 'long',
       year: 'numeric'
     });
   };

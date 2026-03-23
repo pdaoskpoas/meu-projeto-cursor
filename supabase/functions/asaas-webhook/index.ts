@@ -352,13 +352,197 @@ serve(async (req) => {
         });
       }
 
+      // ── Payment Link: pagamento ainda nao existe no DB ──
       if (!paymentRow) {
-        console.warn('[webhook] Pagamento NÃO encontrado no DB:', paymentId);
-        if (logId) await markProcessed(serviceClient, logId, true, 'Pagamento não encontrado no banco');
-        return new Response(JSON.stringify({ success: true, message: 'Pagamento não encontrado no banco.' }), {
-          headers: webhookHeaders,
-        });
+        console.log('[webhook] Pagamento nao encontrado no DB, tentando provisionar via Payment Link...');
+
+        const extRef = payment.externalReference as string | undefined;
+        if (!extRef) {
+          console.warn('[webhook] Sem externalReference — ignorando pagamento desconhecido:', paymentId);
+          if (logId) await markProcessed(serviceClient, logId, true, 'Pagamento sem referencia');
+          return new Response(JSON.stringify({ success: true, message: 'Sem referencia externa.' }), {
+            headers: webhookHeaders,
+          });
+        }
+
+        // Parse externalReference — formato compacto: P|userId|planId|cycle ou B|userId|duration|animalId
+        // Também aceita JSON legado por compatibilidade
+        let refData: { type?: string; userId?: string; planId?: string; billingCycle?: string; duration?: string; animalId?: string | null };
+        if (extRef.startsWith('P|') || extRef.startsWith('B|')) {
+          const parts = extRef.split('|');
+          if (parts[0] === 'P') {
+            refData = { type: 'plan', userId: parts[1], planId: parts[2], billingCycle: parts[3] };
+          } else {
+            refData = { type: 'boost', userId: parts[1], duration: parts[2], animalId: parts[3] || null };
+          }
+        } else {
+          try {
+            refData = JSON.parse(extRef);
+          } catch {
+            console.warn('[webhook] externalReference formato desconhecido, ignorando:', extRef);
+            if (logId) await markProcessed(serviceClient, logId, true, 'Referencia em formato desconhecido');
+            return new Response(JSON.stringify({ success: true, message: 'Referencia em formato desconhecido.' }), {
+              headers: webhookHeaders,
+            });
+          }
+        }
+
+        if (!refData.userId) {
+          console.warn('[webhook] externalReference sem userId:', extRef);
+          if (logId) await markProcessed(serviceClient, logId, true, 'Sem userId na referencia');
+          return new Response(JSON.stringify({ success: true }), { headers: webhookHeaders });
+        }
+
+        const userId = refData.userId;
+        const asaasCustomerId = payment.customer as string | undefined;
+
+        // Garantir registro em asaas_customers
+        let customerRowId: string | null = null;
+        if (asaasCustomerId) {
+          const { data: existingCustomer } = await serviceClient
+            .from('asaas_customers')
+            .select('id')
+            .eq('user_id', userId)
+            .maybeSingle();
+
+          if (existingCustomer) {
+            customerRowId = existingCustomer.id;
+          } else {
+            const { data: newCust } = await serviceClient
+              .from('asaas_customers')
+              .insert({
+                user_id: userId,
+                asaas_customer_id: asaasCustomerId,
+                name: 'Cliente via Payment Link',
+                email: '',
+                cpf_cnpj: '',
+                is_active: true,
+              })
+              .select('id')
+              .maybeSingle();
+            customerRowId = newCust?.id ?? null;
+          }
+        }
+
+        // ── Provisionar conforme tipo de compra ──
+
+        if (refData.type === 'plan' && refData.planId && refData.billingCycle) {
+          // Criar asaas_subscriptions + asaas_payments
+          const expiresAt = new Date();
+          if (refData.billingCycle === 'annual') {
+            expiresAt.setMonth(expiresAt.getMonth() + 12);
+          } else {
+            expiresAt.setMonth(expiresAt.getMonth() + 1);
+          }
+
+          const { data: subRow } = await serviceClient
+            .from('asaas_subscriptions')
+            .insert({
+              user_id: userId,
+              asaas_customer_id: customerRowId,
+              asaas_subscription_id: payment.subscription as string || `pl_${paymentId}`,
+              plan_type: refData.planId,
+              billing_type: refData.billingCycle,
+              value: payment.value as number || 0,
+              status: 'pending',
+              expires_at: expiresAt.toISOString(),
+              auto_renew: refData.billingCycle === 'monthly',
+            })
+            .select('id')
+            .maybeSingle();
+
+          await serviceClient.from('asaas_payments').insert({
+            user_id: userId,
+            asaas_customer_id: customerRowId,
+            asaas_payment_id: paymentId,
+            payment_type: 'subscription',
+            subscription_id: subRow?.id ?? null,
+            value: payment.value as number || 0,
+            billing_type: (payment.billingType as string)?.toUpperCase() ?? 'UNDEFINED',
+            status: (payment.status as string)?.toLowerCase() ?? 'pending',
+            description: `Plano ${refData.planId} ${refData.billingCycle}`,
+            external_reference: extRef,
+            invoice_url: (payment.invoiceUrl as string) ?? null,
+            payment_date: (payment.paymentDate as string) ?? null,
+            confirmed_at: (payment.confirmedDate as string) ?? null,
+            metadata: { source: 'payment_link', ...refData },
+          });
+
+          // Se aprovado, aplicar efeitos imediatamente
+          if (isApprovedPaymentPayload(eventType, payment.status as string) && subRow) {
+            const provisionedRow = {
+              user_id: userId,
+              payment_type: 'subscription',
+              subscription_id: subRow.id,
+              asaas_customer_id: customerRowId,
+              value: payment.value as number || 0,
+              billing_type: (payment.billingType as string)?.toUpperCase() ?? 'UNDEFINED',
+              description: `Plano ${refData.planId} ${refData.billingCycle}`,
+              metadata: { source: 'payment_link', ...refData },
+            };
+            try {
+              await applyApprovedPaymentEffects(serviceClient, provisionedRow, paymentId);
+              console.log('[webhook] Efeitos de plano (Payment Link) aplicados com sucesso');
+            } catch (effectError) {
+              console.error('[webhook] Erro ao aplicar efeitos (Payment Link):', (effectError as Error)?.message);
+            }
+          }
+
+        } else if (refData.type === 'boost' && refData.duration) {
+          // Criar asaas_payments para boost
+          await serviceClient.from('asaas_payments').insert({
+            user_id: userId,
+            asaas_customer_id: customerRowId,
+            asaas_payment_id: paymentId,
+            payment_type: 'boost_purchase',
+            value: payment.value as number || 0,
+            billing_type: (payment.billingType as string)?.toUpperCase() ?? 'UNDEFINED',
+            status: (payment.status as string)?.toLowerCase() ?? 'pending',
+            description: `Turbinar ${refData.duration}`,
+            external_reference: extRef,
+            invoice_url: (payment.invoiceUrl as string) ?? null,
+            payment_date: (payment.paymentDate as string) ?? null,
+            confirmed_at: (payment.confirmedDate as string) ?? null,
+            metadata: {
+              source: 'payment_link',
+              boost_duration: refData.duration,
+              boost_quantity: 1,
+              animal_id: refData.animalId || null,
+            },
+          });
+
+          if (isApprovedPaymentPayload(eventType, payment.status as string)) {
+            const provisionedRow = {
+              user_id: userId,
+              payment_type: 'boost_purchase',
+              asaas_customer_id: customerRowId,
+              value: payment.value as number || 0,
+              billing_type: (payment.billingType as string)?.toUpperCase() ?? 'UNDEFINED',
+              description: `Turbinar ${refData.duration}`,
+              metadata: {
+                source: 'payment_link',
+                boost_duration: refData.duration,
+                boost_quantity: 1,
+                animal_id: refData.animalId || null,
+              },
+            };
+            try {
+              await applyApprovedPaymentEffects(serviceClient, provisionedRow, paymentId);
+              console.log('[webhook] Efeitos de boost (Payment Link) aplicados com sucesso');
+            } catch (effectError) {
+              console.error('[webhook] Erro ao aplicar efeitos boost (Payment Link):', (effectError as Error)?.message);
+            }
+          }
+
+        } else {
+          console.warn('[webhook] Tipo de compra desconhecido no Payment Link:', refData.type);
+        }
+
+        if (logId) await markProcessed(serviceClient, logId, true);
+        return new Response(JSON.stringify({ success: true }), { headers: webhookHeaders });
       }
+
+      // ── Pagamento ja existe no DB (fluxo existente) ──
 
       console.log('[webhook] Pagamento encontrado:', {
         type: paymentRow.payment_type,

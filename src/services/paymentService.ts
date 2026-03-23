@@ -3,28 +3,22 @@
  * PAYMENT SERVICE - Serviço Principal de Pagamentos
  * =================================================================
  *
- * Modelo 100% baseado em Edge Functions.
- * Nenhuma comunicação direta com o Asaas ocorre no frontend.
+ * Modelo 100% baseado em Payment Links hospedados no Asaas.
+ * Nenhum dado pessoal trafega pelo frontend ou backend.
  *
- * - Compra de planos → Edge Function process-payment
- * - Compra de turbinares → Edge Function process-boost-payment
+ * - Compra de planos/boosts → Payment Link (Asaas hospedado)
  * - Cancelamento → Edge Function cancel-subscription
  * - Reembolso → apenas DB (solicitação registrada para análise)
  * - Consultas → Supabase (DB-only)
- *
- * @author Cavalaria Digital
  */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { supabase } from '@/lib/supabase';
 import {
-  processPayment as invokeProcessPayment,
-  processBoostPayment as invokeProcessBoostPayment,
+  createPaymentLink,
   cancelSubscription as invokeCancelSubscription,
-  type ProcessPaymentPayload,
-  type ProcessPaymentResponse,
-  type BoostPaymentPayload,
-  type BoostPaymentResponse,
+  type CreatePaymentLinkPayload,
+  type CreatePaymentLinkResponse,
   type CancelSubscriptionResponse,
 } from './checkoutService';
 
@@ -35,19 +29,11 @@ import {
 class PaymentService {
 
   // =================================================================
-  // COMPRA DE PLANOS (via Edge Function)
+  // GERAR PAYMENT LINK (checkout 100% Asaas)
   // =================================================================
 
-  async purchasePlan(payload: ProcessPaymentPayload): Promise<ProcessPaymentResponse> {
-    return invokeProcessPayment(payload);
-  }
-
-  // =================================================================
-  // COMPRA DE TURBINARES (via Edge Function)
-  // =================================================================
-
-  async purchaseBoost(payload: BoostPaymentPayload): Promise<BoostPaymentResponse> {
-    return invokeProcessBoostPayment(payload);
+  async generatePaymentLink(payload: CreatePaymentLinkPayload): Promise<CreatePaymentLinkResponse> {
+    return createPaymentLink(payload);
   }
 
   // =================================================================

@@ -16,7 +16,7 @@ const AboutPage = () => {
 
             {/* Coluna de texto */}
             <div>
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-[#1a2a5e] uppercase tracking-tight mb-8">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-blue-600 uppercase tracking-tight mb-8">
                 O que é a Vitrine do Cavalo
               </h1>
 
@@ -88,7 +88,7 @@ const AboutPage = () => {
 
             {/* Coluna de texto */}
             <div>
-              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-[#1a2a5e] uppercase tracking-tight mb-8">
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-blue-600 uppercase tracking-tight mb-8">
                 Nossa História
               </h2>
 
@@ -156,7 +156,7 @@ const AboutPage = () => {
       {/* ═══════════════════════════════════════════════════════════
           SEÇÃO 3 — CTA final
       ═══════════════════════════════════════════════════════════ */}
-      <section className="py-14 sm:py-16 lg:py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-[#1a2a5e] to-[#0f1f45] relative overflow-hidden">
+      <section className="py-14 sm:py-16 lg:py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-blue-600 to-blue-800 relative overflow-hidden">
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-white/[0.03] rounded-full blur-3xl" />
         </div>

@@ -124,7 +124,7 @@ const ArticleCard = ({ article }: { article: Article }) => {
                 <User className="h-3 w-3 text-slate-500" />
               </div>
               <span className="text-xs font-medium text-slate-600">
-                por {article.authorName}
+                por Vitrine do Cavalo
               </span>
             </div>
             <div className="flex items-center space-x-1 text-xs text-slate-500">
