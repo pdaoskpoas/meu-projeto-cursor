@@ -43,7 +43,7 @@ const AnimalImpressionTracker: React.FC<{
   }, [animalId, carouselIndex]);
 
   return (
-    <div ref={elementRef} onClick={onAnimalClick} className="h-full flex">
+    <div ref={elementRef} onClick={onAnimalClick}>
       {children}
     </div>
   );
@@ -163,7 +163,7 @@ const RecentlyPublishedCarousel = () => {
           >
             <CarouselContent className="-ml-2 md:-ml-4">
               {recentAnimals.map((horse, index) => (
-                <CarouselItem key={horse.id} className="pl-2 md:pl-4 basis-full sm:basis-1/2 lg:basis-1/3 xl:basis-1/4 h-full flex">
+                <CarouselItem key={horse.id} className="pl-2 md:pl-4 basis-full sm:basis-1/2 lg:basis-1/3 xl:basis-1/4">
                   <AnimalImpressionTracker 
                     animalId={horse.id}
                     carouselIndex={index}
@@ -172,7 +172,7 @@ const RecentlyPublishedCarousel = () => {
                     }}
                   >
                     <Link to={`/animal/${horse.id}`} className="block w-full">
-                      <div className="bg-white border border-slate-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow cursor-pointer flex flex-col h-full min-h-[520px]">
+                      <div className="bg-white border border-slate-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow cursor-pointer flex flex-col">
                       {/* Image Gallery */}
                       <div className="relative flex-shrink-0">
                         <div className="aspect-square overflow-hidden">
@@ -190,51 +190,38 @@ const RecentlyPublishedCarousel = () => {
                           </Badge>
                         </div>
                       </div>
-                      
-                      {/* Content - Informações organizadas verticalmente */}
-                      <div className="p-4 space-y-3 flex flex-col flex-grow">
-                        {/* Nome do Animal */}
-                        <h3 className="font-bold text-slate-900 text-lg hover:text-blue-600 transition-colors">
+
+                      {/* Content */}
+                      <div className="p-4 space-y-2 flex flex-col flex-grow">
+                        <h3 className="font-bold text-slate-900 text-lg leading-tight line-clamp-1">
                           {horse.name}
                         </h3>
-                      
-                      {/* Raça */}
-                      <div className="text-sm text-slate-600">
+
+                      {/* Raça · Gênero */}
+                      <p className="text-sm text-slate-600 truncate">
                         <span className="font-medium">{horse.breed}</span>
-                      </div>
-                      
-                      {/* Pelagem */}
-                      <div className="text-sm text-slate-600">
-                        <span>{horse.coat}</span>
-                      </div>
-                      
+                        <span className="mx-1.5 text-slate-300">·</span>
+                        <span className={`font-semibold ${horse.gender === 'Macho' ? 'text-blue-600' : 'text-pink-600'}`}>
+                          {horse.gender === 'Macho' ? '♂' : '♀'}
+                        </span>
+                      </p>
+
                       {/* Idade */}
-                      <div className="flex items-center space-x-2 text-sm text-slate-600">
-                        <Calendar className="h-4 w-4" />
+                      <div className="flex items-center gap-1.5 text-sm text-slate-600">
+                        <Calendar className="h-3.5 w-3.5 flex-shrink-0" />
                         <span>{getAge(horse.birthDate)}</span>
                       </div>
-                      
-                      {/* Gender */}
-                      <div className={`font-semibold text-sm ${
-                        horse.gender === 'Macho' 
-                          ? 'text-blue-600' 
-                          : 'text-pink-600'
-                      }`}>
-                        {horse.gender === 'Macho' ? '♂ Macho' : '♀ Fêmea'}
+
+                      {/* Criador */}
+                      <div className="flex items-center gap-1.5 text-sm text-slate-600">
+                        <Users className="h-3.5 w-3.5 flex-shrink-0" />
+                        <span className="truncate">{horse.harasName}</span>
                       </div>
-                      
-                      {/* Criador - Haras ou Perfil Pessoal */}
-                      <div className="flex items-center space-x-2 text-sm text-slate-600 break-words">
-                        <Users className="h-4 w-4 flex-shrink-0" />
-                        <span className="line-clamp-2">
-                          {horse.harasName}
-                        </span>
-                      </div>
-                      
-                      {/* Localização e Favorito - Na mesma linha */}
-                      <div className="flex items-center justify-between text-sm text-slate-600 pt-2 border-t border-slate-100 mt-auto">
-                        <div className="flex items-center space-x-2 overflow-hidden">
-                          <MapPin className="h-4 w-4 flex-shrink-0" />
+
+                      {/* Localização e Favorito */}
+                      <div className="flex items-center justify-between text-sm text-slate-500 pt-2 border-t border-slate-100 mt-auto">
+                        <div className="flex items-center gap-1.5 overflow-hidden">
+                          <MapPin className="h-3.5 w-3.5 flex-shrink-0" />
                           <span className="truncate">{horse.currentLocation.city}, {horse.currentLocation.state}</span>
                         </div>
                         <Button
