@@ -64,16 +64,28 @@ const activateSubscriptionOnProfile = async (
   subscriptionRow: Record<string, any>,
   subscriptionId: string
 ) => {
-  // Ativar a assinatura se ainda não estiver ativa
-  await serviceClient
+  // Idempotency: only activate if not already active
+  const { data: currentSub } = await serviceClient
     .from('asaas_subscriptions')
-    .update({
-      status: 'active',
-      started_at: subscriptionRow.started_at || new Date().toISOString(),
-      first_payment_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', subscriptionId);
+    .select('status')
+    .eq('id', subscriptionId)
+    .maybeSingle();
+
+  if (currentSub?.status !== 'active') {
+    const { error: subError } = await serviceClient
+      .from('asaas_subscriptions')
+      .update({
+        status: 'active',
+        started_at: subscriptionRow.started_at || new Date().toISOString(),
+        first_payment_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', subscriptionId);
+
+    if (subError) {
+      throw new Error(`Falha ao ativar assinatura: ${subError.message}`);
+    }
+  }
 
   // Atualizar o plano no perfil do usuário
   if (subscriptionRow.plan_type && subscriptionRow.user_id) {
@@ -88,7 +100,7 @@ const activateSubscriptionOnProfile = async (
       (subscriptionRow.expires_at && profileRow?.plan_expires_at !== subscriptionRow.expires_at);
 
     if (needsUpdate) {
-      await serviceClient
+      const { error: profileError } = await serviceClient
         .from('profiles')
         .update({
           plan: subscriptionRow.plan_type,
@@ -98,6 +110,10 @@ const activateSubscriptionOnProfile = async (
           updated_at: new Date().toISOString(),
         })
         .eq('id', subscriptionRow.user_id);
+
+      if (profileError) {
+        throw new Error(`Falha ao atualizar plano no perfil: ${profileError.message}`);
+      }
     }
   }
 };
@@ -224,22 +240,15 @@ serve(async (req) => {
         );
       }
 
-      await serviceClient
-        .from('asaas_payments')
-        .update({
-          status: payment?.status?.toLowerCase() ?? 'pending',
-          payment_date: payment?.paymentDate ?? null,
-          confirmed_at: payment?.confirmedDate ?? null,
-        })
-        .eq('asaas_payment_id', paymentId);
-
+      // Apply effects FIRST, before updating status.
+      // If effects fail, status stays unchanged — user can retry polling.
       if (mappedStatus === 'APPROVED' && paymentRow) {
         try {
           console.log('[check-status] Aplicando efeitos para pagamento APPROVED...');
           await applyApprovedPaymentEffects(serviceClient, paymentRow, paymentId);
-          console.log('[check-status] ✅ Efeitos aplicados com sucesso');
+          console.log('[check-status] Efeitos aplicados com sucesso');
         } catch (error) {
-          console.error('[check-status] ❌ Erro ao aplicar efeitos:', error?.message);
+          console.error('[check-status] Erro ao aplicar efeitos:', error?.message);
           return new Response(
             JSON.stringify({
               success: false,
@@ -249,6 +258,16 @@ serve(async (req) => {
           );
         }
       }
+
+      // Update status AFTER effects are successfully applied
+      await serviceClient
+        .from('asaas_payments')
+        .update({
+          status: payment?.status?.toLowerCase() ?? 'pending',
+          payment_date: payment?.paymentDate ?? null,
+          confirmed_at: payment?.confirmedDate ?? null,
+        })
+        .eq('asaas_payment_id', paymentId);
 
       console.log('[check-status] Retornando:', { success: true, status: mappedStatus });
       return new Response(JSON.stringify({ success: true, status: mappedStatus }), {
@@ -285,7 +304,18 @@ serve(async (req) => {
       const localStatus = mapSubscriptionStatus(subscriptionRow?.status);
       if (localStatus !== 'PENDING') {
         if (localStatus === 'APPROVED') {
-          await activateSubscriptionOnProfile(serviceClient, subscriptionRow, subscriptionId);
+          try {
+            await activateSubscriptionOnProfile(serviceClient, subscriptionRow, subscriptionId);
+          } catch (activateError) {
+            console.error('[check-status] Erro ao ativar assinatura (fallback):', activateError?.message);
+            return new Response(
+              JSON.stringify({
+                success: false,
+                message: activateError?.message || 'Assinatura confirmada, mas não foi possível ativar o plano.',
+              }),
+              { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            );
+          }
         }
         return new Response(JSON.stringify({ success: true, status: localStatus }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -311,7 +341,18 @@ serve(async (req) => {
 
     // ── Ativar assinatura e plano no perfil quando APPROVED ──
     if (mappedStatus === 'APPROVED') {
-      await activateSubscriptionOnProfile(serviceClient, subscriptionRow, subscriptionId);
+      try {
+        await activateSubscriptionOnProfile(serviceClient, subscriptionRow, subscriptionId);
+      } catch (error) {
+        console.error('[check-status] Erro ao ativar assinatura no perfil:', error?.message);
+        return new Response(
+          JSON.stringify({
+            success: false,
+            message: error?.message || 'Assinatura confirmada, mas não foi possível ativar o plano.',
+          }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
     }
 
     return new Response(JSON.stringify({ success: true, status: mappedStatus }), {

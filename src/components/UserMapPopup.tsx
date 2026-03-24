@@ -120,7 +120,7 @@ const UserMapPopup: React.FC<UserMapPopupProps> = ({ user, onClose, onViewProfil
               ) : user.property_name ? (
                 `${displayPropertyName}, Brasil`
               ) : (
-                'São Paulo, Brasil'
+                'Salvador, Brasil'
               )}
             </span>
           </div>

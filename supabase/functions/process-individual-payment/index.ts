@@ -328,6 +328,34 @@ serve(async (req) => {
       throw new Error('Cliente não encontrado para cobrança.');
     }
 
+    // ── Verificar pagamento pendente duplicado (idempotência) ──
+
+    stage = 'check_existing_payment';
+    const individualRef = `PI|${userId}|${contentType}|${contentId}`;
+
+    const { data: existingIndividual } = await serviceClient
+      .from('asaas_payments')
+      .select('asaas_payment_id, invoice_url, pix_qr_code, pix_copy_paste')
+      .eq('external_reference', individualRef)
+      .eq('status', 'pending')
+      .limit(1)
+      .maybeSingle();
+
+    if (existingIndividual?.asaas_payment_id && existingIndividual?.invoice_url) {
+      console.log('[individual] Retornando pagamento pendente existente:', existingIndividual.asaas_payment_id);
+      return new Response(
+        JSON.stringify({
+          success: true,
+          paymentId: existingIndividual.asaas_payment_id,
+          invoiceUrl: existingIndividual.invoice_url,
+          pixQrCode: existingIndividual.pix_qr_code ?? null,
+          pixCopyPaste: existingIndividual.pix_copy_paste ?? null,
+          recovered: true,
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const dueDate = new Date();
     dueDate.setDate(dueDate.getDate() + 3);
 
@@ -343,7 +371,7 @@ serve(async (req) => {
       value: finalPrice,
       description: contentType === 'animal' ? 'Anúncio Individual' : 'Evento Individual',
       dueDate: dueDate.toISOString().split('T')[0],
-      externalReference: `${contentType}-${contentId}-${userId}-${Date.now()}`,
+      externalReference: individualRef,
     };
 
     // Payload SEM creditCard / creditCardHolderInfo

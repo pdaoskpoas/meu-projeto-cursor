@@ -88,16 +88,15 @@ export const WizardProgress: React.FC<WizardProgressProps> = ({
         </div>
       </div>
 
-      {/* Desktop/Tablet: stepper completo */}
-      <div className="hidden sm:block relative">
-        <div className="absolute top-5 left-0 w-full h-1 bg-gray-200">
+      {/* Tablet: stepper com labels curtas */}
+      <div className="hidden sm:block lg:hidden relative">
+        <div className="absolute top-4 left-0 w-full h-1 bg-gray-200">
           <div
             className="h-full bg-blue-600 transition-all duration-300"
             style={{ width: `${progressPercent}%` }}
           />
         </div>
 
-        {/* Steps */}
         <div className="relative flex justify-between">
           {[1, 2, 3, 4, 5, 6].map((step) => {
             const status = getStepStatus(step);
@@ -108,7 +107,61 @@ export const WizardProgress: React.FC<WizardProgressProps> = ({
                 key={step}
                 className="flex flex-col items-center"
               >
-                {/* Ícone do step */}
+                <div
+                  className={cn(
+                    'w-8 h-8 rounded-full flex items-center justify-center',
+                    'border-2 transition-all duration-200 text-sm font-bold',
+                    {
+                      'bg-blue-600 border-blue-600 text-white': status === 'current',
+                      'bg-green-600 border-green-600 text-white': status === 'completed' && isValid,
+                      'bg-gray-100 border-gray-300 text-gray-400': status === 'pending'
+                    }
+                  )}
+                >
+                  {status === 'completed' && isValid ? (
+                    <CheckCircle2 className="w-4 h-4" />
+                  ) : (
+                    step
+                  )}
+                </div>
+
+                <span
+                  className={cn(
+                    'mt-1.5 text-[10px] font-medium text-center leading-tight',
+                    {
+                      'text-blue-600': status === 'current',
+                      'text-green-600': status === 'completed' && isValid,
+                      'text-gray-500': status === 'pending'
+                    }
+                  )}
+                >
+                  {STEP_SHORT_LABELS[step - 1]}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Desktop: stepper completo */}
+      <div className="hidden lg:block relative">
+        <div className="absolute top-5 left-0 w-full h-1 bg-gray-200">
+          <div
+            className="h-full bg-blue-600 transition-all duration-300"
+            style={{ width: `${progressPercent}%` }}
+          />
+        </div>
+
+        <div className="relative flex justify-between">
+          {[1, 2, 3, 4, 5, 6].map((step) => {
+            const status = getStepStatus(step);
+            const isValid = stepValidations[step];
+
+            return (
+              <div
+                key={step}
+                className="flex flex-col items-center"
+              >
                 <div
                   className={cn(
                     'w-10 h-10 rounded-full flex items-center justify-center',
@@ -127,7 +180,6 @@ export const WizardProgress: React.FC<WizardProgressProps> = ({
                   )}
                 </div>
 
-                {/* Label */}
                 <span
                   className={cn(
                     'mt-2 text-xs font-medium text-center max-w-[80px]',

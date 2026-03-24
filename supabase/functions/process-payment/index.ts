@@ -424,6 +424,53 @@ serve(async (req: Request) => {
       throw new Error('Cliente nao encontrado para cobranca.');
     }
 
+    // ── Verificar assinatura ativa/pendente duplicada (idempotência) ──
+
+    stage = 'check_existing_subscription';
+    const { data: existingSubscription } = await serviceClient
+      .from('asaas_subscriptions')
+      .select('id, status, plan_type')
+      .eq('user_id', userId)
+      .eq('plan_type', planId)
+      .in('status', ['active', 'pending'])
+      .maybeSingle();
+
+    if (existingSubscription) {
+      if (existingSubscription.status === 'active') {
+        return errorResponse(409, 'Voce ja possui uma assinatura ativa para este plano.');
+      }
+
+      // Pending — recuperar dados do pagamento existente para o usuario poder pagar
+      const { data: existingPayment } = await serviceClient
+        .from('asaas_payments')
+        .select('asaas_payment_id, invoice_url, pix_qr_code, pix_copy_paste')
+        .eq('subscription_id', existingSubscription.id)
+        .eq('status', 'pending')
+        .limit(1)
+        .maybeSingle();
+
+      if (existingPayment?.asaas_payment_id && existingPayment?.invoice_url) {
+        console.log('[process-payment] Retornando pagamento pendente existente:', existingPayment.asaas_payment_id);
+        return new Response(
+          JSON.stringify({
+            success: true,
+            status: 'PENDING',
+            subscriptionId: existingSubscription.id,
+            paymentId: existingPayment.asaas_payment_id,
+            invoiceUrl: existingPayment.invoice_url,
+            pixQrCode: existingPayment.pix_qr_code ?? undefined,
+            pixCopyPaste: existingPayment.pix_copy_paste ?? undefined,
+            recovered: true,
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Assinatura pendente sem pagamento valido — limpar orfao e prosseguir
+      console.warn('[process-payment] Assinatura pendente sem pagamento — limpando orfao:', existingSubscription.id);
+      await serviceClient.from('asaas_subscriptions').delete().eq('id', existingSubscription.id);
+    }
+
     // ── Calcular precos ──
 
     const prices = PLAN_PRICES[planId];
@@ -431,7 +478,7 @@ serve(async (req: Request) => {
     const discountRate = paymentMethod === 'PIX' ? 0.03 : 0;
     const discountAmount = Number((baseTotal * discountRate).toFixed(2));
     const totalValue = Number((baseTotal - discountAmount).toFixed(2));
-    const externalReference = `${userId}-${planId}-${Date.now()}`;
+    const externalReference = `PP|${userId}|${planId}|${billingCycle}`;
 
     // ══════════════════════════════════════════════════════════════
     // ASSINATURA MENSAL — via checkout hospedado (sem dados de cartao)
@@ -531,7 +578,7 @@ serve(async (req: Request) => {
       // ── Criar registro em asaas_payments para o primeiro pagamento ──
       if (firstPaymentId) {
         stage = 'insert_monthly_payment';
-        await serviceClient.from('asaas_payments').insert({
+        const { error: monthlyPaymentError } = await serviceClient.from('asaas_payments').insert({
           user_id: userId,
           asaas_customer_id: customerRowId,
           asaas_payment_id: firstPaymentId,
@@ -550,6 +597,12 @@ serve(async (req: Request) => {
             is_monthly: true,
           },
         });
+
+        if (monthlyPaymentError) {
+          await asaasRequest(`/subscriptions/${subscription.id}`, 'DELETE').catch(() => null);
+          await serviceClient.from('asaas_subscriptions').delete().eq('id', subscriptionRow.id);
+          throw new Error('Falha ao salvar pagamento mensal no banco.');
+        }
       }
 
       return new Response(

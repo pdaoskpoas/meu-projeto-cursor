@@ -1,6 +1,6 @@
 // src/components/animal/NewAnimalWizard/index.tsx
 
-import React, { lazy, Suspense, useCallback, useState, useEffect } from 'react';
+import React, { lazy, Suspense, useCallback, useRef, useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -58,7 +58,8 @@ const WizardContent: React.FC<{
   planLoading: boolean;
   isQuotaExceeded: boolean;
   onNavigateToPlans: () => void;
-}> = ({ onClose, isOpen, onSuccess, actingUserId, actingProfile, isAdminMode, adminUserId, planBlocked, planLoading, isQuotaExceeded, onNavigateToPlans }) => {
+  closeAttemptRef: React.MutableRefObject<(() => void) | undefined>;
+}> = ({ onClose, isOpen, onSuccess, actingUserId, actingProfile, isAdminMode, adminUserId, planBlocked, planLoading, isQuotaExceeded, onNavigateToPlans, closeAttemptRef }) => {
   const { state, dispatch } = useWizard();
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const handleAutoSaved = useCallback(() => {
@@ -102,10 +103,11 @@ const WizardContent: React.FC<{
   };
 
   const handleCloseAttempt = () => {
-    // ✅ SEMPRE mostrar dialog de confirmação
-    // Previne fechamento acidental
     setShowCancelDialog(true);
   };
+
+  // Registrar handler de fechamento para o botão X do Dialog
+  closeAttemptRef.current = planBlocked ? onClose : handleCloseAttempt;
 
   const handleConfirmClose = () => {
     setShowCancelDialog(false);
@@ -153,7 +155,7 @@ const WizardContent: React.FC<{
   return (
     <>
       <DialogContent
-        className="max-w-5xl w-[calc(100vw-1rem)] sm:w-[calc(100vw-2rem)] md:w-[calc(100vw-4rem)] lg:w-full max-h-[95dvh] overflow-y-auto p-4 sm:p-6 lg:p-8"
+        className="max-w-[calc(100vw-1rem)] sm:max-w-[calc(100vw-2rem)] md:max-w-3xl lg:max-w-5xl w-full max-h-[95dvh] overflow-y-auto p-4 sm:p-6 lg:p-8"
         onInteractOutside={(e) => {
           e.preventDefault();
           if (planBlocked) {
@@ -183,14 +185,6 @@ const WizardContent: React.FC<{
           completedSteps={state.completedSteps}
           stepValidations={state.stepValidations}
         />
-
-        {/* Indicador de Auto-save */}
-        {!planBlocked && state.lastSaved && (
-          <div className="text-xs text-gray-500 text-right -mt-2">
-            ✓ Salvo automaticamente há{' '}
-            {Math.floor((Date.now() - state.lastSaved.getTime()) / 1000)}s
-          </div>
-        )}
 
         {/* Step Atual - com overlay de bloqueio quando sem plano */}
         <div className="mt-4 relative">
@@ -337,8 +331,18 @@ export const NewAnimalWizard: React.FC<NewAnimalWizardProps> = ({
     return null;
   }
 
+  const closeAttemptRef = useRef<(() => void) | undefined>();
+
   return (
-    <Dialog open={isOpen} onOpenChange={planBlocked ? onClose : undefined}>
+    <Dialog open={isOpen} onOpenChange={(open) => {
+      if (!open) {
+        if (closeAttemptRef.current) {
+          closeAttemptRef.current();
+        } else {
+          onClose();
+        }
+      }
+    }}>
       <WizardProvider>
         <WizardContent
           onClose={onClose}
@@ -352,6 +356,7 @@ export const NewAnimalWizard: React.FC<NewAnimalWizardProps> = ({
           planLoading={planLoading}
           isQuotaExceeded={isQuotaExceeded}
           onNavigateToPlans={handleNavigateToPlans}
+          closeAttemptRef={closeAttemptRef}
         />
       </WizardProvider>
     </Dialog>

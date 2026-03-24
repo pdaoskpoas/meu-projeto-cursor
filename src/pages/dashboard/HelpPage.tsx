@@ -638,7 +638,7 @@ const HelpPage = () => {
                   </span>
                   <span className="inline-flex items-center gap-2">
                     <MapPin className="h-4 w-4 shrink-0 text-slate-500" />
-                    São Paulo, SP — Brasil
+                    Salvador, BA — Brasil
                   </span>
                 </div>
               </div>

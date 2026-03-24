@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Shield, Mail, Phone, MapPin, Facebook, Instagram, Linkedin, Award } from 'lucide-react';
+import { Shield, Mail, Phone, MapPin, Instagram, Award } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
@@ -57,26 +57,14 @@ const AppFooter: React.FC = () => {
             
             {/* Redes Sociais */}
             <div className="flex items-center space-x-3">
-              <a 
-                href="#" 
-                className="w-11 h-11 sm:w-9 sm:h-9 bg-slate-700/50 hover:bg-blue-600 rounded-lg flex items-center justify-center transition-all duration-300 hover:scale-110"
-                aria-label="Facebook"
-              >
-                <Facebook className="w-5 h-5 sm:w-4 sm:h-4" />
-              </a>
-              <a 
-                href="#" 
-                className="w-11 h-11 sm:w-9 sm:h-9 bg-slate-700/50 hover:bg-blue-600 rounded-lg flex items-center justify-center transition-all duration-300 hover:scale-110"
+              <a
+                href="https://www.instagram.com/vitrinedocavalo_br/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-11 h-11 sm:w-9 sm:h-9 bg-slate-700/50 hover:bg-gradient-to-br hover:from-purple-600 hover:to-pink-500 rounded-lg flex items-center justify-center transition-all duration-300 hover:scale-110"
                 aria-label="Instagram"
               >
                 <Instagram className="w-5 h-5 sm:w-4 sm:h-4" />
-              </a>
-              <a 
-                href="#" 
-                className="w-11 h-11 sm:w-9 sm:h-9 bg-slate-700/50 hover:bg-blue-600 rounded-lg flex items-center justify-center transition-all duration-300 hover:scale-110"
-                aria-label="LinkedIn"
-              >
-                <Linkedin className="w-5 h-5 sm:w-4 sm:h-4" />
               </a>
             </div>
           </div>
@@ -213,7 +201,7 @@ const AppFooter: React.FC = () => {
               </a>
               <div className="flex items-center space-x-2 text-sm text-slate-300">
                 <MapPin className="w-4 h-4" />
-                <span>São Paulo, SP - Brasil</span>
+                <span>Salvador, BA - Brasil</span>
               </div>
             </div>
           </div>

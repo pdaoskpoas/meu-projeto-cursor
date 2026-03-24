@@ -133,8 +133,17 @@ serve(async (req: Request) => {
       try {
         await asaasRequest(`/subscriptions/${subscription.asaas_subscription_id}`, 'DELETE');
       } catch (asaasError) {
-        // Log mas não falha - pode já estar cancelada no Asaas
-        console.error('Erro ao cancelar no Asaas (continuando):', (asaasError as Error)?.message);
+        const errMsg = (asaasError as Error)?.message ?? '';
+        // Se a assinatura já não existe no Asaas (404), prosseguir normalmente
+        const isNotFound = errMsg.includes('not found') || errMsg.includes('não encontrad');
+        if (!isNotFound) {
+          console.error('Erro ao cancelar no Asaas (bloqueando):', errMsg);
+          return errorResponse(
+            502,
+            'Nao foi possivel cancelar a assinatura no provedor de pagamento. Tente novamente em alguns minutos.'
+          );
+        }
+        console.warn('Assinatura nao encontrada no Asaas (ja removida), prosseguindo:', errMsg);
       }
     }
 

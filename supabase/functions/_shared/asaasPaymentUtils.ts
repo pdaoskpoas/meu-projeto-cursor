@@ -19,8 +19,8 @@ export const checkRateLimit = async (
 
   if (error) {
     console.error('[rate-limit] Erro ao verificar rate limit:', error.message);
-    // Em caso de erro na verificação, permitir (fail-open para não bloquear pagamentos legítimos)
-    return { allowed: true };
+    // Fail-closed: bloquear em caso de erro para evitar abuso
+    return { allowed: false, message: 'Erro ao verificar limite de tentativas. Tente novamente em alguns minutos.' };
   }
 
   return {
@@ -149,15 +149,28 @@ export const applyApprovedPaymentEffects = async (
   };
 
   if (paymentRow.payment_type === 'subscription' && paymentRow.subscription_id) {
-    await serviceClient
+    // Idempotency: only activate if not already active
+    const { data: currentSub } = await serviceClient
       .from('asaas_subscriptions')
-      .update({
-        status: 'active',
-        started_at: new Date().toISOString(),
-        first_payment_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', paymentRow.subscription_id);
+      .select('status')
+      .eq('id', paymentRow.subscription_id)
+      .maybeSingle();
+
+    if (currentSub?.status !== 'active') {
+      const { error: subUpdateError } = await serviceClient
+        .from('asaas_subscriptions')
+        .update({
+          status: 'active',
+          started_at: new Date().toISOString(),
+          first_payment_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', paymentRow.subscription_id);
+
+      if (subUpdateError) {
+        throw new Error(`Falha ao ativar assinatura: ${subUpdateError.message}`);
+      }
+    }
 
     const { data: subscriptionRow } = await serviceClient
       .from('asaas_subscriptions')
@@ -178,7 +191,7 @@ export const applyApprovedPaymentEffects = async (
           profileRow?.plan_expires_at !== subscriptionRow.expires_at);
 
       if (needsProfileUpdate) {
-        await serviceClient
+        const { error: profileUpdateError } = await serviceClient
           .from('profiles')
           .update({
             plan: subscriptionRow.plan_type,
@@ -188,36 +201,66 @@ export const applyApprovedPaymentEffects = async (
             updated_at: new Date().toISOString(),
           })
           .eq('id', paymentRow.user_id);
+
+        if (profileUpdateError) {
+          throw new Error(`Falha ao atualizar plano no perfil: ${profileUpdateError.message}`);
+        }
       }
     }
   }
 
   if (paymentRow.payment_type === 'individual_ad' && paymentRow.related_content_id) {
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 30);
-    await serviceClient
+    // Idempotency: skip if already activated
+    const { data: currentAnimal } = await serviceClient
       .from('animals')
-      .update({
-        is_individual_paid: true,
-        individual_paid_expires_at: expiresAt.toISOString(),
-        ad_status: 'active',
-        published_at: new Date().toISOString(),
-      })
-      .eq('id', paymentRow.related_content_id);
+      .select('is_individual_paid, ad_status')
+      .eq('id', paymentRow.related_content_id)
+      .maybeSingle();
+
+    if (!currentAnimal?.is_individual_paid || currentAnimal?.ad_status !== 'active') {
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 30);
+      const { error: animalUpdateError } = await serviceClient
+        .from('animals')
+        .update({
+          is_individual_paid: true,
+          individual_paid_expires_at: expiresAt.toISOString(),
+          ad_status: 'active',
+          published_at: new Date().toISOString(),
+        })
+        .eq('id', paymentRow.related_content_id);
+
+      if (animalUpdateError) {
+        throw new Error(`Falha ao ativar anuncio individual: ${animalUpdateError.message}`);
+      }
+    }
   }
 
   if (paymentRow.payment_type === 'individual_event' && paymentRow.related_content_id) {
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 30);
-    await serviceClient
+    // Idempotency: skip if already activated
+    const { data: currentEvent } = await serviceClient
       .from('events')
-      .update({
-        is_individual_paid: true,
-        individual_paid_expires_at: expiresAt.toISOString(),
-        ad_status: 'active',
-        published_at: new Date().toISOString(),
-      })
-      .eq('id', paymentRow.related_content_id);
+      .select('is_individual_paid, ad_status')
+      .eq('id', paymentRow.related_content_id)
+      .maybeSingle();
+
+    if (!currentEvent?.is_individual_paid || currentEvent?.ad_status !== 'active') {
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 30);
+      const { error: eventUpdateError } = await serviceClient
+        .from('events')
+        .update({
+          is_individual_paid: true,
+          individual_paid_expires_at: expiresAt.toISOString(),
+          ad_status: 'active',
+          published_at: new Date().toISOString(),
+        })
+        .eq('id', paymentRow.related_content_id);
+
+      if (eventUpdateError) {
+        throw new Error(`Falha ao ativar evento individual: ${eventUpdateError.message}`);
+      }
+    }
   }
 
   if (paymentRow.payment_type === 'boost_purchase') {

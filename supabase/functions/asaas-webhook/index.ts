@@ -159,19 +159,24 @@ const checkIdempotency = async (
 ): Promise<{ isDuplicate: boolean; logId?: string }> => {
   const idempotencyKey = `${eventType}:${paymentId || ''}:${subscriptionId || ''}`;
 
-  // Check if this exact event was already processed
+  // Check if this exact event already exists in the log
   const { data: existing } = await serviceClient
     .from('asaas_webhooks_log')
-    .select('id')
+    .select('id, processed')
     .eq('idempotency_key', idempotencyKey)
-    .eq('processed', true)
     .maybeSingle();
 
   if (existing) {
-    return { isDuplicate: true };
+    if (existing.processed) {
+      // Already processed successfully — skip
+      return { isDuplicate: true };
+    }
+    // Previous attempt failed (processed=false) — allow retry with same logId
+    console.log('[webhook] Retentando webhook que falhou anteriormente:', idempotencyKey);
+    return { isDuplicate: false, logId: existing.id };
   }
 
-  // Insert log entry for this webhook (with IP and user-agent for audit)
+  // Insert new log entry for this webhook
   const { data: logEntry, error: logError } = await serviceClient
     .from('asaas_webhooks_log')
     .insert({
@@ -187,9 +192,17 @@ const checkIdempotency = async (
     .maybeSingle();
 
   if (logError) {
-    // If insert fails due to unique constraint, it's a duplicate
     if (logError.code === '23505') {
-      return { isDuplicate: true };
+      // Race condition: another request just inserted — fetch and check
+      const { data: raceEntry } = await serviceClient
+        .from('asaas_webhooks_log')
+        .select('id, processed')
+        .eq('idempotency_key', idempotencyKey)
+        .maybeSingle();
+
+      if (raceEntry?.processed) return { isDuplicate: true };
+      // Previous attempt failed or concurrent — allow retry
+      return { isDuplicate: false, logId: raceEntry?.id };
     }
     console.warn('[asaas-webhook] Failed to create log entry:', logError.message);
   }
@@ -365,15 +378,26 @@ serve(async (req) => {
           });
         }
 
-        // Parse externalReference — formato compacto: P|userId|planId|cycle ou B|userId|duration|animalId
-        // Também aceita JSON legado por compatibilidade
-        let refData: { type?: string; userId?: string; planId?: string; billingCycle?: string; duration?: string; animalId?: string | null };
-        if (extRef.startsWith('P|') || extRef.startsWith('B|')) {
+        // Parse externalReference — formatos aceitos:
+        //   Payment Link:  P|userId|planId|cycle   ou  B|userId|duration|animalId
+        //   Fluxo regular: PP|userId|planId|cycle  ou  PB|userId|duration|animalId  ou  PI|userId|contentType|contentId
+        //   JSON legado por compatibilidade
+        let refData: { type?: string; userId?: string; planId?: string; billingCycle?: string; duration?: string; animalId?: string | null; contentType?: string; contentId?: string };
+        if (extRef.includes('|')) {
           const parts = extRef.split('|');
-          if (parts[0] === 'P') {
+          const prefix = parts[0];
+          if (prefix === 'P' || prefix === 'PP') {
             refData = { type: 'plan', userId: parts[1], planId: parts[2], billingCycle: parts[3] };
-          } else {
+          } else if (prefix === 'B' || prefix === 'PB') {
             refData = { type: 'boost', userId: parts[1], duration: parts[2], animalId: parts[3] || null };
+          } else if (prefix === 'PI') {
+            refData = { type: 'individual', userId: parts[1], contentType: parts[2], contentId: parts[3] };
+          } else {
+            console.warn('[webhook] externalReference prefixo desconhecido, ignorando:', extRef);
+            if (logId) await markProcessed(serviceClient, logId, true, 'Prefixo de referencia desconhecido');
+            return new Response(JSON.stringify({ success: true, message: 'Referencia com prefixo desconhecido.' }), {
+              headers: webhookHeaders,
+            });
           }
         } else {
           try {
@@ -485,6 +509,11 @@ serve(async (req) => {
               console.log('[webhook] Efeitos de plano (Payment Link) aplicados com sucesso');
             } catch (effectError) {
               console.error('[webhook] Erro ao aplicar efeitos (Payment Link):', (effectError as Error)?.message);
+              if (logId) await markProcessed(serviceClient, logId, false, (effectError as Error)?.message);
+              return new Response(
+                JSON.stringify({ success: false, message: 'Erro ao aplicar efeitos do pagamento.' }),
+                { status: 500, headers: webhookHeaders }
+              );
             }
           }
 
@@ -531,11 +560,62 @@ serve(async (req) => {
               console.log('[webhook] Efeitos de boost (Payment Link) aplicados com sucesso');
             } catch (effectError) {
               console.error('[webhook] Erro ao aplicar efeitos boost (Payment Link):', (effectError as Error)?.message);
+              if (logId) await markProcessed(serviceClient, logId, false, (effectError as Error)?.message);
+              return new Response(
+                JSON.stringify({ success: false, message: 'Erro ao aplicar efeitos do boost.' }),
+                { status: 500, headers: webhookHeaders }
+              );
+            }
+          }
+
+        } else if (refData.type === 'individual' && refData.contentType && refData.contentId) {
+          // Criar asaas_payments para pagamento individual (anuncio/evento)
+          const paymentType = refData.contentType === 'animal' ? 'individual_ad' : 'individual_event';
+          await serviceClient.from('asaas_payments').insert({
+            user_id: userId,
+            asaas_customer_id: customerRowId,
+            asaas_payment_id: paymentId,
+            payment_type: paymentType,
+            related_content_type: refData.contentType,
+            related_content_id: refData.contentId,
+            value: payment.value as number || 0,
+            billing_type: (payment.billingType as string)?.toUpperCase() ?? 'UNDEFINED',
+            status: (payment.status as string)?.toLowerCase() ?? 'pending',
+            description: refData.contentType === 'animal' ? 'Anúncio Individual' : 'Evento Individual',
+            external_reference: extRef,
+            invoice_url: (payment.invoiceUrl as string) ?? null,
+            payment_date: (payment.paymentDate as string) ?? null,
+            confirmed_at: (payment.confirmedDate as string) ?? null,
+            metadata: { source: 'recovered', content_type: refData.contentType, content_id: refData.contentId },
+          });
+
+          if (isApprovedPaymentPayload(eventType, payment.status as string)) {
+            const provisionedRow = {
+              user_id: userId,
+              payment_type: paymentType,
+              related_content_type: refData.contentType,
+              related_content_id: refData.contentId,
+              asaas_customer_id: customerRowId,
+              value: payment.value as number || 0,
+              billing_type: (payment.billingType as string)?.toUpperCase() ?? 'UNDEFINED',
+              description: refData.contentType === 'animal' ? 'Anúncio Individual' : 'Evento Individual',
+              metadata: { source: 'recovered' },
+            };
+            try {
+              await applyApprovedPaymentEffects(serviceClient, provisionedRow, paymentId);
+              console.log('[webhook] Efeitos de pagamento individual recuperado aplicados com sucesso');
+            } catch (effectError) {
+              console.error('[webhook] Erro ao aplicar efeitos individual:', (effectError as Error)?.message);
+              if (logId) await markProcessed(serviceClient, logId, false, (effectError as Error)?.message);
+              return new Response(
+                JSON.stringify({ success: false, message: 'Erro ao aplicar efeitos do pagamento individual.' }),
+                { status: 500, headers: webhookHeaders }
+              );
             }
           }
 
         } else {
-          console.warn('[webhook] Tipo de compra desconhecido no Payment Link:', refData.type);
+          console.warn('[webhook] Tipo de compra desconhecido:', refData.type);
         }
 
         if (logId) await markProcessed(serviceClient, logId, true);
@@ -550,15 +630,8 @@ serve(async (req) => {
         isApproved: isApprovedPaymentPayload(eventType, payment.status as string),
       });
 
-      await serviceClient
-        .from('asaas_payments')
-        .update({
-          status: (payment.status as string)?.toLowerCase() ?? paymentRow.status ?? 'pending',
-          payment_date: (payment.paymentDate as string) ?? null,
-          confirmed_at: (payment.confirmedDate as string) ?? null,
-        })
-        .eq('asaas_payment_id', paymentId);
-
+      // Apply effects FIRST, before updating status.
+      // If effects fail, status stays unchanged — Asaas retry can reprocess.
       if (isApprovedPaymentPayload(eventType, payment.status as string)) {
         try {
           console.log('[webhook] Aplicando efeitos para evento aprovado...');
@@ -573,6 +646,16 @@ serve(async (req) => {
           );
         }
       }
+
+      // Update status AFTER effects are successfully applied
+      await serviceClient
+        .from('asaas_payments')
+        .update({
+          status: (payment.status as string)?.toLowerCase() ?? paymentRow.status ?? 'pending',
+          payment_date: (payment.paymentDate as string) ?? null,
+          confirmed_at: (payment.confirmedDate as string) ?? null,
+        })
+        .eq('asaas_payment_id', paymentId);
 
       if (logId) await markProcessed(serviceClient, logId, true);
       return new Response(JSON.stringify({ success: true }), { headers: webhookHeaders });
@@ -592,45 +675,65 @@ serve(async (req) => {
 
       const isActive = ['ACTIVE'].includes((subscription.status as string)?.toUpperCase() ?? '');
       if (isActive) {
-        const { data: subRow } = await serviceClient
-          .from('asaas_subscriptions')
-          .select('id, user_id, plan_type, billing_type, expires_at, started_at')
-          .eq('asaas_subscription_id', subscriptionId)
-          .maybeSingle();
-
-        if (subRow?.plan_type && subRow?.user_id) {
-          await serviceClient
+        try {
+          const { data: subRow } = await serviceClient
             .from('asaas_subscriptions')
-            .update({
-              status: 'active',
-              started_at: subRow.started_at || new Date().toISOString(),
-              first_payment_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-            })
-            .eq('id', subRow.id);
-
-          const { data: profileRow } = await serviceClient
-            .from('profiles')
-            .select('plan, plan_expires_at')
-            .eq('id', subRow.user_id)
+            .select('id, user_id, plan_type, billing_type, expires_at, started_at, status')
+            .eq('asaas_subscription_id', subscriptionId)
             .maybeSingle();
 
-          const needsUpdate =
-            profileRow?.plan !== subRow.plan_type ||
-            (subRow.expires_at && profileRow?.plan_expires_at !== subRow.expires_at);
+          if (subRow?.plan_type && subRow?.user_id) {
+            // Idempotency: only activate if not already active
+            if (subRow.status !== 'active') {
+              const { error: subActivateError } = await serviceClient
+                .from('asaas_subscriptions')
+                .update({
+                  status: 'active',
+                  started_at: subRow.started_at || new Date().toISOString(),
+                  first_payment_at: new Date().toISOString(),
+                  updated_at: new Date().toISOString(),
+                })
+                .eq('id', subRow.id);
 
-          if (needsUpdate) {
-            await serviceClient
+              if (subActivateError) {
+                throw new Error(`Falha ao ativar assinatura: ${subActivateError.message}`);
+              }
+            }
+
+            const { data: profileRow } = await serviceClient
               .from('profiles')
-              .update({
-                plan: subRow.plan_type,
-                plan_expires_at: subRow.expires_at ?? null,
-                plan_purchased_at: subRow.started_at ?? new Date().toISOString(),
-                is_annual_plan: subRow.billing_type === 'annual',
-                updated_at: new Date().toISOString(),
-              })
-              .eq('id', subRow.user_id);
+              .select('plan, plan_expires_at')
+              .eq('id', subRow.user_id)
+              .maybeSingle();
+
+            const needsUpdate =
+              profileRow?.plan !== subRow.plan_type ||
+              (subRow.expires_at && profileRow?.plan_expires_at !== subRow.expires_at);
+
+            if (needsUpdate) {
+              const { error: profileError } = await serviceClient
+                .from('profiles')
+                .update({
+                  plan: subRow.plan_type,
+                  plan_expires_at: subRow.expires_at ?? null,
+                  plan_purchased_at: subRow.started_at ?? new Date().toISOString(),
+                  is_annual_plan: subRow.billing_type === 'annual',
+                  updated_at: new Date().toISOString(),
+                })
+                .eq('id', subRow.user_id);
+
+              if (profileError) {
+                throw new Error(`Falha ao atualizar plano no perfil: ${profileError.message}`);
+              }
+            }
           }
+        } catch (effectError) {
+          console.error('[webhook] Erro ao ativar assinatura:', (effectError as Error)?.message);
+          if (logId) await markProcessed(serviceClient, logId, false, (effectError as Error)?.message);
+          return new Response(
+            JSON.stringify({ success: false, message: 'Erro ao ativar assinatura.' }),
+            { status: 500, headers: webhookHeaders }
+          );
         }
       }
 

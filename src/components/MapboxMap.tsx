@@ -181,7 +181,7 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ users, onUserClick, className = '
     users.forEach(async (user) => {
       // Construir localização baseada nos dados do perfil
       // Prioridade: cidade/estado/país > propriedade > padrão
-      let location = 'São Paulo, Brasil'; // Padrão
+      let location = 'Salvador, Brasil'; // Padrão
       
       if (user.city && user.state && user.country) {
         // Usar localização completa do perfil

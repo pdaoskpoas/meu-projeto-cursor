@@ -317,6 +317,34 @@ serve(async (req: Request) => {
       throw new Error('Cliente nao encontrado para cobranca.');
     }
 
+    // ── Verificar pagamento pendente duplicado (idempotência) ──
+
+    stage = 'check_existing_payment';
+    const boostRef = `PB|${userId}|${durationStr}|${animalId || ''}`;
+
+    const { data: existingBoost } = await serviceClient
+      .from('asaas_payments')
+      .select('asaas_payment_id, invoice_url, pix_qr_code, pix_copy_paste')
+      .eq('external_reference', boostRef)
+      .eq('status', 'pending')
+      .limit(1)
+      .maybeSingle();
+
+    if (existingBoost?.asaas_payment_id && existingBoost?.invoice_url) {
+      console.log('[boost] Retornando pagamento pendente existente:', existingBoost.asaas_payment_id);
+      return new Response(
+        JSON.stringify({
+          success: true,
+          paymentId: existingBoost.asaas_payment_id,
+          invoiceUrl: existingBoost.invoice_url,
+          pixQrCode: existingBoost.pix_qr_code ?? null,
+          pixCopyPaste: existingBoost.pix_copy_paste ?? null,
+          recovered: true,
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // ── Criar pagamento SEM dados de cartao ──
 
     stage = 'create_payment';
@@ -334,7 +362,7 @@ serve(async (req: Request) => {
       value: finalPrice,
       description: `Turbinar ${tier.label}`,
       dueDate: dueDate.toISOString().split('T')[0],
-      externalReference: `boost-${durationStr}-${userId}-${Date.now()}`,
+      externalReference: boostRef,
     };
 
     const payment = await asaasRequest('/payments', 'POST', paymentPayload);
