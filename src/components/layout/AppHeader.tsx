@@ -183,7 +183,7 @@ const AppHeader: React.FC<AppHeaderProps> = ({ onToggleSidebar, sidebarOpen }) =
             <Button
               variant="ghost"
               size="icon"
-              className="lg:hidden h-10 w-10"
+              className="lg:hidden"
               onClick={() => navigate('/buscar')}
               aria-label="Buscar"
             >
@@ -276,15 +276,10 @@ const AppHeader: React.FC<AppHeaderProps> = ({ onToggleSidebar, sidebarOpen }) =
               // Usuário Não Logado — botão Acessar em mobile, Entrar/Cadastrar em desktop
               <div className="flex items-center space-x-1.5 sm:space-x-3">
                 <Link to="/login">
-                  <Button variant="ghost" size="icon" className="sm:hidden h-10 w-10" aria-label="Acessar">
-                    <User className="h-5 w-5 text-slate-600" />
-                  </Button>
                   <Button variant="outline" className="hidden sm:flex">
                     Entrar
                   </Button>
-                </Link>
-                <Link to="/login">
-                  <Button className="sm:hidden h-10 px-3 text-sm bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800">
+                  <Button className="sm:hidden px-3 text-sm bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800">
                     Acessar
                   </Button>
                 </Link>
@@ -298,14 +293,14 @@ const AppHeader: React.FC<AppHeaderProps> = ({ onToggleSidebar, sidebarOpen }) =
 
             {/* Sidebar Toggle - apenas no dashboard em mobile */}
             {isDashboardRoute && user && (
-              <SidebarTrigger className="lg:hidden h-10 w-10" />
+              <SidebarTrigger className="lg:hidden h-11 w-11 sm:h-10 sm:w-10" />
             )}
 
             {/* Mobile Menu Toggle */}
             <Button
               variant="ghost"
               size="icon"
-              className="lg:hidden h-10 w-10"
+              className="lg:hidden"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               aria-label={isMenuOpen ? 'Fechar menu' : 'Abrir menu'}
             >

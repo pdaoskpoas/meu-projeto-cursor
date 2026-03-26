@@ -487,19 +487,19 @@ const RankingPage = () => {
                     variant="outline"
                     onClick={() => handlePageChange(currentPage - 1)}
                     disabled={currentPage === 1}
-                    className="h-10 px-3 sm:px-4 text-sm"
+                    className="px-3 sm:px-4 text-sm"
                   >
                     <ChevronLeft className="h-4 w-4 sm:mr-1" />
                     <span className="hidden sm:inline">Anterior</span>
                   </Button>
-                  
+
                   <div className="flex items-center gap-1">
                     {visiblePages.map((page, index) => {
                       if (page === '...') {
                         return (
                           <span
                             key={`ellipsis-${index}`}
-                            className="h-10 w-8 sm:w-10 flex items-center justify-center text-slate-500"
+                            className="h-11 sm:h-10 w-10 flex items-center justify-center text-slate-500"
                           >
                             ...
                           </span>
@@ -511,19 +511,19 @@ const RankingPage = () => {
                           key={page}
                           variant={currentPage === page ? "default" : "outline"}
                           onClick={() => handlePageChange(page)}
-                          className="h-10 w-9 sm:w-10 text-sm"
+                          className="w-10 text-sm"
                         >
                           {page}
                         </Button>
                       );
                     })}
                   </div>
-                  
+
                   <Button
                     variant="outline"
                     onClick={() => handlePageChange(currentPage + 1)}
                     disabled={currentPage === totalPages}
-                    className="h-10 px-3 sm:px-4 text-sm"
+                    className="px-3 sm:px-4 text-sm"
                   >
                     <span className="hidden sm:inline">Próxima</span>
                     <ChevronRight className="h-4 w-4 sm:ml-1" />

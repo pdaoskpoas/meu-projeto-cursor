@@ -479,7 +479,7 @@ const DashboardPage = () => {
           isOpen={showBoostPlansModal}
           onClose={() => setShowBoostPlansModal(false)}
           onSelectPlan={(plan) => {
-            const quantities = { single: 1, popular: 5, prime: 10 };
+            const quantities = { single: 1, popular: 3, prime: 7 };
             setSelectedBoostQty(quantities[plan]);
             setShowBoostPlansModal(false);
             setShowBoostCheckout(true);

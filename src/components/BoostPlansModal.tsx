@@ -22,8 +22,8 @@ const BoostPlansModal: React.FC<BoostPlansModalProps> = ({
     {
       id: 'single' as const,
       name: '1 Turbinar',
-      price: 'R$ 47,00',
-      individualPrice: 'R$ 47,00',
+      price: 'R$ 19,90',
+      individualPrice: 'R$ 19,90',
       boosts: 1,
       duration: '24 horas',
       description: 'Destaque seu anúncio na página inicial',
@@ -38,34 +38,34 @@ const BoostPlansModal: React.FC<BoostPlansModalProps> = ({
     },
     {
       id: 'popular' as const,
-      name: '5 Turbinar',
-      price: 'R$ 129,25',
-      individualPrice: 'R$ 25,85',
-      boosts: 5,
-      duration: '5x 24 horas',
+      name: '3 Turbinar',
+      price: 'R$ 49,90',
+      individualPrice: 'R$ 16,63',
+      boosts: 3,
+      duration: '3x 24 horas',
       description: 'Melhor custo-benefício para uso frequente',
       features: [],
       popular: true,
       bestOffer: false,
-      savings: '45%',
-      buttonText: 'Receba 5 por R$ 129,25',
+      savings: '16%',
+      buttonText: 'Receba 3 por R$ 49,90',
       icon: Star,
       color: 'bg-slate-50 border-slate-200',
       buttonColor: 'bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800'
     },
     {
       id: 'prime' as const,
-      name: '10 Turbinar',
-      price: 'R$ 202,10',
-      individualPrice: 'R$ 20,21',
-      boosts: 10,
-      duration: '10x 24 horas',
+      name: '7 Turbinar',
+      price: 'R$ 89,90',
+      individualPrice: 'R$ 12,84',
+      boosts: 7,
+      duration: '7x 24 horas',
       description: 'Para criadores profissionais',
       features: [],
       popular: false,
       bestOffer: true,
-      savings: '57%',
-      buttonText: 'Receba 10 por R$ 202,10',
+      savings: '35%',
+      buttonText: 'Receba 7 por R$ 89,90',
       icon: Crown,
       color: 'bg-slate-50 border-slate-200',
       buttonColor: 'bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800'
@@ -86,7 +86,7 @@ const BoostPlansModal: React.FC<BoostPlansModalProps> = ({
           <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-4 sm:p-6 mb-4 sm:mb-6 border border-purple-200">
             <div className="flex items-center justify-center space-x-2 text-slate-700 mb-1">
               <Zap className="h-5 w-5 text-purple-600 flex-shrink-0" />
-              <span className="text-base sm:text-lg font-semibold">Destaque seu {getTypeText()} na página inicial</span>
+              <span className="text-base sm:text-lg font-semibold">Destaque seu animal ou evento na página inicial</span>
             </div>
             <p className="text-center text-sm sm:text-base text-slate-600 leading-relaxed">
               Por 24 horas e aumente suas chances de visualização

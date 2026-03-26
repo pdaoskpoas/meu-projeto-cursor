@@ -237,7 +237,7 @@ const MostViewedCarousel = () => {
                         <Button
                           size="sm"
                           variant="ghost"
-                          className="h-8 w-8 p-0 hover:text-red-500 transition-colors"
+                          className="h-11 w-11 sm:h-8 sm:w-8 p-0 hover:text-red-500 transition-colors"
                           onClick={(e) => handleFavoriteClick(e, horse.id)}
                           title={user ? (isFavorite(horse.id) ? "Remover dos favoritos" : "Adicionar aos favoritos") : "Faça login para favoritar"}
                         >
