@@ -105,14 +105,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     let unsub: { data: { subscription: { unsubscribe: () => void } } } | null = null;
     let cancelled = false;
 
-    const schedule = (cb: () => void) => {
-      if ('requestIdleCallback' in window) {
-        return (window as Window & { requestIdleCallback?: (fn: () => void, opts?: { timeout: number }) => number })
-          .requestIdleCallback?.(cb, { timeout: 2000 });
-      }
-      return window.setTimeout(cb, 300);
-    };
-
     const init = async () => {
       diagnostics.info('auth-context', 'Auth bootstrap started');
       setIsLoading(true);
@@ -167,19 +159,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     };
 
-    const id = schedule(() => {
-      void init();
-    });
+    // Execução imediata — sem defer via schedule/requestIdleCallback.
+    // Garantir que auth resolve ANTES de qualquer query dependente.
+    void init();
 
     return () => {
       cancelled = true;
-      if (typeof id === 'number') {
-        if ('cancelIdleCallback' in window) {
-          (window as Window & { cancelIdleCallback?: (id: number) => void }).cancelIdleCallback?.(id);
-        } else {
-          clearTimeout(id);
-        }
-      }
       try {
         unsub?.data.subscription.unsubscribe();
       } catch (error) {

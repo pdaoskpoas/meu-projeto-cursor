@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Trophy, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Trophy, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import RankingFilters from './RankingFilters';
@@ -10,6 +10,8 @@ import { useBoostManager } from '@/hooks/useBoostManager';
 import { useSupabaseAllAnimalsStats } from '@/hooks/useSupabaseContentStats';
 import { getOwnerDisplayName } from '@/utils/ownerDisplayName';
 import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/contexts/AuthContext';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface RankingAnimal {
   id: string;
@@ -118,12 +120,26 @@ const getVisiblePages = (
   return pages;
 };
 
+const SLOW_LOADING_THRESHOLD_MS = 5_000;
+
 const RankingPage = () => {
   const { breed } = useParams();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { isLoading: authLoading } = useAuth();
   const { isItemBoosted } = useBoostManager();
   const { allStats, isLoading: statsLoading } = useSupabaseAllAnimalsStats();
+
+  // Loading prolongado: exibir mensagem extra se auth demorar mais que 5s
+  const [slowLoading, setSlowLoading] = useState(false);
+  useEffect(() => {
+    if (!authLoading) {
+      setSlowLoading(false);
+      return;
+    }
+    const timer = window.setTimeout(() => setSlowLoading(true), SLOW_LOADING_THRESHOLD_MS);
+    return () => window.clearTimeout(timer);
+  }, [authLoading]);
   
   // Pega os filtros da URL (query string ou params)
   const breedFromQuery = searchParams.get('breed');
@@ -148,6 +164,8 @@ const RankingPage = () => {
   const itemsPerPage = 14;
 
   const [dbAnimals, setDbAnimals] = useState<RankingAnimal[]>([]);
+  const [fetchFailed, setFetchFailed] = useState(false);
+  const [retryKey, setRetryKey] = useState(0);
 
   const mapAnimalRecord = (
     a: Record<string, unknown>,
@@ -210,8 +228,13 @@ const RankingPage = () => {
   }, [breedFromQuery, breed, genderFromQuery, sortByFromQuery]);
 
   // Ler do Supabase conforme filtros (client-side paginate)
+  // Gate: só dispara quando auth bootstrap terminar (isLoading = false),
+  // garantindo que o Supabase client já possui JWT válido (ou sessão anônima confirmada).
   useEffect(() => {
+    if (authLoading) return;
+
     let mounted = true;
+    setFetchFailed(false);
     (async () => {
       try {
         const list = await animalService.searchAnimals({
@@ -254,12 +277,14 @@ const RankingPage = () => {
           setDbAnimals((fallbackList || []).map((item) => mapAnimalRecord(item, {})));
         } catch (fallbackError) {
           console.error('[RankingPage] fallback fetch failed', fallbackError);
+          if (!mounted) return;
           setDbAnimals([]);
+          setFetchFailed(true);
         }
       }
     })();
     return () => { mounted = false; };
-  }, [searchTerm, selectedBreed, selectedGender, selectedCategory, selectedState, selectedCity, sortBy]);
+  }, [authLoading, searchTerm, selectedBreed, selectedGender, selectedCategory, selectedState, selectedCity, sortBy, retryKey]);
 
   // ✅ PRODUÇÃO: Usar apenas dados reais do banco, sem fallback para mock
   const sourceHorses: RankingAnimal[] = dbAnimals
@@ -390,6 +415,81 @@ const RankingPage = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  // Loading state: exibir skeleton enquanto auth bootstrap não completou.
+  // Mantém a mesma estrutura visual (header + grid 1+3) para evitar layout shift.
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-12">
+          {/* Header skeleton */}
+          <div className="flex items-center mb-8 sm:mb-12">
+            <Skeleton className="h-10 w-10 rounded-full" />
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 lg:gap-8">
+            {/* Filters skeleton */}
+            <div className="lg:col-span-1">
+              <Card className="p-4 sm:p-6">
+                <Skeleton className="h-6 w-24 mb-4" />
+                <div className="space-y-3">
+                  <Skeleton className="h-10 w-full rounded-md" />
+                  <Skeleton className="h-10 w-full rounded-md" />
+                  <Skeleton className="h-10 w-full rounded-md" />
+                  <Skeleton className="h-10 w-full rounded-md" />
+                </div>
+              </Card>
+            </div>
+
+            {/* Results skeleton */}
+            <div className="lg:col-span-3">
+              {/* Results header skeleton */}
+              <div className="mb-6">
+                <Skeleton className="h-6 w-48 mb-2" />
+                <Skeleton className="h-4 w-28" />
+              </div>
+
+              {/* Cards grid skeleton — 6 cards replica o layout real */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <Card key={i} className="overflow-hidden">
+                    {/* Imagem placeholder — mesma altura do card real */}
+                    <Skeleton className="h-48 sm:h-64 w-full rounded-none" />
+                    <div className="p-4 sm:p-6">
+                      {/* Nome */}
+                      <Skeleton className="h-6 w-3/4 mb-3" />
+                      {/* Badges (raça, sexo, idade) */}
+                      <div className="flex gap-2 mb-3">
+                        <Skeleton className="h-5 w-28 rounded-full" />
+                        <Skeleton className="h-5 w-16 rounded-full" />
+                        <Skeleton className="h-5 w-20 rounded-full" />
+                      </div>
+                      {/* Haras info */}
+                      <Skeleton className="h-4 w-2/3 mb-3" />
+                      {/* Genealogia */}
+                      <div className="pt-3 border-t border-slate-100">
+                        <Skeleton className="h-4 w-24 mb-2" />
+                        <Skeleton className="h-3 w-40 mb-1" />
+                        <Skeleton className="h-3 w-36" />
+                      </div>
+                      {/* Localização */}
+                      <Skeleton className="h-4 w-1/2 mt-3" />
+                    </div>
+                  </Card>
+                ))}
+              {/* Mensagem de loading prolongado */}
+              {slowLoading && (
+                <p className="text-center text-sm text-slate-500 mt-8 animate-fade-in">
+                  A conexão está lenta, ainda estamos carregando os dados…
+                </p>
+              )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-12">
@@ -452,14 +552,31 @@ const RankingPage = () => {
             {paginatedHorses.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 auto-rows-fr">
                 {paginatedHorses.map((horse, index) => (
-                  <AnimalRankingCard 
-                    key={horse.id} 
-                    animal={horse} 
+                  <AnimalRankingCard
+                    key={horse.id}
+                    animal={horse}
                     index={startIndex + index}
                     isBoosted={horse.isBoostedActive || isItemBoosted(horse.id, 'animal')}
                   />
                 ))}
               </div>
+            ) : fetchFailed ? (
+              <Card className="p-8 sm:p-12 text-center">
+                <div className="max-w-md mx-auto">
+                  <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <RefreshCw className="h-8 w-8 text-red-400" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-slate-900 mb-2">
+                    Não foi possível carregar os dados
+                  </h3>
+                  <p className="text-slate-600 mb-6">
+                    Verifique sua conexão com a internet e tente novamente.
+                  </p>
+                  <Button onClick={() => setRetryKey(k => k + 1)} variant="default">
+                    Tentar novamente
+                  </Button>
+                </div>
+              </Card>
             ) : (
               <Card className="p-8 sm:p-12 text-center">
                 <div className="max-w-md mx-auto">
