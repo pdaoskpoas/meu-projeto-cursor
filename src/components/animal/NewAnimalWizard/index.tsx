@@ -291,6 +291,9 @@ export const NewAnimalWizard: React.FC<NewAnimalWizardProps> = ({
     navigate('/planos');
   };
 
+  // useRef DEVE ficar antes de qualquer return condicional (Rules of Hooks)
+  const closeAttemptRef = useRef<(() => void) | undefined>();
+
   // PRE-FETCH: Carregar plano em background quando modal abrir
   // Deve ficar ANTES do early return para respeitar a regra de hooks do React
   useEffect(() => {
@@ -330,8 +333,6 @@ export const NewAnimalWizard: React.FC<NewAnimalWizardProps> = ({
   if (!isOpen) {
     return null;
   }
-
-  const closeAttemptRef = useRef<(() => void) | undefined>();
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => {
