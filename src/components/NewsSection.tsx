@@ -193,13 +193,16 @@ const NewsSection = () => {
     <section className="bg-white py-20">
       <div className="container-responsive">
         {/* Header */}
-        <div className="text-center space-content mb-12 sm:mb-16">
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-slate-900 text-balance">
-            Últimas notícias da
-            <span className="bg-gradient-to-r from-red-600 to-orange-600 bg-clip-text text-transparent"> Vitrine</span>
+        <div className="text-center space-content mb-10 sm:mb-14">
+          <p className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-red-500 mb-3">
+            Conteúdo exclusivo
+          </p>
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900 text-balance">
+            O que está acontecendo no{' '}
+            <span className="bg-gradient-to-r from-red-600 to-orange-600 bg-clip-text text-transparent">mercado equestre</span>
           </h2>
-          <p className="text-lg sm:text-xl text-slate-600 max-w-3xl mx-auto leading-relaxed mt-4">
-            Acompanhe novidades, historias, eventos, tendencias e temas relevantes para a comunidade.
+          <p className="text-base sm:text-lg text-slate-600 max-w-2xl mx-auto leading-relaxed mt-3">
+            Novidades, tendências e histórias que importam para quem vive o cavalo.
           </p>
         </div>
 
@@ -232,11 +235,11 @@ const NewsSection = () => {
         <div className="text-center">
           <div className="space-y-6">
             <div className="bg-gradient-to-r from-slate-50 to-slate-100 rounded-2xl p-8 border border-slate-200">
-              <h3 className="text-2xl font-bold text-slate-900 mb-4">
-                Mantenha-se Atualizado com Nossos Conteudos
+              <h3 className="text-xl sm:text-2xl font-bold text-slate-900 mb-3">
+                Fique por dentro de tudo
               </h3>
-              <p className="text-slate-600 text-lg mb-6">
-                Receba novidades e publicacoes diretamente no seu e-mail.
+              <p className="text-slate-600 text-base sm:text-lg mb-5">
+                Receba novidades e publicações diretamente no seu e-mail.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Link to="/noticias">

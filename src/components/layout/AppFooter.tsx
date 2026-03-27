@@ -1,13 +1,48 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Shield, Mail, Phone, MapPin, Instagram, Award } from 'lucide-react';
+import { Mail, MapPin, Instagram, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+
+/** Accordion section — collapses on mobile, always open on desktop */
+const FooterSection: React.FC<{
+  title: string;
+  children: React.ReactNode;
+}> = ({ title, children }) => {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="border-b border-slate-700/40 lg:border-0">
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="flex w-full items-center justify-between py-3 lg:py-0 lg:cursor-default lg:pointer-events-none"
+      >
+        <h4 className="text-base font-semibold text-white flex items-center">
+          <span className="w-1 h-5 bg-blue-500 rounded-full mr-2" />
+          {title}
+        </h4>
+        <ChevronDown
+          className={`h-4 w-4 text-slate-400 transition-transform duration-200 lg:hidden ${
+            open ? 'rotate-180' : ''
+          }`}
+        />
+      </button>
+      <div
+        className={`overflow-hidden transition-all duration-300 lg:max-h-[500px] lg:opacity-100 lg:mt-4 ${
+          open ? 'max-h-96 opacity-100 pb-4' : 'max-h-0 opacity-0'
+        }`}
+      >
+        {children}
+      </div>
+    </div>
+  );
+};
 
 const AppFooter: React.FC = () => {
   return (
     <footer className="relative bg-gradient-to-br from-slate-800 via-slate-900 to-blue-950 text-white overflow-hidden w-full">
-      {/* Padrão decorativo de fundo */}
+      {/* Padrão decorativo */}
       <div className="absolute inset-0 opacity-5">
         <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
           <defs>
@@ -19,216 +54,133 @@ const AppFooter: React.FC = () => {
         </svg>
       </div>
 
-      <div className="relative w-full py-12 sm:py-14 lg:py-16 px-4 sm:px-6 lg:px-8">
-        {/* Seção Principal */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-10 mb-12">
-          
-          {/* Logo e Descrição */}
-          <div className="lg:col-span-1">
+      <div className="relative w-full py-10 sm:py-12 lg:py-16 px-4 sm:px-6 lg:px-8">
+        {/* Grid principal */}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-0 lg:gap-10 mb-8 lg:mb-12">
+          {/* Logo e redes sociais — sempre visível */}
+          <div className="pb-6 mb-2 border-b border-slate-700/40 lg:border-0 lg:pb-0 lg:mb-0">
             <Link to="/" className="inline-block group mb-4">
               <div className="flex items-center space-x-3">
-                <div className="relative">
-                  <img 
-                    src="/logo.png.png" 
-                    alt="Logo Vitrine do Cavalo"
-                    className="w-12 h-12 object-contain drop-shadow-lg group-hover:scale-105 transition-all duration-300"
-                    onError={(e) => {
-                      // Fallback se a imagem não carregar
-                      const target = e.target as HTMLImageElement;
-                      target.style.display = 'none';
-                      const fallback = target.nextElementSibling as HTMLElement;
-                      if (fallback) fallback.classList.remove('hidden');
-                    }}
-                  />
-                  <div className="hidden w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-700 rounded-xl flex items-center justify-center shadow-lg">
-                    <Shield className="h-6 w-6 text-white" />
-                  </div>
-                </div>
+                <img
+                  src="/logo.png.png"
+                  alt="Logo Vitrine do Cavalo"
+                  className="w-10 h-10 object-contain drop-shadow-lg"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = 'none';
+                  }}
+                />
                 <div>
-                  <h3 className="text-xl font-bold text-white group-hover:text-blue-300 transition-colors">
-                    Vitrine do Cavalo
-                  </h3>
-                  <div className="text-xs font-medium text-slate-300 tracking-wide">
-                    PLATAFORMA PREMIUM
+                  <h3 className="text-lg font-bold text-white">Vitrine do Cavalo</h3>
+                  <div className="text-[10px] font-medium text-blue-400 tracking-widest uppercase">
+                    Plataforma Premium
                   </div>
                 </div>
               </div>
             </Link>
-            
-            {/* Redes Sociais */}
-            <div className="flex items-center space-x-3">
-              <a
-                href="https://www.instagram.com/vitrinedocavalo_br/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-11 h-11 sm:w-9 sm:h-9 bg-slate-700/50 hover:bg-gradient-to-br hover:from-purple-600 hover:to-pink-500 rounded-lg flex items-center justify-center transition-all duration-300 hover:scale-110"
-                aria-label="Instagram"
-              >
-                <Instagram className="w-5 h-5 sm:w-4 sm:h-4" />
-              </a>
-            </div>
+
+            <a
+              href="https://www.instagram.com/vitrinedocavalo_br/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 text-sm text-slate-300 hover:text-white transition-colors"
+              aria-label="Instagram"
+            >
+              <Instagram className="w-4 h-4" />
+              <span>@vitrinedocavalo_br</span>
+            </a>
           </div>
 
-          {/* Navegação */}
-          <div>
-            <h4 className="text-base font-semibold mb-4 text-white flex items-center">
-              <span className="w-1 h-5 bg-blue-500 rounded-full mr-2"></span>
-              Navegação
-            </h4>
+          {/* Navegação — accordion no mobile */}
+          <FooterSection title="Navegação">
             <ul className="space-y-2.5">
-              <li>
-                <Link 
-                  to="/" 
-                  className="text-slate-300 hover:text-blue-400 transition-colors text-sm inline-flex items-center group"
-                >
-                  <span className="w-0 group-hover:w-2 h-px bg-blue-400 transition-all duration-300 mr-0 group-hover:mr-2"></span>
-                  Início
-                </Link>
-              </li>
-              <li>
-                <Link 
-                  to="/buscar" 
-                  className="text-slate-300 hover:text-blue-400 transition-colors text-sm inline-flex items-center group"
-                >
-                  <span className="w-0 group-hover:w-2 h-px bg-blue-400 transition-all duration-300 mr-0 group-hover:mr-2"></span>
-                  Cavalos em Destaque
-                </Link>
-              </li>
-              <li>
-                <Link 
-                  to="/buscar" 
-                  className="text-slate-300 hover:text-blue-400 transition-colors text-sm inline-flex items-center group"
-                >
-                  <span className="w-0 group-hover:w-2 h-px bg-blue-400 transition-all duration-300 mr-0 group-hover:mr-2"></span>
-                  Buscar Animais
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/ranking"
-                  className="text-slate-300 hover:text-blue-400 transition-colors text-sm inline-flex items-center group"
-                >
-                  <span className="w-0 group-hover:w-2 h-px bg-blue-400 transition-all duration-300 mr-0 group-hover:mr-2"></span>
-                  Ranking Histórico
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/sobre"
-                  className="text-slate-300 hover:text-blue-400 transition-colors text-sm inline-flex items-center group"
-                >
-                  <span className="w-0 group-hover:w-2 h-px bg-blue-400 transition-all duration-300 mr-0 group-hover:mr-2"></span>
-                  Sobre Nós
-                </Link>
-              </li>
+              {[
+                { to: '/', label: 'Início' },
+                { to: '/buscar', label: 'Buscar Animais' },
+                { to: '/ranking', label: 'Ranking' },
+                { to: '/eventos', label: 'Eventos' },
+                { to: '/sobre', label: 'Sobre Nós' },
+              ].map(({ to, label }) => (
+                <li key={to}>
+                  <Link
+                    to={to}
+                    className="text-slate-300 hover:text-blue-400 transition-colors text-sm"
+                  >
+                    {label}
+                  </Link>
+                </li>
+              ))}
             </ul>
-          </div>
+          </FooterSection>
 
           {/* Para Criadores */}
-          <div>
-            <h4 className="text-base font-semibold mb-4 text-white flex items-center">
-              <span className="w-1 h-5 bg-blue-500 rounded-full mr-2"></span>
-              Para Criadores
-            </h4>
+          <FooterSection title="Para Criadores">
             <ul className="space-y-2.5">
-              <li>
-                <Link 
-                  to="/register" 
-                  className="text-slate-300 hover:text-blue-400 transition-colors text-sm inline-flex items-center group"
-                >
-                  <span className="w-0 group-hover:w-2 h-px bg-blue-400 transition-all duration-300 mr-0 group-hover:mr-2"></span>
-                  Criar Conta
-                </Link>
-              </li>
-              <li>
-                <Link 
-                  to="/planos" 
-                  className="text-slate-300 hover:text-blue-400 transition-colors text-sm inline-flex items-center group"
-                >
-                  <span className="w-0 group-hover:w-2 h-px bg-blue-400 transition-all duration-300 mr-0 group-hover:mr-2"></span>
-                  Planos Premium
-                </Link>
-              </li>
-              <li>
-                <Link 
-                  to="/dashboard/society" 
-                  className="text-slate-300 hover:text-blue-400 transition-colors text-sm inline-flex items-center group"
-                >
-                  <span className="w-0 group-hover:w-2 h-px bg-blue-400 transition-all duration-300 mr-0 group-hover:mr-2"></span>
-                  Sociedades
-                </Link>
-              </li>
-              <li>
-                <Link 
-                  to="/ajuda" 
-                  className="text-slate-300 hover:text-blue-400 transition-colors text-sm inline-flex items-center group"
-                >
-                  <span className="w-0 group-hover:w-2 h-px bg-blue-400 transition-all duration-300 mr-0 group-hover:mr-2"></span>
-                  Central de Ajuda
-                </Link>
-              </li>
+              {[
+                { to: '/register', label: 'Criar Conta' },
+                { to: '/planos', label: 'Planos Premium' },
+                { to: '/dashboard/society', label: 'Sociedades' },
+                { to: '/ajuda', label: 'Central de Ajuda' },
+              ].map(({ to, label }) => (
+                <li key={to}>
+                  <Link
+                    to={to}
+                    className="text-slate-300 hover:text-blue-400 transition-colors text-sm"
+                  >
+                    {label}
+                  </Link>
+                </li>
+              ))}
             </ul>
-          </div>
+          </FooterSection>
 
-          {/* Newsletter e Contato */}
-          <div>
-            <h4 className="text-base font-semibold mb-4 text-white flex items-center">
-              <span className="w-1 h-5 bg-blue-500 rounded-full mr-2"></span>
-              Fique Conectado
-            </h4>
-            <p className="text-slate-300 text-sm mb-4 leading-relaxed">
-              Receba novidades e oportunidades exclusivas do mercado equestre.
-            </p>
-            
-            <div className="space-y-3 mb-6">
-              <Input 
+          {/* Newsletter e contato */}
+          <FooterSection title="Fique Conectado">
+            <div className="space-y-3 mb-4">
+              <p className="text-slate-400 text-sm">
+                Novidades e oportunidades do mercado equestre.
+              </p>
+              <Input
                 placeholder="Seu melhor e-mail"
-                className="bg-slate-700/50 border-slate-600 text-white placeholder-slate-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                className="bg-slate-700/50 border-slate-600 text-white placeholder-slate-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 h-11"
               />
-              <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium shadow-lg hover:shadow-blue-500/50 transition-all duration-300">
+              <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium h-11">
                 Assinar Newsletter
               </Button>
             </div>
 
-            {/* Contato */}
-            <div className="space-y-2.5 pt-4 border-t border-slate-700">
-              <a 
-                href="mailto:contato@vitrinedocavalo.com.br" 
-                className="flex items-center space-x-2 text-sm text-slate-300 hover:text-blue-400 transition-colors group"
+            <div className="space-y-2 pt-3 border-t border-slate-700/50">
+              <a
+                href="mailto:contato@vitrinedocavalo.com.br"
+                className="flex items-center space-x-2 text-sm text-slate-400 hover:text-blue-400 transition-colors"
               >
-                <Mail className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                <Mail className="w-3.5 h-3.5" />
                 <span>contato@vitrinedocavalo.com.br</span>
               </a>
-              <div className="flex items-center space-x-2 text-sm text-slate-300">
-                <MapPin className="w-4 h-4" />
+              <div className="flex items-center space-x-2 text-sm text-slate-400">
+                <MapPin className="w-3.5 h-3.5" />
                 <span>Salvador, BA - Brasil</span>
               </div>
             </div>
-          </div>
+          </FooterSection>
         </div>
 
-        {/* Rodapé Inferior */}
-        <div className="pt-8 border-t border-slate-700/50">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <p className="text-slate-400 text-xs sm:text-sm">
-              © 2024 <span className="text-blue-400 font-medium">Vitrine do Cavalo</span>. Todos os direitos reservados.
+        {/* Rodapé inferior */}
+        <div className="pt-6 border-t border-slate-700/50">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <p className="text-slate-500 text-xs">
+              © 2024 <span className="text-blue-400/80">Vitrine do Cavalo</span>. Todos os direitos reservados.
             </p>
-            <div className="flex flex-wrap gap-4 sm:gap-6">
-              <Link 
-                to="/terms" 
-                className="text-slate-400 hover:text-blue-400 transition-colors text-xs sm:text-sm"
-              >
+            <div className="flex gap-4">
+              <Link to="/terms" className="text-slate-500 hover:text-blue-400 transition-colors text-xs">
                 Termos de Uso
               </Link>
-              <Link 
-                to="/privacy" 
-                className="text-slate-400 hover:text-blue-400 transition-colors text-xs sm:text-sm"
-              >
+              <Link to="/privacy" className="text-slate-500 hover:text-blue-400 transition-colors text-xs">
                 Privacidade
               </Link>
-              <Link 
-                to={{ pathname: "/ajuda", hash: "contato" }}
-                className="text-slate-400 hover:text-blue-400 transition-colors text-xs sm:text-sm"
+              <Link
+                to={{ pathname: '/ajuda', hash: 'contato' }}
+                className="text-slate-500 hover:text-blue-400 transition-colors text-xs"
               >
                 Contato
               </Link>

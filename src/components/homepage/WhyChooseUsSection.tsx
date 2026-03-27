@@ -1,28 +1,28 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Eye, Image, Users, ArrowRight } from 'lucide-react';
+import { Eye, Image, Users, ArrowRight, Shield } from 'lucide-react';
 
 const features = [
   {
     icon: Eye,
-    title: 'Visibilidade para seus animais',
+    title: 'Seu plantel visível para todo o Brasil',
     description:
-      'Seu plantel exposto para criadores, compradores e entusiastas de todo o Brasil, 24 horas por dia.',
+      'Criadores, compradores e entusiastas encontram seus animais 24h por dia, em qualquer estado.',
     color: 'bg-blue-100 text-blue-600',
   },
   {
     icon: Image,
-    title: 'Apresentação com padrão profissional',
+    title: 'Cada animal apresentado como merece',
     description:
-      'Galeria de fotos, genealogia de até 4 gerações, títulos conquistados e ficha completa — cada animal apresentado com a qualidade que merece.',
+      'Galeria profissional, genealogia de até 4 gerações, títulos e ficha completa — tudo em um perfil.',
     color: 'bg-emerald-100 text-emerald-600',
   },
   {
     icon: Users,
-    title: 'Conexão com o mercado equestre',
+    title: 'Conexão direta com quem importa',
     description:
-      'Rankings por raça, busca com filtros avançados, mapa de criadores e contato direto — seu haras encontrado pelas pessoas certas.',
-    color: 'bg-slate-100 text-slate-700',
+      'Rankings por raça, busca avançada, mapa de criadores e contato direto — seu haras encontrado pelas pessoas certas.',
+    color: 'bg-amber-100 text-amber-700',
   },
 ];
 
@@ -30,20 +30,20 @@ const WhyChooseUsSection: React.FC = () => {
   const navigate = useNavigate();
 
   return (
-    <section className="w-full relative bg-white py-12 sm:py-16 lg:py-20">
+    <section className="w-full relative py-12 sm:py-16 lg:py-20">
       <div className="container-responsive">
         <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
           {/* Left — Text Block */}
           <div className="space-y-6">
             <p className="text-sm font-semibold uppercase tracking-wider text-blue-600 flex items-center gap-2">
               <span className="w-1 h-5 bg-blue-600 rounded-full inline-block" />
-              Por que a Vitrine do Cavalo?
+              Por que criadores escolhem a Vitrine
             </p>
 
-            <h2 className="text-3xl sm:text-4xl lg:text-[2.75rem] font-bold text-slate-900 leading-tight">
-              Mais do que divulgação.{' '}
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 leading-tight">
+              Não é só divulgação.{' '}
               <span className="text-blue-600 relative inline-block">
-                Uma vitrine estratégica
+                É posicionamento.
                 <svg
                   className="absolute -bottom-1 left-0 w-full h-2 text-blue-600/30"
                   viewBox="0 0 200 8"
@@ -60,19 +60,26 @@ const WhyChooseUsSection: React.FC = () => {
               </span>
             </h2>
 
-            <p className="text-lg text-slate-600 leading-relaxed max-w-xl">
-              Criada para valorizar cavalos de raça com o padrão que eles realmente
-              merecem. Aqui, cada animal é apresentado com atenção aos detalhes e
-              posicionamento, transformando exposição em valor percebido para o seu haras.
+            <p className="text-base sm:text-lg text-slate-600 leading-relaxed max-w-xl">
+              Cada animal é apresentado com atenção aos detalhes, transformando
+              exposição em valor percebido para o seu haras.
             </p>
 
-            <button
-              onClick={() => navigate('/sobre')}
-              className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-full transition-all duration-200 shadow-md hover:shadow-lg min-h-[44px]"
-            >
-              Conheça a plataforma
-              <ArrowRight className="h-4 w-4" />
-            </button>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button
+                onClick={() => navigate('/sobre')}
+                className="inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-full transition-all duration-200 shadow-md hover:shadow-lg min-h-[44px]"
+              >
+                Conheça a plataforma
+                <ArrowRight className="h-4 w-4" />
+              </button>
+              <button
+                onClick={() => navigate('/register')}
+                className="inline-flex items-center justify-center gap-2 border-2 border-slate-200 hover:border-blue-400 text-slate-700 hover:text-blue-600 font-semibold px-6 py-3 rounded-full transition-all duration-200 min-h-[44px]"
+              >
+                Criar conta gratuita
+              </button>
+            </div>
           </div>
 
           {/* Right — Feature Cards */}

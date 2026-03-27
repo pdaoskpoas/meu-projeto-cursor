@@ -16,76 +16,81 @@ const NewsSection = lazy(() => import('@/components/NewsSection'));
 const Index = () => {
   return (
     <main className="overflow-hidden bg-white">
-      {/* Hero Section - Seção principal com destaque */}
+      {/* Hero — primeiro contato, CTA claro */}
       <HeroSection />
-      
-      {/* Seção de Patrocinadores - Sem padding interno, já tem no componente */}
-      <LazySection minHeight="220px">
-        <Suspense fallback={<div className="min-h-[220px]" />}>
-          <SponsorsCarousel />
-        </Suspense>
-      </LazySection>
-      
-      {/* Seção "Por que a Vitrine do Cavalo?" */}
-      <LazySection minHeight="400px">
-        <Suspense fallback={<div className="min-h-[400px]" />}>
-          <WhyChooseUsSection />
-        </Suspense>
-      </LazySection>
 
-      {/* Bloco de Animais - Carrosséis relacionados com espaçamento tight */}
+      {/* Animais mais buscados — prova visual imediata logo após o hero */}
       <FavoritesProviderBoundary>
         <LazySection minHeight="400px">
-          <SectionContainer variant="default" size="default" divider="top">
-            <Suspense fallback={null}>
-              <FeaturedCarousel />
-            </Suspense>
-          </SectionContainer>
-        </LazySection>
-        
-        <LazySection minHeight="400px">
-          <SectionContainer variant="gray" size="tight">
+          <SectionContainer variant="default" size="default">
             <Suspense fallback={null}>
               <MostViewedCarousel />
             </Suspense>
           </SectionContainer>
         </LazySection>
-        
+
+        {/* Animais turbinados — diferenciação premium */}
         <LazySection minHeight="400px">
-          <SectionContainer variant="default" size="tight">
+          <SectionContainer variant="gray" size="tight">
+            <Suspense fallback={null}>
+              <FeaturedCarousel />
+            </Suspense>
+          </SectionContainer>
+        </LazySection>
+
+        {/* Eventos — urgência temporal puxa engajamento */}
+        <LazySection minHeight="350px">
+          <SectionContainer variant="default" size="default" divider="top">
+            <Suspense fallback={null}>
+              <AuctionCarousel />
+            </Suspense>
+          </SectionContainer>
+        </LazySection>
+
+        {/* Ranking mensal — garanhões e doadoras */}
+        <LazySection minHeight="400px">
+          <SectionContainer variant="gray" size="tight">
             <Suspense fallback={null}>
               <TopMalesByMonthCarousel />
             </Suspense>
           </SectionContainer>
         </LazySection>
-        
+
         <LazySection minHeight="400px">
-          <SectionContainer variant="gray" size="tight">
+          <SectionContainer variant="default" size="tight">
             <Suspense fallback={null}>
               <TopFemalesByMonthCarousel />
             </Suspense>
           </SectionContainer>
         </LazySection>
-        
+
+        {/* Recém-publicados — novidade gera retorno */}
         <LazySection minHeight="400px">
-          <SectionContainer variant="default" size="tight">
+          <SectionContainer variant="gray" size="tight">
             <Suspense fallback={null}>
               <RecentlyPublishedCarousel />
             </Suspense>
           </SectionContainer>
         </LazySection>
       </FavoritesProviderBoundary>
-      
-      {/* Seção de Eventos - Bloco diferenciado com espaçamento relaxed */}
-      <LazySection minHeight="350px">
+
+      {/* Proposta de valor — convence após ver os animais */}
+      <LazySection minHeight="400px">
         <SectionContainer variant="default" size="relaxed" divider="top">
           <Suspense fallback={null}>
-            <AuctionCarousel />
+            <WhyChooseUsSection />
           </Suspense>
         </SectionContainer>
       </LazySection>
-      
-      {/* Seção de Notícias - Última seção com espaçamento relaxed */}
+
+      {/* Patrocinadores */}
+      <LazySection minHeight="220px">
+        <Suspense fallback={<div className="min-h-[220px]" />}>
+          <SponsorsCarousel />
+        </Suspense>
+      </LazySection>
+
+      {/* Notícias e conteúdo */}
       <LazySection minHeight="400px">
         <SectionContainer variant="gray" size="relaxed" divider="top">
           <Suspense fallback={null}>

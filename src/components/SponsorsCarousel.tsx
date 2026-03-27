@@ -105,8 +105,8 @@ const SponsorsCarousel: React.FC = () => {
             <LogoCarousel logos={logos} speed={35} />
           </div>
 
-          {/* Footer hint */}
-          <p className="text-center text-xs sm:text-sm text-slate-500 italic">
+          {/* Footer hint — apenas desktop */}
+          <p className="text-center text-xs sm:text-sm text-slate-500 italic hidden sm:block">
             Passe o mouse sobre os logos para pausar
           </p>
         </div>

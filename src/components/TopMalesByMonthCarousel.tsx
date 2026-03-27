@@ -40,16 +40,21 @@ const TopMalesByMonthCarousel = () => {
     horse.images.length > 0 ? horse.images : getPlaceholderGallery();
 
   return (
-    <section className="bg-white py-16">
+    <section className="py-12 sm:py-16">
       <div className="container-responsive">
-        <div className="mb-8 flex justify-between items-center">
-          <h2 className="text-2xl font-bold text-slate-900">
-            Garanhões mais buscados do mês
-          </h2>
+        <div className="mb-6 sm:mb-8 flex justify-between items-center">
+          <div>
+            <p className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-blue-600 mb-1.5">
+              Ranking mensal ♂
+            </p>
+            <h2 className="text-xl sm:text-2xl font-bold text-slate-900">
+              Garanhões em destaque
+            </h2>
+          </div>
           <Button
             variant="outline"
             onClick={() => navigate('/buscar?gender=Macho&sortBy=views')}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 font-semibold"
           >
             Ver todos
             <ArrowRight className="h-4 w-4" />
@@ -77,7 +82,7 @@ const TopMalesByMonthCarousel = () => {
           >
             <CarouselContent className="-ml-2 md:-ml-4">
               {displayHorses.map((horse, index) => (
-                <CarouselItem key={horse.id} className="pl-2 md:pl-4 basis-full sm:basis-1/2 lg:basis-1/3 xl:basis-1/4">
+                <CarouselItem key={horse.id} className="pl-2 md:pl-4 basis-[85%] sm:basis-1/2 lg:basis-1/3 xl:basis-1/4">
                   <AnimalImpressionTracker 
                     animalId={horse.id}
                     carouselIndex={index}

@@ -24,13 +24,11 @@ export const HORSE_BREEDS = [
 export type HorseBreed = typeof HORSE_BREEDS[number];
 
 /**
- * Raças mais populares para exibir na home
+ * Raças com animais registrados — exibidas na home.
+ * Adicionar novas raças conforme forem tendo cadastros.
  */
 export const POPULAR_BREEDS = [
   'Mangalarga Marchador',
-  'Quarto de Milha',
-  'Campolina',
-  'Mangalarga Paulista'
 ] as const;
 
 

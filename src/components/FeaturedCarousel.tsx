@@ -101,16 +101,22 @@ const FeaturedCarousel = () => {
   const validHorses = featuredAnimals.filter((horse) => horse && horse.id);
 
   return (
-    <section id="destaques" className="bg-white py-16">
+    <section id="destaques" className="py-12 sm:py-16">
       <div className="container-responsive">
-        <div className="mb-8 flex justify-between items-center">
-          <h2 className="text-2xl font-bold text-slate-900">
-            Animais em Destaque
-          </h2>
+        <div className="mb-6 sm:mb-8 flex justify-between items-center">
+          <div>
+            <p className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-amber-600 mb-1.5 flex items-center gap-1.5">
+              <Crown className="h-3.5 w-3.5" />
+              Seleção premium
+            </p>
+            <h2 className="text-xl sm:text-2xl font-bold text-slate-900">
+              Os mais desejados da semana
+            </h2>
+          </div>
           <Button
             variant="outline"
             onClick={() => navigate('/buscar?sortBy=relevant')}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 border-amber-200 text-amber-700 hover:bg-amber-50 hover:border-amber-400 font-semibold"
           >
             Ver todos
             <ArrowRight className="h-4 w-4" />
@@ -142,7 +148,7 @@ const FeaturedCarousel = () => {
           >
             <CarouselContent className="-ml-2 md:-ml-4 carousel-mobile">
               {validHorses.map((horse, index) => (
-                <CarouselItem key={horse.id} className="pl-2 md:pl-4 basis-full sm:basis-1/2 lg:basis-1/3 xl:basis-1/4 carousel-item-mobile">
+                <CarouselItem key={horse.id} className="pl-2 md:pl-4 basis-[85%] sm:basis-1/2 lg:basis-1/3 xl:basis-1/4 carousel-item-mobile">
                   <AnimalImpressionTracker 
                     animalId={horse.id}
                     carouselIndex={index}
@@ -151,7 +157,7 @@ const FeaturedCarousel = () => {
                     }}
                   >
                     <Link to={`/animal/${horse.id}`} className="block w-full">
-                      <div className="bg-white border border-slate-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow cursor-pointer flex flex-col">
+                      <div className="bg-white border-2 border-amber-200/60 rounded-xl overflow-hidden hover:shadow-xl hover:shadow-amber-100/50 transition-all duration-300 cursor-pointer flex flex-col ring-1 ring-amber-100/40">
                       {/* Image Gallery */}
                       <div className="relative flex-shrink-0">
                         <div className="aspect-square overflow-hidden">
@@ -161,11 +167,11 @@ const FeaturedCarousel = () => {
                             className="w-full h-full"
                           />
                         </div>
-                        {/* Premium Badge */}
+                        {/* Premium Badge — forte e visível */}
                         <div className="absolute top-2 left-2 z-10">
-                          <Badge className="bg-emerald-500 text-white text-xs px-2 py-1">
+                          <Badge className="bg-gradient-to-r from-amber-500 to-amber-600 text-white text-xs px-2.5 py-1 shadow-lg shadow-amber-500/30 font-semibold">
                             <Crown className="h-3 w-3 mr-1" />
-                            Premium
+                            Destaque
                           </Badge>
                         </div>
                       </div>

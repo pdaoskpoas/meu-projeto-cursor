@@ -172,11 +172,15 @@ const AuctionCarousel = () => {
   }
 
   return (
-    <section className="bg-white py-16">
+    <section className="py-12 sm:py-16">
       <div className="container-responsive">
-        <div className="mb-8">
-          <h2 className="text-2xl font-bold text-slate-900">
-            Eventos em destaque
+        <div className="mb-6 sm:mb-8">
+          <p className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-purple-600 mb-1.5 flex items-center gap-1.5">
+            <Calendar className="h-3.5 w-3.5" />
+            Não perca
+          </p>
+          <h2 className="text-xl sm:text-2xl font-bold text-slate-900">
+            Eventos e leilões em breve
           </h2>
         </div>
 
@@ -195,7 +199,7 @@ const AuctionCarousel = () => {
             >
               <CarouselContent className="-ml-2 md:-ml-4">
                 {boostedEvents.map((event) => (
-                  <CarouselItem key={event.id} className="pl-2 md:pl-4 basis-full sm:basis-1/2 lg:basis-1/3 xl:basis-1/4 h-full flex">
+                  <CarouselItem key={event.id} className="pl-2 md:pl-4 basis-[85%] sm:basis-1/2 lg:basis-1/3 xl:basis-1/4 h-full flex">
                     <Link to={`/eventos/${event.id}`} className="block w-full">
                       <div className="bg-white border border-slate-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow cursor-pointer flex flex-col h-full min-h-[420px]">
                         {/* Cover Image */}
