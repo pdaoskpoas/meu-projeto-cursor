@@ -1,19 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  ArrowLeft, 
-  MapPin, 
-  Upload, 
-  Save, 
-  Building2, 
-  User, 
-  Calendar, 
+import {
+  MapPin,
+  Upload,
+  Save,
+  Building2,
+  User,
+  Calendar,
   Info,
   AlertCircle,
   CheckCircle,
   Loader2,
   Instagram
 } from 'lucide-react';
+import BackButton from '@/components/ui/BackButton';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -295,14 +295,7 @@ const UpdateProfilePage = () => {
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center gap-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate('/dashboard')}
-            className="shrink-0"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
+          <BackButton fallbackPath="/dashboard" variant="icon" />
           <div>
             <h1 className="text-3xl font-bold text-slate-900">
               {isInstitutional ? 'Atualizar Perfil Institucional' : 'Atualizar Meu Perfil'}

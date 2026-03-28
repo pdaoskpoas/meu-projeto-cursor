@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Calendar, User, Share2, TrendingUp, Eye, Heart, Tag, Loader2, Facebook, Twitter, Linkedin, Link as LinkIcon } from 'lucide-react';
+import { Calendar, User, Share2, TrendingUp, Eye, Heart, Tag, Loader2, Facebook, Twitter, Linkedin, Link as LinkIcon } from 'lucide-react';
+import BackButton from '@/components/ui/BackButton';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -227,10 +228,7 @@ const ArticlePage = () => {
         {/* Header com navegação */}
         <div className="border-b border-slate-200 bg-white sticky top-0 z-10">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-            <Link to="/noticias" className="inline-flex items-center space-x-2 text-slate-600 hover:text-slate-900 transition-colors font-medium">
-              <ArrowLeft className="h-4 w-4" />
-              <span>Notícias</span>
-            </Link>
+            <BackButton fallbackPath="/noticias" label="Notícias" className="text-slate-600 hover:text-slate-900" />
           </div>
         </div>
 

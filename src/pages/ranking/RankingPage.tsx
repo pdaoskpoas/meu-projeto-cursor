@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Trophy, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
+import { useParams, useSearchParams } from 'react-router-dom';
+import { Trophy, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
+import BackButton from '@/components/ui/BackButton';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import RankingFilters from './RankingFilters';
@@ -125,7 +126,6 @@ const SLOW_LOADING_THRESHOLD_MS = 5_000;
 const RankingPage = () => {
   const { breed } = useParams();
   const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
   const { isLoading: authLoading } = useAuth();
   const { isItemBoosted } = useBoostManager();
   const { allStats, isLoading: statsLoading } = useSupabaseAllAnimalsStats();
@@ -184,9 +184,9 @@ const RankingPage = () => {
     },
     harasId: a.owner_id ?? a.haras_id ?? '0',
     harasName: getOwnerDisplayName(
-      a.owner_account_type,
-      a.owner_name,
-      a.owner_property_name
+      a.owner_account_type ?? a.account_type,
+      a.owner_name ?? a.haras_name,
+      a.owner_property_name ?? a.property_name
     ),
     ownerAccountType: a.owner_account_type,
     ownerPropertyType: a.owner_property_type ?? null,
@@ -495,13 +495,7 @@ const RankingPage = () => {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-12">
         {/* Header */}
         <div className="flex items-center mb-8 sm:mb-12">
-          <Button
-            variant="ghost"
-            onClick={() => navigate('/')}
-            className="h-10 w-10 rounded-full"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
+          <BackButton fallbackPath="/" variant="ghost" showLabel={false} className="h-10 w-10 rounded-full" />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 lg:gap-8">

@@ -19,15 +19,16 @@ export function getOwnerDisplayName(
 ): string {
   // Se não tiver tipo de conta, assume pessoal
   const type = accountType || 'personal';
-  
+
   // Perfil institucional: prioriza nome da propriedade
   if (type === 'institutional') {
     const displayName = propertyName || personalName || 'Proprietário não informado';
     return formatNameUppercase(displayName);
   }
-  
-  // Perfil pessoal: usa nome da pessoa
-  return personalName || 'Proprietário não informado';
+
+  // Perfil pessoal: usa nome da pessoa, com fallback para nome da propriedade
+  // (cobre o caso em que owner_account_type não está disponível na query)
+  return personalName || propertyName || 'Proprietário não informado';
 }
 
 /**

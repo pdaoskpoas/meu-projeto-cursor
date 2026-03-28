@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Calendar, User, ArrowLeft, Clock, Share2, Search, Filter, Loader2 } from 'lucide-react';
+import { Calendar, User, Clock, Share2, Search, Filter, Loader2 } from 'lucide-react';
+import BackButton from '@/components/ui/BackButton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -294,10 +295,7 @@ const NewsPage = () => {
     return (
       <main className="container-responsive section-spacing bg-gradient-to-br from-slate-50 via-white to-slate-50 min-h-screen">
         <div className="mb-8">
-          <Link to="/" className="inline-flex items-center space-x-2 text-slate-600 hover:text-blue-600 transition-colors font-medium">
-            <ArrowLeft className="h-4 w-4" />
-            <span>Voltar ao Início</span>
-          </Link>
+          <BackButton fallbackPath="/" label="Voltar ao Início" className="text-slate-600 hover:text-blue-600" />
         </div>
         <Card className="p-6 bg-red-50 border-red-200">
           <h3 className="text-lg font-semibold text-red-900 mb-2">Erro ao carregar notícias</h3>
@@ -316,10 +314,7 @@ const NewsPage = () => {
 
         {/* Back Navigation */}
         <div className="mb-8">
-          <Link to="/" className="inline-flex items-center space-x-2 text-slate-600 hover:text-blue-600 transition-colors font-medium">
-            <ArrowLeft className="h-4 w-4" />
-            <span>Voltar ao Início</span>
-          </Link>
+          <BackButton fallbackPath="/" label="Voltar ao Início" className="text-slate-600 hover:text-blue-600" />
         </div>
 
         {/* Simple Header */}

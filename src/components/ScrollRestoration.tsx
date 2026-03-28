@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
+import { incrementInternalNavCount } from '@/components/ui/BackButton';
 
 /**
  * Componente ROBUSTO de gerenciamento de scroll que:
@@ -40,7 +41,8 @@ const ScrollRestoration = () => {
     // Marca que estamos navegando
     if (previousPath !== currentPath) {
       isNavigatingRef.current = true;
-      
+      incrementInternalNavCount();
+
       // Salva a posição de scroll da página anterior
       scrollPositions.set(previousPath, {
         x: window.scrollX,

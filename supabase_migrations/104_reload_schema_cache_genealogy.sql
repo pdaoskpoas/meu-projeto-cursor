@@ -36,7 +36,10 @@ SELECT
   a.*,
   p.name AS owner_name,
   p.property_name,
+  p.property_name AS owner_property_name,
   p.public_code AS owner_public_code,
+  p.account_type AS owner_account_type,
+  p.avatar_url AS owner_avatar_url,
   COALESCE(imp.impression_count, 0) AS impression_count,
   COALESCE(clk.click_count, 0) AS click_count,
   CASE

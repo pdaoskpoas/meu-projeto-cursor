@@ -3,14 +3,14 @@ import { useParams, Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { 
-  ArrowLeft, 
-  Calendar, 
-  MapPin, 
-  Clock, 
+import {
+  Calendar,
+  MapPin,
+  Clock,
   User,
   Star
 } from 'lucide-react';
+import BackButton from '@/components/ui/BackButton';
 import { mockEvents, getUpcomingEvents } from '@/data/eventsData';
 import { sanitizeRichText } from '@/utils/sanitize';
 import heroHorse from '@/assets/hero-horse.jpg';
@@ -75,12 +75,7 @@ const EventPage = () => {
         {/* Navegação */}
         <section className="section-spacing bg-white">
           <div className="container-responsive">
-            <Link to="/eventos">
-              <Button variant="ghost" size="sm" className="mb-4">
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Voltar para eventos
-              </Button>
-            </Link>
+            <BackButton fallbackPath="/eventos" label="Voltar para eventos" variant="ghost" className="mb-4" />
           </div>
         </section>
 

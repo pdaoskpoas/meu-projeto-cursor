@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Eye, Award, Calendar, MapPin, Crown, Share2, Heart, Flag, Users } from 'lucide-react';
+import BackButton from '@/components/ui/BackButton';
 import { formatNameUppercase } from '@/utils/nameFormat';
 import { normalizeSupabaseImages } from '@/utils/animalCard';
 import { Button } from '@/components/ui/button';
@@ -54,6 +55,8 @@ const AnimalPage = () => {
         name: horse.harasName,
         location: `${horse.currentLocation.city}, ${horse.currentLocation.state}`,
         verified: false,
+        avatarUrl: horse.ownerAvatarUrl as string | null,
+        propertyType: horse.ownerPropertyType as string | null,
       }
     : null;
   const displayHorseName = formatNameUppercase(horse?.name);
@@ -101,13 +104,15 @@ const AnimalPage = () => {
           currentLocation: { city: a.current_city ?? '—', state: a.current_state ?? '—' },
           chip: a.registration_number ?? null,
           harasId: a.haras_id ?? a.owner_id ?? '0',
-          harasName: a.haras_name ?? '—',
+          harasName: a.haras_name || a.owner_property_name || a.owner_name || '—',
           ownerId: a.owner_id,
           ownerName: ownerDisplayName,
           ownerPersonalName: a.owner_name ?? null,
           ownerPropertyName: a.owner_property_name ?? null,
           ownerPublicCode: a.owner_public_code ?? null,
           ownerAccountType: ownerAccountType,
+          ownerAvatarUrl: a.owner_avatar_url ?? null,
+          ownerPropertyType: a.owner_property_type ?? null,
           category: a.category ?? null,
           description: a.description ?? null,
           father: a.father_name ?? null,
@@ -278,10 +283,7 @@ const AnimalPage = () => {
     <main className={`container mx-auto px-4 py-6 min-h-screen bg-background ${shouldShowContact ? 'pb-24 lg:pb-6' : ''}`}>
       {/* Back Navigation */}
       <div className="mb-6">
-        <Link to="/" className="inline-flex items-center space-x-2 text-blue-600 hover:text-blue-800 transition-colors">
-          <ArrowLeft className="h-4 w-4" />
-          <span className="font-medium">Voltar</span>
-        </Link>
+        <BackButton fallbackPath="/" label="Voltar" className="text-blue-600 hover:text-blue-800" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-8">
@@ -539,17 +541,35 @@ const AnimalPage = () => {
           {/* Haras Info */}
           {haras && (
             <Card className="p-6">
-              <h3 className="text-lg font-semibold mb-4">Sobre o Haras</h3>
+              <h3 className="text-lg font-semibold mb-4">
+                {haras.propertyType === 'fazenda' ? 'Sobre a Fazenda'
+                  : haras.propertyType === 'cte' ? 'Sobre o CTE'
+                  : haras.propertyType === 'central-reproducao' ? 'Sobre a Central'
+                  : 'Sobre o Haras'}
+              </h3>
               <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <span className="font-medium">{displayHarasName}</span>
-                  {haras.verified && <Crown className="h-4 w-4 text-blue-500" />}
+                <div className="flex items-center gap-3">
+                  {haras.avatarUrl ? (
+                    <img
+                      src={haras.avatarUrl}
+                      alt={displayHarasName}
+                      className="w-10 h-10 rounded-full object-cover border border-gray-200"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center border border-gray-200">
+                      <Users className="h-5 w-5 text-gray-400" />
+                    </div>
+                  )}
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium">{displayHarasName}</span>
+                    {haras.verified && <Crown className="h-4 w-4 text-blue-500" />}
+                  </div>
                 </div>
                 <div className="flex items-center gap-2 text-gray-600">
                   <MapPin className="h-4 w-4" />
                   <span>{haras.location}</span>
                 </div>
-                <Link 
+                <Link
                   to={`/haras/${haras.id}`}
                   onClick={() => analyticsService.recordClick('animal', horse.id, user?.id, { clickTarget: 'haras_link' })}
                   className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 text-sm"

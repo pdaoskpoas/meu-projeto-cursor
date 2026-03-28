@@ -290,7 +290,7 @@ class AnimalService {
 
       const { data: ownerProfile } = await supabase
         .from('public_profiles')
-        .select('name, public_code, account_type, property_name, property_type')
+        .select('name, public_code, account_type, property_name, property_type, avatar_url')
         .eq('id', animal.owner_id)
         .single()
 
@@ -320,7 +320,8 @@ class AnimalService {
         owner_public_code: ownerProfile?.public_code || '',
         owner_account_type: ownerProfile?.account_type || '',
         owner_property_name: ownerProfile?.property_name || null,
-        owner_property_type: ownerProfile?.property_type || null
+        owner_property_type: ownerProfile?.property_type || null,
+        owner_avatar_url: ownerProfile?.avatar_url || null
       } as AnimalWithStats
 
       logSupabaseOperation('Get animal success', { id })
@@ -348,9 +349,9 @@ class AnimalService {
         return null
       }
 
-      const impressions = data.impressions ?? 0
-      const clicks = data.clicks ?? 0
-      const clickRate = data.ctr ?? (impressions > 0 ? Number(((clicks / impressions) * 100).toFixed(2)) : 0)
+      const impressions = data.impression_count ?? data.impressions ?? 0
+      const clicks = data.click_count ?? data.clicks ?? 0
+      const clickRate = data.click_rate ?? data.ctr ?? (impressions > 0 ? Number(((clicks / impressions) * 100).toFixed(2)) : 0)
 
       return {
         ...data,
@@ -359,9 +360,9 @@ class AnimalService {
         click_rate: clickRate,
         owner_name: data.owner_name || '',
         owner_public_code: data.owner_public_code || '',
-        owner_account_type: '',
-        owner_property_name: data.property_name || null,
-        owner_property_type: null
+        owner_account_type: data.owner_account_type || data.account_type || '',
+        owner_property_name: data.owner_property_name || data.property_name || null,
+        owner_property_type: data.owner_property_type || null
       } as AnimalWithStats
     } catch (error) {
       console.error('Erro ao buscar animal via view:', error)
@@ -638,7 +639,13 @@ class AnimalService {
       }
 
       logSupabaseOperation('Get featured animals success', { count: data?.length })
-      return data as AnimalWithStats[]
+      // Normalizar campos: RPC retorna haras_name, mas o sistema espera owner_name
+      return (data || []).map((item: Record<string, unknown>) => ({
+        ...item,
+        owner_name: item.owner_name || item.haras_name || '',
+        owner_property_name: item.owner_property_name || item.property_name || null,
+        owner_account_type: item.owner_account_type || item.account_type || null,
+      })) as AnimalWithStats[]
 
     } catch (error) {
       logSupabaseOperation('Get featured animals error', null, error)
@@ -655,7 +662,13 @@ class AnimalService {
         .limit(limit)
 
       if (fallbackError) throw handleSupabaseError(fallbackError)
-      return fallbackData as AnimalWithStats[]
+      // Normalizar campos do fallback (view retorna owner_name diretamente)
+      return (fallbackData || []).map((item: Record<string, unknown>) => ({
+        ...item,
+        owner_name: item.owner_name || item.haras_name || '',
+        owner_property_name: item.owner_property_name || item.property_name || null,
+        owner_account_type: item.owner_account_type || item.account_type || null,
+      })) as AnimalWithStats[]
     }
   }
 

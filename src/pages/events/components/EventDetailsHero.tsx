@@ -1,18 +1,18 @@
 import React from 'react';
-import { ArrowLeft, Share2 } from 'lucide-react';
+import { Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import BackButton from '@/components/ui/BackButton';
 import { EventDetailsEvent } from '../types';
 
 interface EventDetailsHeroProps {
   event: EventDetailsEvent;
-  onBack: () => void;
+  onBack?: () => void;
   onShare: () => void;
   getEventIcon: (type: string | null) => string;
 }
 
 const EventDetailsHero: React.FC<EventDetailsHeroProps> = ({
   event,
-  onBack,
   onShare,
   getEventIcon
 }) => {
@@ -20,14 +20,7 @@ const EventDetailsHero: React.FC<EventDetailsHeroProps> = ({
     <div className="bg-white border-b border-slate-200">
       <div className="container mx-auto max-w-5xl px-4 py-6">
         <div className="flex items-center justify-between gap-4">
-          <Button
-            variant="ghost"
-            onClick={onBack}
-            className="text-slate-700 hover:bg-slate-100"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Voltar
-          </Button>
+          <BackButton fallbackPath="/eventos" label="Voltar" variant="ghost" className="text-slate-700 hover:bg-slate-100" />
           <Button
             variant="ghost"
             onClick={onShare}

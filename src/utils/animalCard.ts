@@ -81,9 +81,9 @@ export const mapAnimalRecordToCard = (record: Record<string, unknown>): AnimalCa
   coat: record.coat ?? '—',
   gender: record.gender ?? 'Macho',
   harasName: getOwnerDisplayName(
-    record.owner_account_type,
-    record.owner_name,
-    record.owner_property_name
+    record.owner_account_type ?? record.account_type,
+    record.owner_name ?? record.haras_name,
+    record.owner_property_name ?? record.property_name
   ),
   birthDate: record.birth_date ?? '2000-01-01',
   adStatus: record.ad_status ?? 'inactive',

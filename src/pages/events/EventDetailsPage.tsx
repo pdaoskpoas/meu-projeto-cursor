@@ -180,7 +180,6 @@ const EventDetailsPage: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50">
       <EventDetailsHero
         event={event}
-        onBack={() => navigate('/eventos')}
         onShare={handleShare}
         getEventIcon={getEventIcon}
       />

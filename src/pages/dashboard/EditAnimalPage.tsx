@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Save, X, Calendar, Loader2 } from 'lucide-react';
+import { Save, X, Calendar, Loader2 } from 'lucide-react';
+import BackButton from '@/components/ui/BackButton';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -170,10 +171,7 @@ const EditAnimalPage = () => {
             <header className="h-16 bg-card border-b border-border flex items-center px-6">
               <div className="flex items-center space-x-4">
                 <SidebarTrigger />
-                <Link to="/dashboard/animals" className="flex items-center space-x-2 text-gray-medium hover:text-primary transition-colors">
-                  <ArrowLeft className="h-4 w-4" />
-                  <span>Voltar</span>
-                </Link>
+                <BackButton fallbackPath="/dashboard/animals" label="Voltar" className="text-gray-medium hover:text-primary" />
                 <div>
                   <h1 className="text-xl font-semibold text-blue-dark">Editar Equino</h1>
                   <p className="text-sm text-gray-medium">Atualize as informações do equino</p>

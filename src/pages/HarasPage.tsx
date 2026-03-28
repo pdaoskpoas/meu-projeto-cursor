@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, MapPin, Calendar, User, Verified, Instagram, ExternalLink, Crown, Star, Trophy, Building2, MessageCircle, ChevronRight } from 'lucide-react';
+import { MapPin, Calendar, User, Verified, Instagram, ExternalLink, Crown, Star, Trophy, Building2, MessageCircle, ChevronRight } from 'lucide-react';
+import BackButton from '@/components/ui/BackButton';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
@@ -387,10 +388,7 @@ const HarasPage = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           {/* Back Navigation */}
           <div className="mb-4">
-            <Link to="/" className="inline-flex items-center gap-2 text-slate-600 hover:text-blue-600 transition-colors text-sm font-medium">
-              <ArrowLeft className="h-4 w-4" />
-              Voltar ao Início
-            </Link>
+            <BackButton fallbackPath="/" label="Voltar ao Início" className="text-slate-600 hover:text-blue-600 text-sm" />
           </div>
 
           {/* Header com Logo e Informações */}

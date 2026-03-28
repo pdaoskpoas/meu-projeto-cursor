@@ -1,15 +1,13 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Trophy, Calendar } from 'lucide-react';
+import { Trophy, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import BackButton from '@/components/ui/BackButton';
 import { Card } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useMonthlyRankingHistory } from '@/hooks/useMonthlyRankingHistory';
 import RankingHistoryCard from './RankingHistoryCard';
 import { AnimalCardSkeletonGrid } from '@/components/ui/skeletons/AnimalCardSkeleton';
-import { useNavigate } from 'react-router-dom';
-
 const RankingHistoryPage = () => {
-  const navigate = useNavigate();
   const [selectedYear, setSelectedYear] = useState<number | undefined>(undefined);
   const { data, availableYears, isLoading, error } = useMonthlyRankingHistory(selectedYear);
 
@@ -26,13 +24,7 @@ const RankingHistoryPage = () => {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-12">
         {/* Header */}
         <div className="flex items-center mb-8 sm:mb-12">
-          <Button
-            variant="ghost"
-            onClick={() => navigate('/')}
-            className="h-10 w-10 rounded-full mr-4"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
+          <BackButton fallbackPath="/" variant="ghost" showLabel={false} className="h-10 w-10 rounded-full mr-4" />
           <div className="flex-1">
             <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-2">
               Ranking Histórico
