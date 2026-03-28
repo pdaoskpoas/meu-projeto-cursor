@@ -28,25 +28,6 @@ const HeroSection: React.FC = () => {
           {/* Conteúdo principal */}
           <div className="space-y-5 sm:space-y-8">
 
-            {/* Logo + marca — mobile incluso */}
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white/10 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 border border-white/10">
-                <img
-                  src="/logo.png.png"
-                  alt="Vitrine do Cavalo"
-                  className="w-full h-full object-contain"
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    target.style.display = 'none';
-                  }}
-                />
-              </div>
-              <div>
-                <p className="text-white font-bold text-sm sm:text-base leading-tight">Vitrine do Cavalo</p>
-                <p className="text-blue-400/70 text-[10px] sm:text-xs font-medium tracking-widest uppercase">Plataforma Premium</p>
-              </div>
-            </div>
-
             {/* Título */}
             <div className="space-y-3">
               <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold text-white leading-[1.1]">
