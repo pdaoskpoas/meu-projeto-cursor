@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { TrendingUp, MapPin, Search, Users, Sparkles } from 'lucide-react';
+import { TrendingUp, MapPin, Search, Users, Sparkles, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { POPULAR_BREEDS } from '@/constants/breeds';
 
@@ -23,77 +23,100 @@ const HeroSection: React.FC = () => {
         <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-blue-600/8 rounded-full blur-3xl" />
       </div>
 
-      <div className="relative container-responsive py-10 sm:py-16 lg:py-20">
+      <div className="relative container-responsive py-8 sm:py-16 lg:py-20">
         <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-center">
           {/* Conteúdo principal */}
-          <div className="space-y-6 sm:space-y-8">
-            {/* Título focado no benefício do usuário */}
-            <div className="space-y-4">
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold text-white leading-[1.15]">
-                Encontre o cavalo{' '}
-                <span className="relative inline-block text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300">
-                  ideal para você
+          <div className="space-y-5 sm:space-y-8">
+
+            {/* Logo + marca — mobile incluso */}
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white/10 backdrop-blur-sm rounded-xl flex items-center justify-center p-2 border border-white/10">
+                <img
+                  src="/logo.png.png"
+                  alt="Vitrine do Cavalo"
+                  className="w-full h-full object-contain"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = 'none';
+                  }}
+                />
+              </div>
+              <div>
+                <p className="text-white font-bold text-sm sm:text-base leading-tight">Vitrine do Cavalo</p>
+                <p className="text-blue-400/70 text-[10px] sm:text-xs font-medium tracking-widest uppercase">Plataforma Premium</p>
+              </div>
+            </div>
+
+            {/* Título */}
+            <div className="space-y-3">
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold text-white leading-[1.1]">
+                A maior vitrine{' '}
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300">
+                  equestre do Brasil
                 </span>
               </h1>
-              <p className="text-base sm:text-lg text-blue-100/80 leading-relaxed max-w-lg">
-                Milhares de animais de raça reunidos em um só lugar. Busque por raça, região ou criador.
+              <p className="text-sm sm:text-lg text-blue-100/70 leading-relaxed max-w-lg">
+                Conheça animais de raça apresentados com o padrão que eles merecem.
               </p>
             </div>
 
-            {/* Prova social — visível em TODOS os dispositivos */}
-            <div className="grid grid-cols-3 gap-3 sm:gap-4">
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl px-3 py-3 sm:px-4 sm:py-4 border border-white/10 text-center">
-                <p className="text-xl sm:text-2xl font-bold text-white">8,5k+</p>
-                <p className="text-xs sm:text-sm text-blue-200/70 mt-0.5">Animais</p>
+            {/* Prova social */}
+            <div className="grid grid-cols-3 gap-2.5 sm:gap-4">
+              <div className="bg-white/10 backdrop-blur-sm rounded-xl px-3 py-2.5 sm:px-4 sm:py-4 border border-white/10 text-center">
+                <p className="text-lg sm:text-2xl font-bold text-white">8,5k+</p>
+                <p className="text-[10px] sm:text-sm text-blue-200/60">Animais</p>
               </div>
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl px-3 py-3 sm:px-4 sm:py-4 border border-white/10 text-center">
-                <p className="text-xl sm:text-2xl font-bold text-white">150+</p>
-                <p className="text-xs sm:text-sm text-blue-200/70 mt-0.5">Haras</p>
+              <div className="bg-white/10 backdrop-blur-sm rounded-xl px-3 py-2.5 sm:px-4 sm:py-4 border border-white/10 text-center">
+                <p className="text-lg sm:text-2xl font-bold text-white">150+</p>
+                <p className="text-[10px] sm:text-sm text-blue-200/60">Haras</p>
               </div>
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl px-3 py-3 sm:px-4 sm:py-4 border border-white/10 text-center">
-                <p className="text-xl sm:text-2xl font-bold text-white">27</p>
-                <p className="text-xs sm:text-sm text-blue-200/70 mt-0.5">Estados</p>
+              <div className="bg-white/10 backdrop-blur-sm rounded-xl px-3 py-2.5 sm:px-4 sm:py-4 border border-white/10 text-center">
+                <p className="text-lg sm:text-2xl font-bold text-white">27</p>
+                <p className="text-[10px] sm:text-sm text-blue-200/60">Estados</p>
               </div>
             </div>
 
-            {/* CTA principal com hierarquia clara */}
-            <div className="flex flex-col sm:flex-row gap-3">
+            {/* CTA principal — botão único forte + link secundário */}
+            <div className="space-y-3">
               <Button
                 size="lg"
-                className="bg-white hover:bg-blue-50 text-slate-900 font-bold shadow-lg shadow-white/10 hover:shadow-xl hover:shadow-white/20 transition-all duration-300 text-base"
+                className="w-full sm:w-auto bg-white hover:bg-blue-50 text-slate-900 font-bold shadow-lg shadow-white/10 hover:shadow-xl transition-all duration-300 text-base"
                 onClick={() => navigate('/buscar')}
               >
                 <Search className="h-5 w-5 mr-2" />
-                Buscar animais
+                Explorar animais
               </Button>
-              <Button
-                size="lg"
-                className="bg-transparent border-2 border-blue-400/50 text-blue-200 hover:bg-blue-500/20 hover:border-blue-400 hover:text-white transition-all duration-300 text-base font-semibold"
-                onClick={() => navigate('/register')}
-              >
-                Cadastre seu animal
-              </Button>
+
+              <div className="flex items-center gap-4 sm:gap-6">
+                <button
+                  onClick={() => navigate('/register')}
+                  className="text-sm text-blue-300/80 hover:text-blue-200 transition-colors font-medium underline underline-offset-4 decoration-blue-400/30 hover:decoration-blue-400/60"
+                >
+                  Cadastre seu animal
+                </button>
+                {POPULAR_BREEDS.length > 0 && (
+                  <>
+                    <span className="w-px h-4 bg-white/15" />
+                    <div className="flex items-center gap-1.5">
+                      <TrendingUp className="h-3 w-3 text-blue-400/50" />
+                      {POPULAR_BREEDS.map((breed) => (
+                        <button
+                          key={breed}
+                          onClick={() => handleBreedClick(breed)}
+                          className="text-sm text-blue-300/70 hover:text-white transition-colors font-medium"
+                        >
+                          {breed}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
 
-            {/* Raças populares */}
-            <div className="space-y-3">
-              <p className="text-xs sm:text-sm font-medium text-blue-200/60 flex items-center">
-                <TrendingUp className="h-3.5 w-3.5 mr-2" aria-hidden="true" />
-                Raças em alta:
-              </p>
-              <div className="flex flex-wrap gap-2" role="list" aria-label="Raças populares">
-                {POPULAR_BREEDS.map((breed) => (
-                  <button
-                    key={breed}
-                    onClick={() => handleBreedClick(breed)}
-                    className="inline-flex items-center bg-white/8 hover:bg-white/15 border border-white/10 hover:border-white/25 px-3 py-2 sm:px-4 sm:py-2.5 rounded-lg text-xs sm:text-sm font-medium text-blue-100 hover:text-white transition-all duration-200 min-h-[44px]"
-                    role="listitem"
-                    aria-label={`Buscar raça ${breed}`}
-                  >
-                    {breed}
-                  </button>
-                ))}
-              </div>
+            {/* Scroll hint — mobile */}
+            <div className="flex justify-center pt-2 sm:hidden animate-bounce" style={{ animationDuration: '2s' }}>
+              <ChevronDown className="h-5 w-5 text-blue-300/40" />
             </div>
           </div>
 
@@ -101,7 +124,6 @@ const HeroSection: React.FC = () => {
           <div className="relative hidden lg:block" aria-hidden="true">
             <div className="relative">
               <div className="w-full h-[420px] bg-gradient-to-br from-blue-600/20 to-blue-800/30 rounded-3xl border border-white/10 overflow-hidden relative backdrop-blur-sm">
-                {/* Pattern Overlay */}
                 <div className="absolute inset-0 opacity-5">
                   <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
                     <defs>

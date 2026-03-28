@@ -146,9 +146,9 @@ const FeaturedCarousel = () => {
             }}
             className="w-full"
           >
-            <CarouselContent className="-ml-2 md:-ml-4 carousel-mobile">
+            <CarouselContent className="-ml-2 md:-ml-4">
               {validHorses.map((horse, index) => (
-                <CarouselItem key={horse.id} className="pl-2 md:pl-4 basis-[85%] sm:basis-1/2 lg:basis-1/3 xl:basis-1/4 carousel-item-mobile">
+                <CarouselItem key={horse.id} className="pl-2 md:pl-4 basis-[85%] sm:basis-1/2 lg:basis-1/3 xl:basis-1/4">
                   <AnimalImpressionTracker 
                     animalId={horse.id}
                     carouselIndex={index}
