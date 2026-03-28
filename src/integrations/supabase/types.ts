@@ -262,11 +262,14 @@ export type Database = {
           boosted_by: string | null
           breed: string
           can_edit: boolean | null
+          category: string | null
+          cep: string | null
           chip: string | null
           coat: string | null
           created_at: string | null
           current_city: string | null
           current_state: string | null
+          description: string | null
           expires_at: string | null
           father_name: string | null
           featured: boolean | null
@@ -277,11 +280,26 @@ export type Database = {
           id: string
           images: Json
           is_boosted: boolean | null
+          is_individual_paid: boolean | null
+          is_registered: boolean | null
+          maternal_gm_father_name: string | null
+          maternal_gm_mother_name: string | null
+          maternal_gg_father_name: string | null
+          maternal_gg_mother_name: string | null
+          maternal_grandfather_name: string | null
+          maternal_grandmother_name: string | null
           mother_name: string | null
           name: string
           owner_id: string | null
+          paternal_gm_father_name: string | null
+          paternal_gm_mother_name: string | null
+          paternal_gg_father_name: string | null
+          paternal_gg_mother_name: string | null
+          paternal_grandfather_name: string | null
+          paternal_grandmother_name: string | null
           published_at: string | null
           registration_number: string | null
+          share_code: string | null
           titles: string[] | null
           updated_at: string | null
           weight: number | null
@@ -296,11 +314,14 @@ export type Database = {
           boosted_by?: string | null
           breed: string
           can_edit?: boolean | null
+          category?: string | null
+          cep?: string | null
           chip?: string | null
           coat?: string | null
           created_at?: string | null
           current_city?: string | null
           current_state?: string | null
+          description?: string | null
           expires_at?: string | null
           father_name?: string | null
           featured?: boolean | null
@@ -311,11 +332,26 @@ export type Database = {
           id?: string
           images?: Json
           is_boosted?: boolean | null
+          is_individual_paid?: boolean | null
+          is_registered?: boolean | null
+          maternal_gm_father_name?: string | null
+          maternal_gm_mother_name?: string | null
+          maternal_gg_father_name?: string | null
+          maternal_gg_mother_name?: string | null
+          maternal_grandfather_name?: string | null
+          maternal_grandmother_name?: string | null
           mother_name?: string | null
           name: string
           owner_id?: string | null
+          paternal_gm_father_name?: string | null
+          paternal_gm_mother_name?: string | null
+          paternal_gg_father_name?: string | null
+          paternal_gg_mother_name?: string | null
+          paternal_grandfather_name?: string | null
+          paternal_grandmother_name?: string | null
           published_at?: string | null
           registration_number?: string | null
+          share_code?: string | null
           titles?: string[] | null
           updated_at?: string | null
           weight?: number | null
@@ -330,11 +366,14 @@ export type Database = {
           boosted_by?: string | null
           breed?: string
           can_edit?: boolean | null
+          category?: string | null
+          cep?: string | null
           chip?: string | null
           coat?: string | null
           created_at?: string | null
           current_city?: string | null
           current_state?: string | null
+          description?: string | null
           expires_at?: string | null
           father_name?: string | null
           featured?: boolean | null
@@ -345,11 +384,26 @@ export type Database = {
           id?: string
           images?: Json
           is_boosted?: boolean | null
+          is_individual_paid?: boolean | null
+          is_registered?: boolean | null
+          maternal_gm_father_name?: string | null
+          maternal_gm_mother_name?: string | null
+          maternal_gg_father_name?: string | null
+          maternal_gg_mother_name?: string | null
+          maternal_grandfather_name?: string | null
+          maternal_grandmother_name?: string | null
           mother_name?: string | null
           name?: string
           owner_id?: string | null
+          paternal_gm_father_name?: string | null
+          paternal_gm_mother_name?: string | null
+          paternal_gg_father_name?: string | null
+          paternal_gg_mother_name?: string | null
+          paternal_grandfather_name?: string | null
+          paternal_grandmother_name?: string | null
           published_at?: string | null
           registration_number?: string | null
+          share_code?: string | null
           titles?: string[] | null
           updated_at?: string | null
           weight?: number | null

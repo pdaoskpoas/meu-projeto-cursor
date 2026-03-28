@@ -56,10 +56,18 @@ export interface Animal {
   registration_number: string | null
   father_name: string | null
   mother_name: string | null
-  paternal_grandfather: string | null
-  paternal_grandmother: string | null
-  maternal_grandfather: string | null
-  maternal_grandmother: string | null
+  paternal_grandfather_name: string | null
+  paternal_grandmother_name: string | null
+  maternal_grandfather_name: string | null
+  maternal_grandmother_name: string | null
+  paternal_gg_father_name: string | null
+  paternal_gg_mother_name: string | null
+  paternal_gm_father_name: string | null
+  paternal_gm_mother_name: string | null
+  maternal_gg_father_name: string | null
+  maternal_gg_mother_name: string | null
+  maternal_gm_father_name: string | null
+  maternal_gm_mother_name: string | null
   cep: string | null
   current_city: string | null
   current_state: string | null
@@ -215,10 +223,18 @@ export interface AnimalInsert {
   registration_number?: string | null
   father_name?: string | null
   mother_name?: string | null
-  paternal_grandfather?: string | null
-  paternal_grandmother?: string | null
-  maternal_grandfather?: string | null
-  maternal_grandmother?: string | null
+  paternal_grandfather_name?: string | null
+  paternal_grandmother_name?: string | null
+  maternal_grandfather_name?: string | null
+  maternal_grandmother_name?: string | null
+  paternal_gg_father_name?: string | null
+  paternal_gg_mother_name?: string | null
+  paternal_gm_father_name?: string | null
+  paternal_gm_mother_name?: string | null
+  maternal_gg_father_name?: string | null
+  maternal_gg_mother_name?: string | null
+  maternal_gm_father_name?: string | null
+  maternal_gm_mother_name?: string | null
   cep?: string | null
   current_city?: string | null
   current_state?: string | null
