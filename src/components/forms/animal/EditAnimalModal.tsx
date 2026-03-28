@@ -9,12 +9,10 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { animalService } from '@/services/animalService';
-import { animalTitlesService } from '@/services/animalTitlesService';
-import { Loader2, CheckCircle2, X, Building2 } from 'lucide-react';
+import { Loader2, CheckCircle2, Building2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { uploadMultiplePhotos } from '@/components/animal/NewAnimalWizard/utils/uploadWithRetry';
 import EditAnimalPhotosSection from '@/components/forms/animal/EditAnimalPhotosSection';
-import type { AnimalAward } from '@/types/animal';
 import { logAdminAction } from '@/services/adminAuditService';
 
 const CATEGORY_OPTIONS = ['Garanhão', 'Castrado', 'Doadora', 'Matriz', 'Potro', 'Potra', 'Outro'];
@@ -31,11 +29,6 @@ const COAT_OPTIONS = [
   'Ruça',
   'Baia Amarilha',
   'Pêlo de Rato',
-];
-const BRAZILIAN_STATES = [
-  'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA',
-  'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN',
-  'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'
 ];
 
 interface AnimalForEdit {
@@ -86,14 +79,6 @@ const EditAnimalModal: React.FC<EditAnimalModalProps> = ({
   const [useProfileCep, setUseProfileCep] = useState(false);
   const [loadingCep, setLoadingCep] = useState(false);
   const [cepError, setCepError] = useState('');
-  const [newAward, setNewAward] = useState<Partial<AnimalAward>>({
-    event_name: '',
-    event_date: '',
-    city: '',
-    state: '',
-    award: ''
-  });
-  const [awards, setAwards] = useState<AnimalAward[]>([]);
   const [imagesState, setImagesState] = useState<{
     existingImages: string[];
     newPhotos: { id: string; file: File; previewUrl: string }[];
@@ -160,15 +145,17 @@ const EditAnimalModal: React.FC<EditAnimalModalProps> = ({
     }
   }, [animal, isOpen]);
 
+  // Buscar dados completos do animal (incluindo descrição) ao abrir o modal
   useEffect(() => {
     if (!animal?.id || !isOpen) return;
     (async () => {
       try {
-        const titles = await animalTitlesService.getTitles(animal.id);
-        setAwards(titles);
+        const fullAnimal = await animalService.getAnimalById(animal.id);
+        if (fullAnimal?.description) {
+          setFormData(prev => ({ ...prev, description: fullAnimal.description || '' }));
+        }
       } catch (error) {
-        console.error('Erro ao carregar premiações:', error);
-        setAwards([]);
+        console.error('Erro ao carregar dados completos do animal:', error);
       }
     })();
   }, [animal?.id, isOpen]);
@@ -240,31 +227,6 @@ const EditAnimalModal: React.FC<EditAnimalModalProps> = ({
     }
   };
 
-  const handleAddAward = () => {
-    if (!newAward.event_name?.trim() || !newAward.award?.trim()) {
-      return;
-    }
-    const award: AnimalAward = {
-      event_name: newAward.event_name.trim(),
-      event_date: newAward.event_date?.trim() || '',
-      city: newAward.city?.trim() || '',
-      state: newAward.state || '',
-      award: newAward.award.trim()
-    };
-    setAwards(prev => [...prev, award]);
-    setNewAward({
-      event_name: '',
-      event_date: '',
-      city: '',
-      state: '',
-      award: ''
-    });
-  };
-
-  const handleRemoveAward = (index: number) => {
-    setAwards(prev => prev.filter((_, i) => i !== index));
-  };
-
   const updateDescription = (value: string) => {
     if (value.length <= 300) {
       setFormData(prev => ({ ...prev, description: value }));
@@ -307,8 +269,6 @@ const EditAnimalModal: React.FC<EditAnimalModalProps> = ({
         maternal_grandfather_name: formData.maternalGrandfather || null,
         maternal_grandmother_name: formData.maternalGrandmother || null
       });
-
-      await animalTitlesService.saveTitles(animal.id, awards);
 
       const existingImages = imagesState.existingImages ?? [];
       const newPhotoFiles = imagesState.newPhotos.map(photo => photo.file);
@@ -654,104 +614,6 @@ const EditAnimalModal: React.FC<EditAnimalModalProps> = ({
                   placeholder="Mãe da mãe"
                 />
               </div>
-            </div>
-          </div>
-
-          {/* PREMIAÇÕES */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold border-b pb-2">Premiações e Títulos</h3>
-            
-            {awards.length > 0 && (
-              <div className="space-y-2">
-                {awards.map((award, index) => (
-                  <Card key={index} className="p-3 bg-white relative">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="absolute top-2 right-2 h-6 w-6 p-0"
-                      onClick={() => handleRemoveAward(index)}
-                    >
-                      <X className="h-3 w-3 text-red-600" />
-                    </Button>
-                    <div className="pr-8">
-                      <p className="font-semibold text-sm text-gray-900">{award.event_name}</p>
-                      <p className="text-xs text-gray-600 mt-1">
-                        <strong>Premiação:</strong> {award.award}
-                      </p>
-                      {award.event_date && (
-                        <p className="text-xs text-gray-600">
-                          <strong>Período:</strong> {award.event_date}
-                        </p>
-                      )}
-                      {award.city && award.state && (
-                        <p className="text-xs text-gray-600">
-                          <strong>Local:</strong> {award.city}/{award.state}
-                        </p>
-                      )}
-                    </div>
-                  </Card>
-                ))}
-              </div>
-            )}
-
-            <div className="space-y-3 pt-3 border-t border-slate-200">
-              <Label className="text-sm font-medium">Adicionar nova premiação</Label>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <Label className="text-xs text-slate-600">Nome do evento *</Label>
-                  <Input
-                    value={newAward.event_name || ''}
-                    onChange={(e) => setNewAward(prev => ({ ...prev, event_name: e.target.value }))}
-                    placeholder="Ex: Expo Mangalarga 2024"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-xs text-slate-600">Período</Label>
-                  <Input
-                    value={newAward.event_date || ''}
-                    onChange={(e) => setNewAward(prev => ({ ...prev, event_date: e.target.value }))}
-                    placeholder="Ex: 10/2024"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-xs text-slate-600">Cidade</Label>
-                  <Input
-                    value={newAward.city || ''}
-                    onChange={(e) => setNewAward(prev => ({ ...prev, city: e.target.value }))}
-                    placeholder="Ex: Belo Horizonte"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-xs text-slate-600">UF</Label>
-                  <Select
-                    value={newAward.state || ''}
-                    onValueChange={(value) => setNewAward(prev => ({ ...prev, state: value }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="UF" />
-                    </SelectTrigger>
-                    <SelectContent side="bottom" align="start" avoidCollisions={false}>
-                      {BRAZILIAN_STATES.map((state) => (
-                        <SelectItem key={state} value={state}>
-                          {state}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label className="text-xs text-slate-600">Premiação recebida *</Label>
-                <Input
-                  value={newAward.award || ''}
-                  onChange={(e) => setNewAward(prev => ({ ...prev, award: e.target.value }))}
-                  placeholder="Ex: Campeã Nacional"
-                  onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddAward())}
-                />
-              </div>
-              <Button type="button" onClick={handleAddAward} variant="outline">
-                Adicionar premiação
-              </Button>
             </div>
           </div>
 

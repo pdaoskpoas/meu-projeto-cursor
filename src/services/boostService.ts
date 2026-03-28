@@ -143,6 +143,64 @@ class BoostService {
   }
 
   /**
+   * Aplica múltiplos turbinares em um animal (1 crédito = 24h cada)
+   */
+  async boostAnimalMultiple(userId: string, animalId: string, quantity: number): Promise<BoostResult> {
+    try {
+      if (quantity < 1) {
+        return { success: false, message: 'Quantidade deve ser pelo menos 1.' };
+      }
+
+      // Verificar se animal já está turbinado
+      const { boosted, expiresAt } = await this.isAnimalBoosted(animalId);
+      if (boosted) {
+        const expiresDate = expiresAt ? new Date(expiresAt).toLocaleString('pt-BR') : '';
+        return {
+          success: false,
+          message: `Este animal já está turbinado até ${expiresDate}. Aguarde o período expirar.`,
+        };
+      }
+
+      let lastResult: BoostResult = { success: false, message: '' };
+
+      for (let i = 0; i < quantity; i++) {
+        const { data, error } = await supabase.rpc('boost_animal_atomic', {
+          p_user_id: userId,
+          p_animal_id: animalId,
+          p_duration_hours: 24
+        });
+
+        if (error) {
+          console.error(`Erro no boost ${i + 1}/${quantity}:`, error);
+          return {
+            success: false,
+            message: i > 0
+              ? `Aplicado ${i} de ${quantity} turbinar(es). Erro: ${error.message}`
+              : `Erro ao turbinar: ${error.message}`,
+          };
+        }
+
+        lastResult = data as BoostResult;
+        if (!lastResult.success) {
+          return {
+            ...lastResult,
+            message: i > 0
+              ? `Aplicado ${i} de ${quantity} turbinar(es). ${lastResult.message}`
+              : lastResult.message,
+          };
+        }
+      }
+
+      return lastResult;
+
+    } catch (error: unknown) {
+      console.error('Erro ao turbinar animal:', error);
+      const message = error instanceof Error ? error.message : 'Erro desconhecido';
+      return { success: false, message: `Erro ao turbinar: ${message}` };
+    }
+  }
+
+  /**
    * Aplica turbinar em um evento
    */
   async boostEvent(userId: string, eventId: string, duration: BoostDuration = '24h'): Promise<BoostResult> {

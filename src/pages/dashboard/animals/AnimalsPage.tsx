@@ -1,6 +1,6 @@
 import React, { Suspense, useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Plus, Eye, Edit3, Trash2, MapPin, Trophy, Zap, RefreshCw, Clock, AlertTriangle } from 'lucide-react';
+import { Plus, Eye, Edit3, Trash2, MapPin, Trophy, Zap, RefreshCw, Clock, AlertTriangle, Minus } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -78,6 +78,10 @@ const AnimalsPage = () => {
   const [loadingTransferPartners, setLoadingTransferPartners] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+  const [showBoostConfirm, setShowBoostConfirm] = useState(false);
+  const [boostQuantity, setBoostQuantity] = useState(1);
+  const [boostAnimal, setBoostAnimal] = useState<UserAnimal | null>(null);
+  const [isApplyingBoost, setIsApplyingBoost] = useState(false);
 
   // Carregar animais do usuário (incluindo sociedades)
   useEffect(() => {
@@ -265,7 +269,7 @@ const AnimalsPage = () => {
     }
   };
 
-  const handleBoostAnimal = async (animal: UserAnimal) => {
+  const handleBoostAnimal = (animal: UserAnimal) => {
     if (!user?.id) return;
 
     // Bloquear re-turbinar animal já turbinado
@@ -280,15 +284,24 @@ const AnimalsPage = () => {
     }
 
     if (boosts.total === 0) {
-      // Sem créditos: abre modal de compra com animal pré-selecionado
       setBoostTargetAnimalId(animal.id);
       setBoostTargetAnimalName(animal.name);
       setIsBoostCheckoutOpen(true);
       return;
     }
 
+    // Abrir dialog de confirmação com seletor de quantidade
+    setBoostAnimal(animal);
+    setBoostQuantity(1);
+    setShowBoostConfirm(true);
+  };
+
+  const handleConfirmBoost = async () => {
+    if (!user?.id || !boostAnimal) return;
+    setIsApplyingBoost(true);
+
     try {
-      const result = await boostService.boostAnimal(user.id, animal.id);
+      const result = await boostService.boostAnimalMultiple(user.id, boostAnimal.id, boostQuantity);
 
       if (result.success) {
         toast({
@@ -296,7 +309,6 @@ const AnimalsPage = () => {
           description: result.message
         });
         refreshBoosts();
-
         const userAnimals = await animalService.getUserAnimals(user.id);
         setAnimals(userAnimals);
       } else {
@@ -312,6 +324,10 @@ const AnimalsPage = () => {
         description: (error as Error)?.message || 'Tente novamente',
         variant: 'destructive'
       });
+    } finally {
+      setIsApplyingBoost(false);
+      setShowBoostConfirm(false);
+      setBoostAnimal(null);
     }
   };
 
@@ -744,6 +760,103 @@ const AnimalsPage = () => {
                   className="bg-blue-600 hover:bg-blue-700 text-white"
                 >
                   Transferir animal
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Dialog de confirmação de turbinar com seletor de quantidade */}
+        <Dialog open={showBoostConfirm} onOpenChange={(open) => {
+          if (!isApplyingBoost) {
+            setShowBoostConfirm(open);
+            if (!open) setBoostAnimal(null);
+          }
+        }}>
+          <DialogContent className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Zap className="h-5 w-5 text-purple-600" />
+                Turbinar {boostAnimal?.name}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-5 pt-2">
+              <p className="text-sm text-muted-foreground">
+                Cada turbinar mantém o anúncio em destaque por <strong>24 horas</strong>.
+                Selecione quantos deseja aplicar:
+              </p>
+
+              {/* Seletor de quantidade */}
+              <div className="flex flex-col items-center gap-3">
+                <div className="flex items-center gap-4">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-10 w-10 rounded-full"
+                    disabled={boostQuantity <= 1 || isApplyingBoost}
+                    onClick={() => setBoostQuantity(q => Math.max(1, q - 1))}
+                  >
+                    <Minus className="h-4 w-4" />
+                  </Button>
+                  <span className="text-3xl font-bold text-purple-700 min-w-[3ch] text-center">
+                    {boostQuantity}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-10 w-10 rounded-full"
+                    disabled={boostQuantity >= boosts.total || isApplyingBoost}
+                    onClick={() => setBoostQuantity(q => Math.min(boosts.total, q + 1))}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+                <span className="text-xs text-muted-foreground">
+                  Você tem <strong>{boosts.total}</strong> turbinar{boosts.total !== 1 ? 'es' : ''} disponível{boosts.total !== 1 ? 'is' : ''}
+                </span>
+              </div>
+
+              {/* Resumo */}
+              <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 text-center">
+                <p className="text-sm font-semibold text-purple-800">
+                  {boostQuantity === 1
+                    ? '1 dia de destaque (24h)'
+                    : `${boostQuantity} dias de destaque (${boostQuantity * 24}h)`
+                  }
+                </p>
+                <p className="text-xs text-purple-600 mt-1">
+                  Restará {boosts.total - boostQuantity} turbinar{(boosts.total - boostQuantity) !== 1 ? 'es' : ''} após aplicar
+                </p>
+              </div>
+
+              {/* Botões */}
+              <div className="flex justify-end gap-2">
+                <Button
+                  variant="outline"
+                  disabled={isApplyingBoost}
+                  onClick={() => {
+                    setShowBoostConfirm(false);
+                    setBoostAnimal(null);
+                  }}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  className="bg-purple-600 hover:bg-purple-700 text-white"
+                  disabled={isApplyingBoost}
+                  onClick={handleConfirmBoost}
+                >
+                  {isApplyingBoost ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      Aplicando...
+                    </>
+                  ) : (
+                    <>
+                      <Zap className="h-4 w-4 mr-2" />
+                      Turbinar
+                    </>
+                  )}
                 </Button>
               </div>
             </div>
