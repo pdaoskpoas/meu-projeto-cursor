@@ -1,5 +1,8 @@
 import React, { useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+
+const MESES = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'] as const;
+const mesAtual = MESES[new Date().getMonth()];
 import { Heart, MapPin, Calendar, Users, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
@@ -45,11 +48,14 @@ const TopMalesByMonthCarousel = () => {
         <div className="mb-6 sm:mb-8 flex justify-between items-center">
           <div>
             <p className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-blue-600 mb-1.5">
-              Ranking mensal ♂
+              Top garanhões de {mesAtual}
             </p>
             <h2 className="text-xl sm:text-2xl font-bold text-slate-900">
-              Garanhões em destaque
+              Os mais buscados do mês
             </h2>
+            <p className="text-sm text-slate-500 mt-1">
+              Baseado em visualizações reais da plataforma
+            </p>
           </div>
           <Button
             variant="outline"

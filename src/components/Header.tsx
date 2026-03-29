@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Menu, X, Search, Users, Calendar, Shield, Award, Phone, Eye, TrendingUp, HelpCircle } from 'lucide-react';
+import { Menu, X, Search, Users, Calendar, Shield, Award, Phone, Eye, TrendingUp, HelpCircle, CreditCard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -97,6 +97,16 @@ const Header = () => {
                 {isActive('/noticias') && <div className="absolute -bottom-6 left-0 right-0 h-0.5 bg-blue-600"></div>}
               </Link>
               <Link
+                to="/planos"
+                className={`text-sm font-semibold transition-all duration-300 hover:text-blue-600 flex items-center space-x-2 relative ${
+                  isActive('/planos') ? 'text-blue-600' : 'text-slate-700'
+                }`}
+              >
+                <CreditCard className="h-4 w-4" />
+                <span>Planos</span>
+                {isActive('/planos') && <div className="absolute -bottom-6 left-0 right-0 h-0.5 bg-blue-600"></div>}
+              </Link>
+              <Link
                 to="/eventos"
                 className={`text-sm font-semibold transition-all duration-300 hover:text-blue-600 flex items-center space-x-2 relative ${
                   isActive('/eventos') ? 'text-blue-600' : 'text-slate-700'
@@ -124,9 +134,9 @@ const Header = () => {
                       Entrar
                     </Button>
                   </Link>
-                  <Link to="/register">
+                  <Link to="/planos">
                     <Button className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-6 py-2.5 font-semibold shadow-lg hover:shadow-xl transition-all duration-300">
-                      Destacar Meus Cavalos
+                      Anuncie seu Haras
                     </Button>
                   </Link>
                 </div>
@@ -196,6 +206,16 @@ const Header = () => {
                   <span>Notícias</span>
                 </Link>
                 <Link
+                  to="/planos"
+                  className={`flex items-center py-3 font-semibold transition-colors space-x-3 ${
+                    isActive('/planos') ? 'text-blue-600' : 'text-slate-700 hover:text-blue-600'
+                  }`}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <CreditCard className="h-5 w-5" />
+                  <span>Planos</span>
+                </Link>
+                <Link
                   to="/eventos"
                   className={`flex items-center py-3 font-semibold transition-colors space-x-3 ${
                     isActive('/eventos') ? 'text-blue-600' : 'text-slate-700 hover:text-blue-600'
@@ -220,9 +240,9 @@ const Header = () => {
                           Entrar
                         </Button>
                       </Link>
-                      <Link to="/register" className="block" onClick={() => setIsMenuOpen(false)}>
+                      <Link to="/planos" className="block" onClick={() => setIsMenuOpen(false)}>
                         <Button className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white w-full py-3 font-semibold shadow-lg">
-                          Destacar Meus Cavalos
+                          Anuncie seu Haras
                         </Button>
                       </Link>
                     </>

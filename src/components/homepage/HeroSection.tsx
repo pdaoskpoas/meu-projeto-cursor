@@ -37,7 +37,7 @@ const HeroSection: React.FC = () => {
                 </span>
               </h1>
               <p className="text-sm sm:text-lg text-blue-100/70 leading-relaxed max-w-lg">
-                Conheça animais de raça apresentados com o padrão que eles merecem.
+                Onde criadores posicionam seus melhores animais e compradores encontram genética de qualidade.
               </p>
             </div>
 
@@ -70,10 +70,10 @@ const HeroSection: React.FC = () => {
 
               <div className="flex items-center gap-4 sm:gap-6">
                 <button
-                  onClick={() => navigate('/register')}
+                  onClick={() => navigate('/planos')}
                   className="text-sm text-blue-300/80 hover:text-blue-200 transition-colors font-medium underline underline-offset-4 decoration-blue-400/30 hover:decoration-blue-400/60"
                 >
-                  Cadastre seu animal
+                  Divulgue seu plantel — a partir de R$ 39,90/mês
                 </button>
                 {POPULAR_BREEDS.length > 0 && (
                   <>
@@ -134,7 +134,7 @@ const HeroSection: React.FC = () => {
                     <Sparkles className="w-12 h-12 text-white hidden" />
                   </div>
                   <h3 className="text-2xl font-bold text-white mb-2">Vitrine do Cavalo</h3>
-                  <p className="text-blue-200/60 text-sm mb-8">Plataforma Premium de Gestão Equestre</p>
+                  <p className="text-blue-200/60 text-sm mb-8">Onde o mercado equestre se encontra</p>
 
                   <div className="grid grid-cols-2 gap-3 w-full max-w-xs">
                     <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">

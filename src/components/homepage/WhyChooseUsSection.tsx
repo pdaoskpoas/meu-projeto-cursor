@@ -5,23 +5,23 @@ import { Eye, Image, Users, ArrowRight, Shield } from 'lucide-react';
 const features = [
   {
     icon: Eye,
-    title: 'Seu plantel visível para todo o Brasil',
+    title: 'Compradores encontram seus animais',
     description:
-      'Criadores, compradores e entusiastas encontram seus animais 24h por dia, em qualquer estado.',
+      'Seu plantel acessível 24h, em qualquer estado — sem você precisar divulgar em grupos ou redes.',
     color: 'bg-blue-100 text-blue-600',
   },
   {
     icon: Image,
-    title: 'Cada animal apresentado como merece',
+    title: 'Seus animais apresentados com qualidade profissional',
     description:
-      'Galeria profissional, genealogia de até 4 gerações, títulos e ficha completa — tudo em um perfil.',
+      'Galeria, genealogia de até 4 gerações, títulos e ficha completa — o padrão que seu plantel merece.',
     color: 'bg-emerald-100 text-emerald-600',
   },
   {
     icon: Users,
-    title: 'Conexão direta com quem importa',
+    title: 'As pessoas certas chegam até você',
     description:
-      'Rankings por raça, busca avançada, mapa de criadores e contato direto — seu haras encontrado pelas pessoas certas.',
+      'Rankings, busca avançada, mapa de criadores e contato direto — seu haras encontrado por quem realmente importa.',
     color: 'bg-amber-100 text-amber-700',
   },
 ];
@@ -61,23 +61,22 @@ const WhyChooseUsSection: React.FC = () => {
             </h2>
 
             <p className="text-base sm:text-lg text-slate-600 leading-relaxed max-w-xl">
-              Cada animal é apresentado com atenção aos detalhes, transformando
-              exposição em valor percebido para o seu haras.
+              Quem vê seu animal aqui percebe qualidade. Quem encontra seu haras, leva a sério.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-3">
               <button
-                onClick={() => navigate('/sobre')}
+                onClick={() => navigate('/planos')}
                 className="inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-full transition-all duration-200 shadow-md hover:shadow-lg min-h-[44px]"
               >
-                Conheça a plataforma
+                Ver planos e preços
                 <ArrowRight className="h-4 w-4" />
               </button>
               <button
-                onClick={() => navigate('/register')}
+                onClick={() => navigate('/sobre')}
                 className="inline-flex items-center justify-center gap-2 border-2 border-slate-200 hover:border-blue-400 text-slate-700 hover:text-blue-600 font-semibold px-6 py-3 rounded-full transition-all duration-200 min-h-[44px]"
               >
-                Criar conta gratuita
+                Conheça a plataforma
               </button>
             </div>
           </div>

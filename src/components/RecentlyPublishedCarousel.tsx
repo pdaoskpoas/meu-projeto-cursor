@@ -136,7 +136,7 @@ const RecentlyPublishedCarousel = () => {
               Acabaram de chegar
             </p>
             <h2 className="text-xl sm:text-2xl font-bold text-slate-900">
-              Publicados recentemente
+              Novos na Vitrine
             </h2>
           </div>
           <Button

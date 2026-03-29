@@ -12,6 +12,7 @@ const TopFemalesByMonthCarousel = lazy(() => import('@/components/TopFemalesByMo
 const RecentlyPublishedCarousel = lazy(() => import('@/components/RecentlyPublishedCarousel'));
 const AuctionCarousel = lazy(() => import('@/components/AuctionCarousel'));
 const NewsSection = lazy(() => import('@/components/NewsSection'));
+const InstitutionalProfilesSection = lazy(() => import('@/components/homepage/InstitutionalProfilesSection'));
 
 const Index = () => {
   return (
@@ -74,9 +75,18 @@ const Index = () => {
         </LazySection>
       </FavoritesProviderBoundary>
 
+      {/* Quem já faz parte — pertencimento e prova social */}
+      <LazySection minHeight="300px">
+        <SectionContainer variant="default" size="default" divider="top">
+          <Suspense fallback={null}>
+            <InstitutionalProfilesSection />
+          </Suspense>
+        </SectionContainer>
+      </LazySection>
+
       {/* Proposta de valor — convence após ver os animais */}
       <LazySection minHeight="400px">
-        <SectionContainer variant="default" size="relaxed" divider="top">
+        <SectionContainer variant="gray" size="relaxed">
           <Suspense fallback={null}>
             <WhyChooseUsSection />
           </Suspense>

@@ -112,15 +112,26 @@ const FeaturedCarousel = () => {
             <h2 className="text-xl sm:text-2xl font-bold text-slate-900">
               Os mais desejados da semana
             </h2>
+            <p className="text-sm text-slate-500 mt-1">
+              Animais turbinados pelos seus criadores
+            </p>
           </div>
-          <Button
-            variant="outline"
-            onClick={() => navigate('/buscar?sortBy=relevant')}
-            className="flex items-center gap-2 border-amber-200 text-amber-700 hover:bg-amber-50 hover:border-amber-400 font-semibold"
-          >
-            Ver todos
-            <ArrowRight className="h-4 w-4" />
-          </Button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate('/planos')}
+              className="hidden sm:inline-flex text-sm font-semibold text-amber-700 hover:text-amber-800 underline underline-offset-4 decoration-amber-300 hover:decoration-amber-500 transition-colors"
+            >
+              Turbine o seu
+            </button>
+            <Button
+              variant="outline"
+              onClick={() => navigate('/buscar?sortBy=relevant')}
+              className="flex items-center gap-2 border-amber-200 text-amber-700 hover:bg-amber-50 hover:border-amber-400 font-semibold"
+            >
+              Ver todos
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
 
         <div className="relative">
