@@ -11,12 +11,40 @@ interface LazySectionProps {
   minHeight?: string;
 }
 
+const CarouselSkeleton: React.FC<{ minHeight: string }> = ({ minHeight }) => (
+  <div className="animate-pulse py-8 sm:py-10 lg:py-12" style={{ minHeight }}>
+    <div className="container-responsive">
+      {/* Título da seção */}
+      <div className="mb-6">
+        <div className="h-7 bg-slate-200 rounded-lg w-48 mb-2" />
+        <div className="h-4 bg-slate-100 rounded w-64" />
+      </div>
+      {/* Cards skeleton */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="bg-white rounded-xl border border-slate-100 overflow-hidden">
+            <div className="aspect-[4/3] bg-slate-200" />
+            <div className="p-4 space-y-3">
+              <div className="h-5 bg-slate-200 rounded w-3/4" />
+              <div className="h-4 bg-slate-100 rounded w-1/2" />
+              <div className="flex gap-2">
+                <div className="h-6 bg-slate-100 rounded-full w-16" />
+                <div className="h-6 bg-slate-100 rounded-full w-20" />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+);
+
 const LazySection: React.FC<LazySectionProps> = ({
   children,
   fallback,
   className = '',
-  threshold = 0.25,
-  rootMargin = '0px',
+  threshold = 0.1,
+  rootMargin = '200px',
   minHeight = '200px'
 }) => {
   const { elementRef, isVisible } = useLazySection({
@@ -25,24 +53,9 @@ const LazySection: React.FC<LazySectionProps> = ({
     triggerOnce: true
   });
 
-  const defaultFallback = (
-    <div className={cn('animate-pulse', className)} style={{ minHeight }}>
-      <div className="bg-slate-200 rounded-lg w-full h-full">
-        <div className="p-8 space-y-4">
-          <div className="h-6 bg-slate-300 rounded w-1/3"></div>
-          <div className="space-y-3">
-            <div className="h-4 bg-slate-300 rounded w-full"></div>
-            <div className="h-4 bg-slate-300 rounded w-5/6"></div>
-            <div className="h-4 bg-slate-300 rounded w-4/6"></div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-
   return (
     <section ref={elementRef} className={cn('content-visibility-auto', className)}>
-      {isVisible ? children : (fallback || defaultFallback)}
+      {isVisible ? children : (fallback || <CarouselSkeleton minHeight={minHeight} />)}
     </section>
   );
 };

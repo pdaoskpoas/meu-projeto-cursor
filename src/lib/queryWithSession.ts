@@ -39,6 +39,14 @@ function isAuthError(error: unknown): boolean {
   );
 }
 
+function isServerError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') return false;
+  const status = (error as { status?: number }).status;
+  if (status && (status === 502 || status === 503 || status === 504)) return true;
+  const msg = ((error as Record<string, unknown>).message as string || '').toLowerCase();
+  return msg.includes('service unavailable') || msg.includes('503') || msg.includes('502');
+}
+
 export async function queryWithSession<T>(queryFn: () => Promise<T>): Promise<T> {
   // Garantir token válido antes da query
   await ensureValidToken();
@@ -55,6 +63,17 @@ export async function queryWithSession<T>(queryFn: () => Promise<T>): Promise<T>
         // Se falhar de novo, propagar o erro original
       }
     }
+
+    // Se for erro de servidor (503, 502, 504), aguarda 1s e retenta uma vez
+    if (isServerError(error)) {
+      await new Promise(r => setTimeout(r, 1000));
+      try {
+        return await queryFn();
+      } catch {
+        // Se falhar de novo, propagar o erro original
+      }
+    }
+
     throw error;
   }
 }

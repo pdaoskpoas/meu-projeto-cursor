@@ -42,6 +42,29 @@ class ProfileFetchError extends Error {
 }
 
 class AuthService {
+  // Cache de perfil para evitar chamadas duplicadas ao Supabase
+  private profileCache: { data: Profile | null; userId: string; timestamp: number } | null = null;
+  private readonly PROFILE_CACHE_TTL = 5_000; // 5 segundos — suficiente para deduplicar chamadas no bootstrap
+
+  private getCachedProfile(userId: string): Profile | null {
+    if (
+      this.profileCache &&
+      this.profileCache.userId === userId &&
+      Date.now() - this.profileCache.timestamp < this.PROFILE_CACHE_TTL
+    ) {
+      return this.profileCache.data;
+    }
+    return null;
+  }
+
+  private setCachedProfile(userId: string, profile: Profile | null): void {
+    this.profileCache = { data: profile, userId, timestamp: Date.now() };
+  }
+
+  invalidateProfileCache(): void {
+    this.profileCache = null;
+  }
+
   // Login com email e senha
   async login(credentials: LoginCredentials): Promise<AuthUser | null> {
     try {
@@ -290,8 +313,14 @@ class AuthService {
     }
   }
 
-  // Obter perfil do usuário
+  // Obter perfil do usuário (com cache de deduplicação)
   async getProfile(userId: string): Promise<Profile | null> {
+    // Verificar cache para evitar chamadas duplicadas no bootstrap
+    const cached = this.getCachedProfile(userId);
+    if (cached !== null) {
+      return cached;
+    }
+
     try {
       const supabase = await getSupabaseClient()
       const { data, error } = await supabase
@@ -307,7 +336,9 @@ class AuthService {
         throw new ProfileFetchError(handleSupabaseError(error).message)
       }
 
-      return data as Profile
+      const profile = data as Profile;
+      this.setCachedProfile(userId, profile);
+      return profile;
     } catch (error) {
       logSupabaseOperation('Get profile error', null, error)
       if (error instanceof ProfileFetchError) {
@@ -320,6 +351,7 @@ class AuthService {
   // Atualizar perfil
   async updateProfile(userId: string, updates: Partial<Profile>): Promise<Profile> {
     try {
+      this.invalidateProfileCache();
       const supabase = await getSupabaseClient()
       const { data, error } = await supabase
         .from('profiles')
@@ -332,8 +364,10 @@ class AuthService {
         throw handleSupabaseError(error)
       }
 
+      const profile = data as Profile;
+      this.setCachedProfile(userId, profile);
       logSupabaseOperation('Profile updated', { userId })
-      return data as Profile
+      return profile
     } catch (error) {
       logSupabaseOperation('Update profile error', null, error)
       throw error
@@ -432,13 +466,13 @@ class AuthService {
       
       if (session?.user) {
         try {
-          // Timeout de 10s no getProfile para nunca deixar o callback pendente.
+          // Timeout de 3s no getProfile para nunca deixar o callback pendente.
           const profile = await Promise.race([
             this.getProfile(session.user.id),
             new Promise<never>((_, reject) =>
               window.setTimeout(
-                () => reject(new Error('getProfile timeout no auth listener (10s)')),
-                10_000
+                () => reject(new Error('getProfile timeout no auth listener (3s)')),
+                3_000
               )
             )
           ])

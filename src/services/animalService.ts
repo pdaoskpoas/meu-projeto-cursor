@@ -238,6 +238,7 @@ class AnimalService {
     try {
       logSupabaseOperation('Search animals', filters)
 
+      // Tenta com todos os parâmetros (incluindo category_filter)
       const { data, error } = await supabase
         .rpc('search_animals', {
           search_term: filters.search || null,
@@ -246,13 +247,43 @@ class AnimalService {
           city_filter: filters.city || null,
           gender_filter: filters.gender || null,
           property_type_filter: filters.propertyType || null,
-          category_filter: filters.category || null,  // Novo filtro de categoria
+          category_filter: filters.category || null,
           order_by: filters.orderBy || 'ranking',
           limit_count: filters.limit || 20,
           offset_count: filters.offset || 0
         })
 
       if (error) {
+        // Se RPC falhar com 400 (parâmetro não reconhecido), tenta sem category_filter
+        if (error.code === '42883' || error.message?.includes('400') || error.code === 'PGRST202') {
+          logSupabaseOperation('search_animals RPC fallback — retrying without category_filter')
+          const { data: fallbackData, error: fallbackError } = await supabase
+            .rpc('search_animals', {
+              search_term: filters.search || null,
+              breed_filter: filters.breed || null,
+              state_filter: filters.state || null,
+              city_filter: filters.city || null,
+              gender_filter: filters.gender || null,
+              property_type_filter: filters.propertyType || null,
+              order_by: filters.orderBy || 'ranking',
+              limit_count: filters.limit || 20,
+              offset_count: filters.offset || 0
+            })
+
+          if (fallbackError) {
+            throw handleSupabaseError(fallbackError)
+          }
+
+          // Filtrar category no client-side se necessário
+          let results = fallbackData as SearchAnimalsResult[];
+          if (filters.category) {
+            results = results.filter((a: SearchAnimalsResult) =>
+              (a as Record<string, unknown>).category === filters.category
+            );
+          }
+          logSupabaseOperation('Search animals fallback success', { count: results?.length })
+          return results
+        }
         throw handleSupabaseError(error)
       }
 

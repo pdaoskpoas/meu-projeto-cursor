@@ -104,6 +104,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     let unsub: { data: { subscription: { unsubscribe: () => void } } } | null = null;
     let cancelled = false;
+    let listenerResolved = false;
 
     const init = async () => {
       diagnostics.info('auth-context', 'Auth bootstrap started');
@@ -111,8 +112,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         // 1. Registra listener PRIMEIRO — recebe INITIAL_SESSION imediatamente
         //    e fica ativo como fonte de verdade para o estado de autenticação.
+        //    O cache no AuthService evita chamadas duplicadas ao getProfile.
         unsub = await authService.onAuthStateChange(async (authUser) => {
           if (cancelled) return;
+          listenerResolved = true;
           diagnostics.info('auth-context', 'Auth listener callback fired', {
             hasUser: Boolean(authUser?.id)
           });
@@ -125,31 +128,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         if (cancelled) return;
 
-        // 2. Fast-path: tenta reidratar user com timeout para render imediato.
-        //    Se falhar ou expirar, o listener acima cuida da recuperação.
-        try {
-          const current = await withTimeout(
-            authService.getCurrentUser(),
-            15_000,
-            'Auth bootstrap demorou demais.'
-          );
-          if (cancelled) return;
+        // 2. Se o listener já resolveu (INITIAL_SESSION rápido), pula rehydration.
+        //    Caso contrário, tenta reidratar com timeout curto.
+        //    O cache no AuthService garante que mesmo se ambos executarem,
+        //    apenas 1 request real ao Supabase acontece.
+        if (!listenerResolved) {
+          try {
+            const current = await withTimeout(
+              authService.getCurrentUser(),
+              3_000,
+              'Auth bootstrap demorou demais.'
+            );
+            if (cancelled) return;
 
-          if (current?.profile) {
-            diagnostics.debug('auth-context', 'Initial user rehydrated', { userId: current.id });
-            setUser(mapProfileToUser(current.profile));
-          } else {
-            diagnostics.debug('auth-context', 'No user in initial rehydration');
-            setUser(null);
+            if (current?.profile) {
+              diagnostics.debug('auth-context', 'Initial user rehydrated', { userId: current.id });
+              setUser(mapProfileToUser(current.profile));
+            } else {
+              diagnostics.debug('auth-context', 'No user in initial rehydration');
+              setUser(null);
+            }
+          } catch (error) {
+            diagnostics.warn(
+              'auth-context',
+              'Initial rehydration failed/timed out — listener handles recovery',
+              error
+            );
           }
-        } catch (error) {
-          diagnostics.warn(
-            'auth-context',
-            'Initial rehydration failed/timed out — listener handles recovery',
-            error
-          );
-          // NÃO setar user = null aqui: o listener já está ativo e fornecerá
-          // o estado definitivo de autenticação quando a rede recuperar.
+        } else {
+          diagnostics.debug('auth-context', 'Listener already resolved — skipping rehydration');
         }
       } finally {
         if (!cancelled) {
@@ -159,8 +166,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     };
 
-    // Execução imediata — sem defer via schedule/requestIdleCallback.
-    // Garantir que auth resolve ANTES de qualquer query dependente.
     void init();
 
     return () => {
@@ -168,7 +173,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         unsub?.data.subscription.unsubscribe();
       } catch (error) {
-        // Ignorar erros ao desinscrever - componente está desmontando
         console.debug('Error unsubscribing:', error);
       }
     };

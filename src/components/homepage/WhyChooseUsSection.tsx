@@ -61,7 +61,7 @@ const WhyChooseUsSection: React.FC = () => {
             </h2>
 
             <p className="text-base sm:text-lg text-slate-600 leading-relaxed max-w-xl">
-              Quem vê seu animal aqui percebe qualidade. Quem encontra seu haras, leva a sério.
+              Não realizamos vendas nem intermediações. Nosso propósito é dar visibilidade, fortalecer a imagem dos criadores e contribuir para a valorização da genética e do trabalho desenvolvido nos haras brasileiros.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-3">

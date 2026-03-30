@@ -70,6 +70,12 @@ const isRecoverableError = (error: unknown) => {
 
   const message = error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase();
 
+  // Verificar HTTP status codes em objetos de erro do Supabase/PostgREST
+  const statusCode = (error as { status?: number; code?: string })?.status;
+  if (statusCode && (statusCode === 503 || statusCode === 502 || statusCode === 504 || statusCode === 429)) {
+    return true;
+  }
+
   return (
     message.includes('timeout') ||
     message.includes('demorou demais') ||
@@ -78,7 +84,13 @@ const isRecoverableError = (error: unknown) => {
     message.includes('jwt') ||
     message.includes('token') ||
     message.includes('session') ||
-    message.includes('auth')
+    message.includes('auth') ||
+    message.includes('service unavailable') ||
+    message.includes('502') ||
+    message.includes('503') ||
+    message.includes('504') ||
+    message.includes('too many requests') ||
+    message.includes('rate limit')
   );
 };
 

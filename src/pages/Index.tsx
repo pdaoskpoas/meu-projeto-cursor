@@ -30,20 +30,20 @@ const Index = () => {
           </SectionContainer>
         </LazySection>
 
-        {/* Animais turbinados — diferenciação premium */}
-        <LazySection minHeight="400px">
-          <SectionContainer variant="gray" size="tight">
+        {/* Proposta de valor — convence ANTES de ver mais animais */}
+        <LazySection minHeight="300px">
+          <SectionContainer variant="gray" size="relaxed">
             <Suspense fallback={null}>
-              <FeaturedCarousel />
+              <WhyChooseUsSection />
             </Suspense>
           </SectionContainer>
         </LazySection>
 
-        {/* Eventos — urgência temporal puxa engajamento */}
-        <LazySection minHeight="350px">
-          <SectionContainer variant="default" size="default" divider="top">
+        {/* Animais turbinados — diferenciação premium */}
+        <LazySection minHeight="400px">
+          <SectionContainer variant="default" size="tight">
             <Suspense fallback={null}>
-              <AuctionCarousel />
+              <FeaturedCarousel />
             </Suspense>
           </SectionContainer>
         </LazySection>
@@ -65,7 +65,7 @@ const Index = () => {
           </SectionContainer>
         </LazySection>
 
-        {/* Recém-publicados — novidade gera retorno */}
+        {/* Recém-publicados */}
         <LazySection minHeight="400px">
           <SectionContainer variant="gray" size="tight">
             <Suspense fallback={null}>
@@ -75,7 +75,7 @@ const Index = () => {
         </LazySection>
       </FavoritesProviderBoundary>
 
-      {/* Quem já faz parte — pertencimento e prova social */}
+      {/* Quem já faz parte — perfis institucionais */}
       <LazySection minHeight="300px">
         <SectionContainer variant="default" size="default" divider="top">
           <Suspense fallback={null}>
@@ -84,11 +84,11 @@ const Index = () => {
         </SectionContainer>
       </LazySection>
 
-      {/* Proposta de valor — convence após ver os animais */}
-      <LazySection minHeight="400px">
-        <SectionContainer variant="gray" size="relaxed">
+      {/* Eventos */}
+      <LazySection minHeight="350px">
+        <SectionContainer variant="default" size="default">
           <Suspense fallback={null}>
-            <WhyChooseUsSection />
+            <AuctionCarousel />
           </Suspense>
         </SectionContainer>
       </LazySection>

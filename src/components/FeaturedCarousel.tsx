@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Crown, Heart, MapPin, Calendar, Users, ArrowRight } from 'lucide-react';
+import { Crown, Heart, MapPin, Calendar, Users, ArrowRight, Eye } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
@@ -21,7 +21,6 @@ import AnimalImpressionTracker from '@/components/tracking/AnimalImpressionTrack
 import CarouselSwipeIndicator from '@/components/ui/CarouselSwipeIndicator';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { animalService } from '@/services/animalService';
-import { queryWithSession } from '@/lib/queryWithSession';
 
 const FeaturedCarousel = () => {
   const navigate = useNavigate();
@@ -31,7 +30,7 @@ const FeaturedCarousel = () => {
 
   const { data: rawData, isLoading, error: queryError } = useQuery({
     queryKey: ['featured-animals', 10],
-    queryFn: () => queryWithSession(() => animalService.getFeaturedAnimals(10)),
+    queryFn: () => animalService.getFeaturedAnimals(10),
     staleTime: 60_000,
     gcTime: 5 * 60_000,
     refetchOnWindowFocus: false,
@@ -71,9 +70,25 @@ const FeaturedCarousel = () => {
         }
       });
 
+    const impressionsChannel = supabase
+      .channel('home-featured-impressions')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'impressions', filter: 'content_type=eq.animal' },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['featured-animals'] });
+        }
+      )
+      .subscribe((status, err) => {
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          console.warn('[FeaturedCarousel] Impressions subscription falhou:', status, err);
+        }
+      });
+
     return () => {
       clearTimeout(debounceTimer);
       supabase.removeChannel(channel);
+      supabase.removeChannel(impressionsChannel);
     };
   }, [queryClient]);
 
@@ -99,6 +114,9 @@ const FeaturedCarousel = () => {
   };
 
   const validHorses = featuredAnimals.filter((horse) => horse && horse.id);
+
+  // Seção vazia não renderiza nada — evita espaço em branco na homepage
+  if (!isLoading && validHorses.length === 0) return null;
 
   return (
     <section id="destaques" className="py-12 sm:py-16">
@@ -141,10 +159,19 @@ const FeaturedCarousel = () => {
             </p>
           )}
           {isLoading && validHorses.length === 0 ? (
-            <p className="text-sm text-slate-500">Carregando turbinados...</p>
-          ) : validHorses.length === 0 ? (
-            <p className="text-sm text-slate-500">Nenhum animal turbinado no momento.</p>
-          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 animate-pulse">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="bg-white border border-amber-100 rounded-xl overflow-hidden">
+                  <div className="aspect-square bg-slate-200" />
+                  <div className="p-4 space-y-3">
+                    <div className="h-5 bg-slate-200 rounded w-3/4" />
+                    <div className="h-4 bg-slate-100 rounded w-1/2" />
+                    <div className="h-4 bg-slate-100 rounded w-2/3" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : validHorses.length === 0 ? null : (
             <Carousel
             opts={{
               align: "start",
@@ -185,6 +212,12 @@ const FeaturedCarousel = () => {
                             Destaque
                           </Badge>
                         </div>
+                        {horse.impressionCount > 0 && (
+                          <div className="absolute bottom-2 right-2 z-10 bg-black/60 backdrop-blur-sm text-white text-xs font-medium px-2 py-1 rounded-full flex items-center gap-1">
+                            <Eye className="h-3 w-3" />
+                            {horse.impressionCount >= 1000 ? `${(horse.impressionCount / 1000).toFixed(1)}k` : horse.impressionCount}
+                          </div>
+                        )}
                       </div>
 
                       {/* Content */}

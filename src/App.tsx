@@ -54,6 +54,7 @@ const FavoritosPage = lazy(() => import("./pages/dashboard/FavoritosPage"));
 const HelpPage = lazy(() => import("./pages/dashboard/HelpPage"));
 const SocietyPage = lazy(() => import("./pages/dashboard/SocietyPage"));
 const AboutPage = lazy(() => import("./pages/AboutPage"));
+const MapPage = lazy(() => import("./pages/MapPage"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 
@@ -167,6 +168,7 @@ const App = () => (
                         element={<Navigate to={{ pathname: "/ajuda", hash: "contato" }} replace />}
                       />
                       <Route path="/sobre" element={<AboutPage />} />
+                      <Route path="/mapa" element={<MapPage />} />
                       <Route path="/checkout" element={<CheckoutPage />} />
                       <Route path="/publicar/:draftId" element={<PublishDraftPage />} />
                       <Route path="/publicar-animal" element={<PublishAnimalPage />} />

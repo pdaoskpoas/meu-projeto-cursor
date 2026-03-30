@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Clock, Heart, MapPin, Calendar, Users, ArrowRight } from 'lucide-react';
+import { Clock, Heart, MapPin, Calendar, Users, ArrowRight, Eye } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
@@ -19,7 +19,6 @@ import { getAge } from '@/utils/animalAge';
 import { supabase } from '@/lib/supabase';
 import { AnimalCardData, getPlaceholderGallery, mapAnimalRecordToCard, normalizeSupabaseImages } from '@/utils/animalCard';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { queryWithSession } from '@/lib/queryWithSession';
 import CarouselSwipeIndicator from '@/components/ui/CarouselSwipeIndicator';
 
 // Componente para rastrear impressões via Supabase Analytics
@@ -60,7 +59,7 @@ const RecentlyPublishedCarousel = () => {
   const { data: rawData, isLoading, error: queryError } = useQuery({
     queryKey: ['recent-animals', 10],
     queryFn: async () => {
-      let list = await queryWithSession(() => animalService.getRecentAnimals(10));
+      let list = await animalService.getRecentAnimals(10);
       if (!list || list.length === 0) {
         list = await animalService.getMostViewedAnimals(10);
       }
@@ -126,6 +125,8 @@ const RecentlyPublishedCarousel = () => {
   const resolveGalleryImages = (horse: AnimalCardData) =>
     horse.images.length > 0 ? horse.images : getPlaceholderGallery();
 
+  if (!isLoading && recentAnimals.length === 0) return null;
+
   return (
     <section className="py-12 sm:py-16">
       <div className="container-responsive">
@@ -152,10 +153,19 @@ const RecentlyPublishedCarousel = () => {
         <div className="relative">
           {error && <p className="text-sm text-red-600 mb-6">{error}</p>}
           {isLoading && recentAnimals.length === 0 ? (
-            <p className="text-sm text-slate-500">Carregando últimas publicações...</p>
-          ) : recentAnimals.length === 0 ? (
-            <p className="text-sm text-slate-500">Nenhum anúncio publicado recentemente.</p>
-          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 animate-pulse">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="bg-white border border-slate-200 rounded-lg overflow-hidden">
+                  <div className="aspect-square bg-slate-200" />
+                  <div className="p-4 space-y-3">
+                    <div className="h-5 bg-slate-200 rounded w-3/4" />
+                    <div className="h-4 bg-slate-100 rounded w-1/2" />
+                    <div className="h-4 bg-slate-100 rounded w-2/3" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : recentAnimals.length === 0 ? null : (
             <Carousel
             opts={{
               align: "start",
@@ -196,6 +206,12 @@ const RecentlyPublishedCarousel = () => {
                             Novo
                           </Badge>
                         </div>
+                        {horse.impressionCount > 0 && (
+                          <div className="absolute bottom-2 right-2 z-10 bg-black/60 backdrop-blur-sm text-white text-xs font-medium px-2 py-1 rounded-full flex items-center gap-1">
+                            <Eye className="h-3 w-3" />
+                            {horse.impressionCount >= 1000 ? `${(horse.impressionCount / 1000).toFixed(1)}k` : horse.impressionCount}
+                          </div>
+                        )}
                       </div>
 
                       {/* Content */}

@@ -128,46 +128,41 @@ const AboutPage = () => {
         <div className="max-w-7xl mx-auto">
 
           {/* Cabeçalho da seção */}
-          <div className="max-w-2xl mb-10 sm:mb-14">
-            <p className="text-sm font-semibold uppercase tracking-wider text-blue-600 flex items-center gap-2 mb-3">
-              <span className="w-1 h-5 bg-blue-600 rounded-full inline-block" />
-              Nossa História
-            </p>
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 leading-tight">
-              Criada por quem vive o{' '}
-              <span className="text-blue-600">mercado equestre na prática.</span>
-            </h2>
-            <p className="text-slate-500 text-base sm:text-lg mt-4 leading-relaxed max-w-xl">
-              A Vitrine do Cavalo foi idealizada por{' '}
-              <strong className="text-slate-800">Rodrigo Tourinho</strong> e{' '}
-              <strong className="text-slate-800">Virgílio Tourinho</strong>, profissionais que vivem, na prática, o dia a dia do mercado equestre.
-            </p>
+          <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-end mb-12 sm:mb-16 pb-12 sm:pb-16 border-b border-slate-100">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-wider text-blue-600 flex items-center gap-2 mb-4">
+                <span className="w-1 h-5 bg-blue-600 rounded-full inline-block" />
+                Nossa História
+              </p>
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-slate-900 leading-tight">
+                Criada por quem vive o{' '}
+                <span className="text-blue-600">mercado equestre na prática.</span>
+              </h2>
+            </div>
+
+            <div>
+              <p className="text-slate-500 text-base sm:text-lg leading-relaxed">
+                A Vitrine do Cavalo foi idealizada por{' '}
+                <strong className="text-slate-800">Rodrigo Tourinho</strong> e{' '}
+                <strong className="text-slate-800">Virgílio Tourinho</strong>, profissionais que vivem, na prática, o dia a dia do mercado equestre.
+              </p>
+            </div>
           </div>
 
           {/* Cards dos fundadores */}
-          <div className="grid md:grid-cols-2 gap-6 sm:gap-8">
+          <div className="flex flex-col gap-6 sm:gap-8">
 
             {/* Card Rodrigo */}
-            <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden hover:shadow-lg transition-shadow duration-300">
-              {/* Área da foto — placeholder */}
-              <div className="bg-gradient-to-br from-slate-100 to-slate-50 h-48 sm:h-56 flex items-center justify-center relative overflow-hidden">
-                <div className="absolute inset-0 opacity-[0.04]">
-                  <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
-                    <defs>
-                      <pattern id="founder-1" width="16" height="16" patternUnits="userSpaceOnUse">
-                        <circle cx="8" cy="8" r="1" fill="currentColor" />
-                      </pattern>
-                    </defs>
-                    <rect width="100%" height="100%" fill="url(#founder-1)" />
-                  </svg>
-                </div>
-                {/* TODO: Substituir pela foto quando enviada */}
-                <div className="w-24 h-24 rounded-full bg-white border-2 border-slate-200 flex items-center justify-center shadow-sm">
-                  <User className="w-10 h-10 text-slate-300" />
-                </div>
+            <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden hover:shadow-lg transition-shadow duration-300 flex flex-col md:flex-row">
+              <div className="md:w-2/5 h-64 md:h-auto overflow-hidden flex-shrink-0">
+                <img
+                  src="/rodrigo.JPG"
+                  alt="Rodrigo Tourinho"
+                  className="w-full h-full object-cover object-center"
+                />
               </div>
 
-              <div className="p-6 sm:p-8">
+              <div className="p-6 sm:p-8 flex flex-col justify-center">
                 <div className="mb-5">
                   <h3 className="text-xl sm:text-2xl font-bold text-slate-900">Rodrigo Tourinho</h3>
                   <p className="text-blue-600 font-medium text-sm mt-1">Cofundador</p>
@@ -202,26 +197,14 @@ const AboutPage = () => {
             </div>
 
             {/* Card Virgílio */}
-            <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden hover:shadow-lg transition-shadow duration-300">
-              {/* Área da foto — placeholder */}
-              <div className="bg-gradient-to-br from-slate-100 to-slate-50 h-48 sm:h-56 flex items-center justify-center relative overflow-hidden">
-                <div className="absolute inset-0 opacity-[0.04]">
-                  <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
-                    <defs>
-                      <pattern id="founder-2" width="16" height="16" patternUnits="userSpaceOnUse">
-                        <circle cx="8" cy="8" r="1" fill="currentColor" />
-                      </pattern>
-                    </defs>
-                    <rect width="100%" height="100%" fill="url(#founder-2)" />
-                  </svg>
-                </div>
-                {/* TODO: Substituir pela foto quando enviada */}
+            <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden hover:shadow-lg transition-shadow duration-300 flex flex-col md:flex-row">
+              <div className="md:w-2/5 h-64 md:h-auto overflow-hidden flex-shrink-0 bg-gradient-to-br from-slate-100 to-slate-50 flex items-center justify-center">
                 <div className="w-24 h-24 rounded-full bg-white border-2 border-slate-200 flex items-center justify-center shadow-sm">
                   <User className="w-10 h-10 text-slate-300" />
                 </div>
               </div>
 
-              <div className="p-6 sm:p-8">
+              <div className="p-6 sm:p-8 flex flex-col justify-center">
                 <div className="mb-5">
                   <h3 className="text-xl sm:text-2xl font-bold text-slate-900">Virgílio Tourinho</h3>
                   <p className="text-blue-600 font-medium text-sm mt-1">Cofundador</p>

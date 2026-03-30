@@ -200,6 +200,48 @@ const DashboardPage = () => {
             </div>
           </Card>
 
+          {/* Onboarding — primeiros passos quando dashboard está vazio */}
+          {!statsLoading && coreLoaded && totalAnimals === 0 && (
+            <Card className="relative overflow-hidden border-2 border-blue-200 bg-gradient-to-br from-blue-50 to-white shadow-md">
+              <div className="p-6 lg:p-8">
+                <h2 className="text-xl font-bold text-gray-900 mb-2 flex items-center gap-2">
+                  <Zap className="h-5 w-5 text-blue-600" />
+                  Comece aqui — 3 passos para ativar sua vitrine
+                </h2>
+                <p className="text-sm text-gray-600 mb-6">
+                  Complete estes passos para que seu haras comece a ser encontrado por compradores.
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <Link to="/dashboard/settings/profile" className="block group">
+                    <div className="flex items-start gap-3 bg-white rounded-xl p-4 border border-slate-200 hover:border-blue-300 hover:shadow-md transition-all">
+                      <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0 text-blue-600 font-bold text-sm">1</div>
+                      <div>
+                        <p className="font-semibold text-gray-900 text-sm group-hover:text-blue-600 transition-colors">Complete seu perfil</p>
+                        <p className="text-xs text-gray-500 mt-0.5">Foto, localização e dados do haras</p>
+                      </div>
+                    </div>
+                  </Link>
+                  <Link to="/dashboard/animals/new" className="block group">
+                    <div className="flex items-start gap-3 bg-white rounded-xl p-4 border border-slate-200 hover:border-blue-300 hover:shadow-md transition-all">
+                      <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0 text-blue-600 font-bold text-sm">2</div>
+                      <div>
+                        <p className="font-semibold text-gray-900 text-sm group-hover:text-blue-600 transition-colors">Cadastre seu primeiro animal</p>
+                        <p className="text-xs text-gray-500 mt-0.5">Fotos, genealogia e ficha completa</p>
+                      </div>
+                    </div>
+                  </Link>
+                  <div className="flex items-start gap-3 bg-white rounded-xl p-4 border border-slate-200 opacity-60">
+                    <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center flex-shrink-0 text-slate-400 font-bold text-sm">3</div>
+                    <div>
+                      <p className="font-semibold text-gray-900 text-sm">Turbine para destaque</p>
+                      <p className="text-xs text-gray-500 mt-0.5">Apareça no topo dos rankings</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          )}
+
           {/* Error Alert */}
           {statsError && (
             <Card className="p-4 border-red-200 bg-red-50">

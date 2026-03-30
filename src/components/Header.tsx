@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Menu, X, Search, Users, Calendar, Shield, Award, Phone, Eye, TrendingUp, HelpCircle, CreditCard } from 'lucide-react';
+import { Menu, X, Search, Users, Calendar, Shield, Award, Phone, Eye, TrendingUp, HelpCircle, CreditCard, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -116,6 +116,16 @@ const Header = () => {
                 <span>Eventos</span>
                 {isActive('/eventos') && <div className="absolute -bottom-6 left-0 right-0 h-0.5 bg-blue-600"></div>}
               </Link>
+              <Link
+                to="/mapa"
+                className={`text-sm font-semibold transition-all duration-300 hover:text-blue-600 flex items-center space-x-2 relative ${
+                  isActive('/mapa') ? 'text-blue-600' : 'text-slate-700'
+                }`}
+              >
+                <MapPin className="h-4 w-4" />
+                <span>Mapa</span>
+                {isActive('/mapa') && <div className="absolute -bottom-6 left-0 right-0 h-0.5 bg-blue-600"></div>}
+              </Link>
             </nav>
 
             {/* CTA - Enhanced */}
@@ -224,6 +234,16 @@ const Header = () => {
                 >
                   <Calendar className="h-5 w-5" />
                   <span>Eventos</span>
+                </Link>
+                <Link
+                  to="/mapa"
+                  className={`flex items-center py-3 font-semibold transition-colors space-x-3 ${
+                    isActive('/mapa') ? 'text-blue-600' : 'text-slate-700 hover:text-blue-600'
+                  }`}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <MapPin className="h-5 w-5" />
+                  <span>Mapa de Criadores</span>
                 </Link>
                 <div className="pt-6 border-t border-slate-200 space-y-3">
                   

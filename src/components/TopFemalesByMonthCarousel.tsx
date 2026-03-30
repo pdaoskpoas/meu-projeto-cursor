@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 
 const MESES = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'] as const;
 const mesAtual = MESES[new Date().getMonth()];
-import { Heart, MapPin, Calendar, Users, ArrowRight } from 'lucide-react';
+import { Heart, MapPin, Calendar, Users, ArrowRight, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFavorites } from '@/contexts/FavoritesContext';
@@ -42,6 +42,8 @@ const TopFemalesByMonthCarousel = () => {
   const resolveGallery = (horse: ReturnType<typeof mapAnimalRecordToCard>) =>
     horse.images.length > 0 ? horse.images : getPlaceholderGallery();
 
+  if (!isLoading && displayHorses.length === 0) return null;
+
   return (
     <section className="py-12 sm:py-16">
       <div className="container-responsive">
@@ -70,10 +72,18 @@ const TopFemalesByMonthCarousel = () => {
         <div className="relative">
           {error && <p className="text-sm text-red-600 mb-6">{error.message}</p>}
           {isLoading && displayHorses.length === 0 ? (
-            <p className="text-sm text-slate-500">Carregando ranking mensal...</p>
-          ) : displayHorses.length === 0 ? (
-            <p className="text-sm text-slate-500">Ainda não há cliques suficientes este mês.</p>
-          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 animate-pulse">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="bg-white border border-slate-200 rounded-lg overflow-hidden">
+                  <div className="aspect-square bg-slate-200" />
+                  <div className="p-4 space-y-3">
+                    <div className="h-5 bg-slate-200 rounded w-3/4" />
+                    <div className="h-4 bg-slate-100 rounded w-1/2" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : displayHorses.length === 0 ? null : (
             <Carousel
             opts={{
               align: "start",
@@ -102,6 +112,12 @@ const TopFemalesByMonthCarousel = () => {
                         <div className="aspect-square overflow-hidden">
                           <PhotoGallery images={resolveGallery(horse)} alt={horse.name} className="w-full h-full" />
                         </div>
+                        {horse.impressionCount > 0 && (
+                          <div className="absolute bottom-2 right-2 z-10 bg-black/60 backdrop-blur-sm text-white text-xs font-medium px-2 py-1 rounded-full flex items-center gap-1">
+                            <Eye className="h-3 w-3" />
+                            {horse.impressionCount >= 1000 ? `${(horse.impressionCount / 1000).toFixed(1)}k` : horse.impressionCount}
+                          </div>
+                        )}
                       </div>
 
                       {/* Content */}

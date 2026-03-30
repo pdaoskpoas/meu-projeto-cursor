@@ -28,7 +28,7 @@ body {
 @layer utilities {
   .content-visibility-auto {
     content-visibility: auto;
-    contain-intrinsic-size: 1px 800px;
+    contain-intrinsic-size: auto 400px;
   }
   /* Touch targets */
   .touch-target {

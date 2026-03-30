@@ -1,16 +1,46 @@
 
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { TrendingUp, MapPin, Search, Users, Sparkles, ChevronDown } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { MapPin, Search, ChevronDown, Eye, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { POPULAR_BREEDS } from '@/constants/breeds';
+import { useTopAnimalsByGender } from '@/hooks/useTopAnimalsByGender';
+import { mapAnimalRecordToCard } from '@/utils/animalCard';
+import LazyImage from '@/components/ui/LazyImage';
+import { supabase } from '@/lib/supabase';
 
 const HeroSection: React.FC = () => {
   const navigate = useNavigate();
 
+  const { animals: topMales } = useTopAnimalsByGender('Macho', 1, 'month');
+  const { animals: topFemales } = useTopAnimalsByGender('Fêmea', 1, 'month');
+
+  const topMale = topMales[0] ? mapAnimalRecordToCard(topMales[0] as unknown as Record<string, unknown>) : null;
+  const topFemale = topFemales[0] ? mapAnimalRecordToCard(topFemales[0] as unknown as Record<string, unknown>) : null;
+
+  // Acessos totais ao site no mês atual
+  const [siteVisitsThisMonth, setSiteVisitsThisMonth] = useState(0);
+
+  useEffect(() => {
+    const firstDay = new Date();
+    firstDay.setDate(1);
+    firstDay.setHours(0, 0, 0, 0);
+
+    supabase
+      .from('page_visits')
+      .select('*', { count: 'exact', head: true })
+      .eq('page_key', 'site_access')
+      .gte('created_at', firstDay.toISOString())
+      .then(({ count }) => {
+        if (count && count > 0) setSiteVisitsThisMonth(count);
+      });
+  }, []);
+
   const handleBreedClick = (breedName: string): void => {
     navigate(`/buscar?breed=${encodeURIComponent(breedName)}`);
   };
+
+  const formatCount = (n: number) => n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n);
 
   return (
     <section
@@ -57,42 +87,47 @@ const HeroSection: React.FC = () => {
               </div>
             </div>
 
-            {/* CTA principal — botão único forte + link secundário */}
-            <div className="space-y-3">
-              <Button
-                size="lg"
-                className="w-full sm:w-auto bg-white hover:bg-blue-50 text-slate-900 font-bold shadow-lg shadow-white/10 hover:shadow-xl transition-all duration-300 text-base"
-                onClick={() => navigate('/buscar')}
-              >
-                <Search className="h-5 w-5 mr-2" />
-                Explorar animais
-              </Button>
-
-              <div className="flex items-center gap-4 sm:gap-6">
-                <button
-                  onClick={() => navigate('/planos')}
-                  className="text-sm text-blue-300/80 hover:text-blue-200 transition-colors font-medium underline underline-offset-4 decoration-blue-400/30 hover:decoration-blue-400/60"
+            {/* CTA principal + secundário */}
+            <div className="space-y-4">
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Button
+                  size="lg"
+                  className="w-full sm:w-auto bg-white hover:bg-blue-50 text-slate-900 font-bold shadow-lg shadow-white/10 hover:shadow-xl transition-all duration-300 text-base"
+                  onClick={() => navigate('/buscar')}
                 >
-                  Divulgue seu plantel — a partir de R$ 39,90/mês
-                </button>
-                {POPULAR_BREEDS.length > 0 && (
-                  <>
-                    <span className="w-px h-4 bg-white/15" />
-                    <div className="flex items-center gap-1.5">
-                      <TrendingUp className="h-3 w-3 text-blue-400/50" />
-                      {POPULAR_BREEDS.map((breed) => (
-                        <button
-                          key={breed}
-                          onClick={() => handleBreedClick(breed)}
-                          className="text-sm text-blue-300/70 hover:text-white transition-colors font-medium"
-                        >
-                          {breed}
-                        </button>
-                      ))}
-                    </div>
-                  </>
-                )}
+                  <Search className="h-5 w-5 mr-2" />
+                  Explorar animais
+                </Button>
+                <Button
+                  size="lg"
+                  className="w-full sm:w-auto bg-blue-500 hover:bg-blue-400 text-white font-bold shadow-lg shadow-blue-500/30 hover:shadow-xl transition-all duration-300 text-base border-0"
+                  onClick={() => navigate('/planos')}
+                >
+                  Anuncie seu plantel
+                </Button>
               </div>
+
+              <button
+                onClick={() => navigate('/planos')}
+                className="text-xs text-blue-300/60 hover:text-blue-200 transition-colors text-left"
+              >
+                Divulgue seu plantel — a partir de <span className="text-blue-200 font-semibold">R$ 33,25/mês</span>
+              </button>
+
+              {POPULAR_BREEDS.length > 0 && (
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs text-blue-300/50 uppercase tracking-wider font-medium">Populares:</span>
+                  {POPULAR_BREEDS.map((breed) => (
+                    <button
+                      key={breed}
+                      onClick={() => handleBreedClick(breed)}
+                      className="text-sm text-blue-300/70 hover:text-white transition-colors font-medium bg-white/5 hover:bg-white/10 px-2.5 py-1 rounded-full border border-white/10"
+                    >
+                      {breed}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Scroll hint — mobile */}
@@ -101,59 +136,98 @@ const HeroSection: React.FC = () => {
             </div>
           </div>
 
-          {/* Card visual — desktop */}
+          {/* Showcase — top garanhão e top doadora do mês (desktop) */}
           <div className="relative hidden lg:block" aria-hidden="true">
-            <div className="relative">
-              <div className="w-full h-[420px] bg-gradient-to-br from-blue-600/20 to-blue-800/30 rounded-3xl border border-white/10 overflow-hidden relative backdrop-blur-sm">
-                <div className="absolute inset-0 opacity-5">
-                  <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
-                    <defs>
-                      <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-                        <path d="M 40 0 L 0 0 0 40" fill="none" stroke="white" strokeWidth="1"/>
-                      </pattern>
-                    </defs>
-                    <rect width="100%" height="100%" fill="url(#grid)" />
-                  </svg>
-                </div>
+            <div className="relative w-full h-[420px]">
 
-                <div className="relative h-full flex flex-col items-center justify-center p-8 text-center">
-                  <div className="w-24 h-24 bg-white/10 backdrop-blur-sm rounded-2xl flex items-center justify-center mb-6 p-5 border border-white/10">
-                    <img
-                      src="/logo.png.png"
-                      alt="Logo Vitrine do Cavalo"
-                      loading="eager"
-                      decoding="async"
-                      className="w-full h-full object-contain"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.style.display = 'none';
-                        const fallback = target.nextElementSibling as HTMLElement;
-                        if (fallback) fallback.style.display = 'block';
-                      }}
+              {/* Card top garanhão */}
+              <Link
+                to={topMale ? `/animal/${topMale.id}` : '/ranking'}
+                className="absolute top-4 left-8 w-[260px] bg-white rounded-2xl shadow-2xl overflow-hidden transform -rotate-3 hover:rotate-0 transition-transform duration-500 block"
+              >
+                <div className="h-[180px] bg-slate-200 overflow-hidden relative">
+                  {topMale && topMale.images.length > 0 ? (
+                    <LazyImage
+                      src={topMale.images[0]}
+                      alt={topMale.name}
+                      className="w-full h-full object-cover"
                     />
-                    <Sparkles className="w-12 h-12 text-white hidden" />
-                  </div>
-                  <h3 className="text-2xl font-bold text-white mb-2">Vitrine do Cavalo</h3>
-                  <p className="text-blue-200/60 text-sm mb-8">Onde o mercado equestre se encontra</p>
-
-                  <div className="grid grid-cols-2 gap-3 w-full max-w-xs">
-                    <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
-                      <div className="flex items-center justify-center gap-2 text-blue-300 mb-1">
-                        <Users className="h-4 w-4" />
-                      </div>
-                      <p className="text-2xl font-bold text-white">150+</p>
-                      <p className="text-blue-200/50 text-xs mt-1">Criadores ativos</p>
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center">
+                      <span className="text-4xl">♂</span>
                     </div>
-                    <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
-                      <div className="flex items-center justify-center gap-2 text-blue-300 mb-1">
-                        <MapPin className="h-4 w-4" />
-                      </div>
-                      <p className="text-2xl font-bold text-white">27</p>
-                      <p className="text-blue-200/50 text-xs mt-1">Estados cobertos</p>
+                  )}
+                  {topMale && topMale.impressionCount > 0 && (
+                    <div className="absolute bottom-2 right-2 bg-black/60 backdrop-blur-sm text-white text-[10px] font-medium px-1.5 py-0.5 rounded-full flex items-center gap-1">
+                      <Eye className="h-2.5 w-2.5" />
+                      {formatCount(topMale.impressionCount)}
+                    </div>
+                  )}
+                </div>
+                <div className="p-4">
+                  <p className="text-[10px] uppercase tracking-wider text-blue-600 font-semibold mb-0.5">Top Garanhão do mês</p>
+                  <p className="font-bold text-slate-900 text-sm truncate">{topMale?.name || 'Carregando...'}</p>
+                  <p className="text-xs text-slate-500 mt-1 truncate">
+                    {topMale ? `${topMale.breed} · ${topMale.harasName}` : '—'}
+                  </p>
+                  {topMale && (
+                    <div className="flex items-center gap-1 mt-2 text-xs text-slate-400">
+                      <MapPin className="h-3 w-3" />
+                      <span>{topMale.currentLocation.city}, {topMale.currentLocation.state}</span>
+                    </div>
+                  )}
+                </div>
+              </Link>
+
+              {/* Card top doadora */}
+              <Link
+                to={topFemale ? `/animal/${topFemale.id}` : '/ranking'}
+                className="absolute top-12 right-4 w-[260px] bg-white rounded-2xl shadow-2xl overflow-hidden transform rotate-2 hover:rotate-0 transition-transform duration-500 block"
+              >
+                <div className="h-[180px] bg-slate-200 overflow-hidden relative">
+                  {topFemale && topFemale.images.length > 0 ? (
+                    <LazyImage
+                      src={topFemale.images[0]}
+                      alt={topFemale.name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-pink-100 to-pink-200 flex items-center justify-center">
+                      <span className="text-4xl">♀</span>
+                    </div>
+                  )}
+                  {topFemale && topFemale.impressionCount > 0 && (
+                    <div className="absolute bottom-2 right-2 bg-black/60 backdrop-blur-sm text-white text-[10px] font-medium px-1.5 py-0.5 rounded-full flex items-center gap-1">
+                      <Eye className="h-2.5 w-2.5" />
+                      {formatCount(topFemale.impressionCount)}
+                    </div>
+                  )}
+                </div>
+                <div className="p-4">
+                  <p className="text-[10px] uppercase tracking-wider text-pink-600 font-semibold mb-0.5">Top Doadora do mês</p>
+                  <p className="font-bold text-slate-900 text-sm truncate">{topFemale?.name || 'Carregando...'}</p>
+                  <p className="text-xs text-slate-500 mt-1 truncate">
+                    {topFemale ? `${topFemale.breed} · ${topFemale.harasName}` : '—'}
+                  </p>
+                </div>
+              </Link>
+
+              {/* Badge de acessos ao site no mês */}
+              {siteVisitsThisMonth > 0 && (
+                <div className="absolute bottom-8 left-12 bg-white/95 backdrop-blur-sm rounded-xl px-4 py-3 shadow-lg border border-slate-100">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                      <Users className="h-4 w-4 text-green-600" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-slate-900">
+                        {formatCount(siteVisitsThisMonth)} acessos este mês
+                      </p>
+                      <p className="text-[10px] text-slate-500">visitas ao site no período</p>
                     </div>
                   </div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
         </div>

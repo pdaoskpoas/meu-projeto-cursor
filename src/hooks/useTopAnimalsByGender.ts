@@ -22,16 +22,9 @@ export interface AnimalWithStats {
   ad_status: string;
 }
 
-const getStartOfMonth = () => {
-  const date = new Date();
-  date.setUTCDate(1);
-  date.setUTCHours(0, 0, 0, 0);
-  return date.toISOString();
-};
-
 const normalizeAnimals = (records: Record<string, unknown>[]): AnimalWithStats[] =>
   (records || []).map((record) => ({
-    ...record,
+    ...(record as unknown as AnimalWithStats),
     images: normalizeSupabaseImages(record),
   }));
 
@@ -70,54 +63,12 @@ export const useTopAnimalsByGender = (
         return;
       }
 
-      const startOfMonth = getStartOfMonth();
-      const { data: monthlyClicks, error: clicksError } = await supabase
-        .from('clicks')
-        .select('content_id')
-        .eq('content_type', 'animal')
-        .gte('created_at', startOfMonth);
+      const { data, error: fetchError } = await buildBaseQuery()
+        .order('impression_count', { ascending: false })
+        .limit(limit);
 
-      if (clicksError) throw clicksError;
-
-      const counts = new Map<string, number>();
-      monthlyClicks?.forEach(({ content_id }) => {
-        counts.set(content_id, (counts.get(content_id) || 0) + 1);
-      });
-
-      const sortedIds = Array.from(counts.entries())
-        .sort((a, b) => b[1] - a[1])
-        .map(([id]) => id);
-
-      let orderedAnimals: AnimalWithStats[] = [];
-
-      if (sortedIds.length > 0) {
-        const rankedQuery = buildBaseQuery().in('id', sortedIds);
-        const { data: ranked, error: rankedError } = await rankedQuery;
-        if (rankedError) throw rankedError;
-
-        const rankedMap = new Map(ranked?.map((animal) => [animal.id, animal]));
-        orderedAnimals = sortedIds
-          .map((id) => rankedMap.get(id))
-          .filter(Boolean) as AnimalWithStats[];
-      }
-
-      if (orderedAnimals.length < limit) {
-        const alreadyIncludedIds = orderedAnimals.map((animal) => animal.id);
-        let fallbackQuery = buildBaseQuery();
-
-        if (alreadyIncludedIds.length > 0) {
-          fallbackQuery = fallbackQuery.not('id', 'in', `(${alreadyIncludedIds.join(',')})`);
-        }
-
-        const { data: fallbackAnimals, error: fallbackError} = await fallbackQuery
-          .order('click_count', { ascending: false })
-          .limit(limit - orderedAnimals.length);
-
-        if (fallbackError) throw fallbackError;
-        orderedAnimals = [...orderedAnimals, ...(fallbackAnimals || [])];
-      }
-
-      setAnimals(normalizeAnimals(orderedAnimals).slice(0, limit));
+      if (fetchError) throw fetchError;
+      setAnimals(normalizeAnimals(data || []));
     } catch (err) {
       console.error(`Error fetching top ${gender} animals:`, err);
       setError(err as Error);
@@ -149,13 +100,13 @@ export const useTopAnimalsByGender = (
     const animalsRef: { current: ReturnType<typeof supabase.channel> | null } = { current: null };
 
     clicksRef.current = supabase
-      .channel(`top-${gender}-${period}-clicks`)
+      .channel(`top-${gender}-${period}-impressions`)
       .on(
         'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'clicks', filter: 'content_type=eq.animal' },
+        { event: 'INSERT', schema: 'public', table: 'impressions', filter: 'content_type=eq.animal' },
         debouncedFetch
       )
-      .subscribe(makeErrorHandler('clicks', clicksRef));
+      .subscribe(makeErrorHandler('impressions', clicksRef));
 
     animalsRef.current = supabase
       .channel(`top-${gender}-${period}-animals`)
