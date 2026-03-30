@@ -15,6 +15,7 @@ interface RankingHistoryCardProps {
   monthName: string;
   year: number;
   adStatus: string;
+  isCurrentMonth?: boolean;
 }
 
 const RankingHistoryCard: React.FC<RankingHistoryCardProps> = ({
@@ -24,7 +25,8 @@ const RankingHistoryCard: React.FC<RankingHistoryCardProps> = ({
   category,
   monthName,
   year,
-  adStatus
+  adStatus,
+  isCurrentMonth,
 }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -85,10 +87,17 @@ const RankingHistoryCard: React.FC<RankingHistoryCardProps> = ({
       </div>
 
       <div className="p-4 space-y-2">
-        <h3 className="font-bold text-lg text-slate-900 line-clamp-1">
-          {displayName}
-        </h3>
-        
+        <div className="flex items-center justify-between gap-2">
+          <h3 className="font-bold text-lg text-slate-900 line-clamp-1 flex-1">
+            {displayName}
+          </h3>
+          {isCurrentMonth && (
+            <Badge className="bg-orange-100 text-orange-700 border border-orange-200 text-xs shrink-0 animate-pulse">
+              Em andamento
+            </Badge>
+          )}
+        </div>
+
         <p className="text-sm text-slate-600">
           {getCategoryLabel(category)} em {monthName} de {year}
         </p>

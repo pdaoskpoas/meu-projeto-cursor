@@ -63,12 +63,52 @@ export const useTopAnimalsByGender = (
         return;
       }
 
-      const { data, error: fetchError } = await buildBaseQuery()
-        .order('impression_count', { ascending: false })
-        .limit(limit);
+      // Mês atual: filtrar impressões do mês corrente para ranking dinâmico
+      const now = new Date();
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+
+      const { data: monthImpressions, error: impError } = await supabase
+        .from('impressions')
+        .select('content_id')
+        .eq('content_type', 'animal')
+        .gte('created_at', startOfMonth)
+        .limit(10000);
+
+      if (impError) throw impError;
+
+      if (!monthImpressions || monthImpressions.length === 0) {
+        // Sem dados no mês ainda: fallback para all-time
+        const { data: fallback, error: fbError } = await buildBaseQuery()
+          .order('impression_count', { ascending: false })
+          .limit(limit);
+        if (fbError) throw fbError;
+        setAnimals(normalizeAnimals(fallback || []));
+        return;
+      }
+
+      const countMap: Record<string, number> = {};
+      for (const row of monthImpressions) {
+        countMap[row.content_id] = (countMap[row.content_id] || 0) + 1;
+      }
+
+      const topIds = Object.entries(countMap)
+        .sort(([, a], [, b]) => b - a)
+        .slice(0, limit * 5)
+        .map(([id]) => id);
+
+      const { data, error: fetchError } = await buildBaseQuery().in('id', topIds);
 
       if (fetchError) throw fetchError;
-      setAnimals(normalizeAnimals(data || []));
+
+      const sorted = (data || [])
+        .sort((a, b) => {
+          const aId = (a as Record<string, unknown>).id as string;
+          const bId = (b as Record<string, unknown>).id as string;
+          return (countMap[bId] || 0) - (countMap[aId] || 0);
+        })
+        .slice(0, limit);
+
+      setAnimals(normalizeAnimals(sorted));
     } catch (err) {
       console.error(`Error fetching top ${gender} animals:`, err);
       setError(err as Error);

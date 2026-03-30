@@ -127,11 +127,21 @@ const RankingHistoryPage = () => {
                   <div key={`${yearData.year}-${monthData.month}`} className="space-y-4">
                     {/* Título do Mês */}
                     <div className="space-y-1">
-                      <h3 className="text-xl sm:text-2xl font-semibold text-slate-800">
-                        Destaques de {monthData.monthName}
-                      </h3>
+                      <div className="flex flex-wrap items-center gap-3">
+                        <h3 className="text-xl sm:text-2xl font-semibold text-slate-800">
+                          Destaques de {monthData.monthName}
+                        </h3>
+                        {monthData.isCurrentMonth && (
+                          <span className="inline-flex items-center gap-1.5 bg-orange-100 text-orange-700 border border-orange-200 text-xs font-semibold px-2.5 py-1 rounded-full animate-pulse">
+                            <span className="w-1.5 h-1.5 rounded-full bg-orange-500 inline-block" />
+                            Em andamento
+                          </span>
+                        )}
+                      </div>
                       <p className="text-sm text-slate-600">
-                        Mais acessados em {monthData.monthName} de {yearData.year}
+                        {monthData.isCurrentMonth
+                          ? `Ranking ao vivo de ${monthData.monthName} — atualiza conforme novas visualizações`
+                          : `Mais acessados em ${monthData.monthName} de ${yearData.year}`}
                       </p>
                     </div>
 
@@ -148,6 +158,7 @@ const RankingHistoryPage = () => {
                             monthName={monthData.monthName}
                             year={yearData.year}
                             adStatus={categoryData.adStatus}
+                            isCurrentMonth={monthData.isCurrentMonth}
                           />
                         ))}
                       </div>
