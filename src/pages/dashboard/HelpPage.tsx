@@ -343,9 +343,9 @@ const HelpPage = () => {
 
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
-      open: 'bg-orange-100 text-orange-700 border-orange-200',
+      open: 'bg-gray-100 text-gray-700 border-gray-200',
       in_progress: 'bg-blue-100 text-blue-700 border-blue-200',
-      closed: 'bg-green-100 text-green-700 border-green-200'
+      closed: 'bg-blue-50 text-blue-600 border-blue-100'
     };
     return colors[status] || colors.open;
   };
@@ -492,16 +492,16 @@ const HelpPage = () => {
                 <div className="flex items-center justify-between">
                   <h2 className="text-2xl font-bold text-slate-900">Enviar ticket</h2>
                   {user && (
-                    <Badge className="bg-green-100 text-green-700 border-0">
+                    <Badge className="bg-blue-100 text-blue-700 border-0">
                       Conectado
                     </Badge>
                   )}
                 </div>
 
                 {!user && (
-                  <Alert className="bg-orange-50 border-orange-200">
-                    <AlertCircle className="h-4 w-4 text-orange-600" />
-                    <AlertDescription className="text-orange-800">
+                  <Alert className="bg-gray-50 border-gray-200">
+                    <AlertCircle className="h-4 w-4 text-gray-600" />
+                    <AlertDescription className="text-gray-800">
                       <strong>Login necessário:</strong> Você precisa estar logado para enviar um ticket.
                       Preencha o formulário e clique em "Enviar" para ser redirecionado ao login.
                     </AlertDescription>

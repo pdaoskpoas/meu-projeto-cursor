@@ -27,21 +27,21 @@ interface NotificationItemProps {
 const getNotificationIcon = (type: Notification['type']) => {
   switch (type) {
     case 'favorite_added':
-      return <Heart className="h-5 w-5 text-red-500" />;
+      return <Heart className="h-5 w-5 text-blue-500" />;
     case 'message_received':
       return <MessageCircle className="h-5 w-5 text-blue-500" />;
     case 'animal_view':
-      return <Eye className="h-5 w-5 text-green-500" />;
+      return <Eye className="h-5 w-5 text-blue-500" />;
     case 'animal_click':
-      return <MousePointerClick className="h-5 w-5 text-purple-500" />;
+      return <MousePointerClick className="h-5 w-5 text-blue-700" />;
     case 'boost_expiring':
-      return <Zap className="h-5 w-5 text-orange-500" />;
+      return <Zap className="h-5 w-5 text-gray-500" />;
     case 'ad_expiring':
-      return <Clock className="h-5 w-5 text-yellow-500" />;
+      return <Clock className="h-5 w-5 text-gray-500" />;
     case 'partnership_invite':
-      return <UserPlus className="h-5 w-5 text-indigo-500" />;
+      return <UserPlus className="h-5 w-5 text-blue-700" />;
     case 'partnership_accepted':
-      return <CheckCircle2 className="h-5 w-5 text-green-600" />;
+      return <CheckCircle2 className="h-5 w-5 text-blue-600" />;
     default:
       return <MessageCircle className="h-5 w-5 text-gray-500" />;
   }
@@ -50,21 +50,21 @@ const getNotificationIcon = (type: Notification['type']) => {
 const getNotificationColor = (type: Notification['type']) => {
   switch (type) {
     case 'favorite_added':
-      return 'bg-red-50 border-red-200';
+      return 'bg-blue-50 border-blue-200';
     case 'message_received':
       return 'bg-blue-50 border-blue-200';
     case 'animal_view':
-      return 'bg-green-50 border-green-200';
+      return 'bg-blue-50 border-blue-200';
     case 'animal_click':
-      return 'bg-purple-50 border-purple-200';
+      return 'bg-blue-50 border-blue-200';
     case 'boost_expiring':
-      return 'bg-orange-50 border-orange-200';
+      return 'bg-gray-100 border-gray-200';
     case 'ad_expiring':
-      return 'bg-yellow-50 border-yellow-200';
+      return 'bg-gray-100 border-gray-200';
     case 'partnership_invite':
-      return 'bg-indigo-50 border-indigo-200';
+      return 'bg-blue-50 border-blue-200';
     case 'partnership_accepted':
-      return 'bg-green-50 border-green-200';
+      return 'bg-blue-50 border-blue-200';
     default:
       return 'bg-gray-50 border-gray-200';
   }
@@ -196,7 +196,7 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
                   e.stopPropagation();
                   onDelete(notification.id);
                 }}
-                className="text-xs h-7 text-red-600 hover:text-red-700 hover:bg-red-50"
+                className="text-xs h-7 text-gray-600 hover:text-gray-700 hover:bg-gray-100"
               >
                 <X className="h-3 w-3" />
               </Button>

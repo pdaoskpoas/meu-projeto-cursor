@@ -18,21 +18,21 @@ const getNotificationIcon = (type: Notification['type']) => {
   
   switch (type) {
     case 'favorite_added':
-      return <Heart className={`${iconClass} text-red-500`} />;
+      return <Heart className={`${iconClass} text-blue-500`} />;
     case 'message_received':
       return <MessageCircle className={`${iconClass} text-blue-500`} />;
     case 'animal_view':
-      return <Eye className={`${iconClass} text-green-500`} />;
+      return <Eye className={`${iconClass} text-blue-500`} />;
     case 'animal_click':
-      return <MousePointerClick className={`${iconClass} text-purple-500`} />;
+      return <MousePointerClick className={`${iconClass} text-blue-700`} />;
     case 'boost_expiring':
-      return <Zap className={`${iconClass} text-orange-500`} />;
+      return <Zap className={`${iconClass} text-gray-500`} />;
     case 'ad_expiring':
-      return <Clock className={`${iconClass} text-yellow-500`} />;
+      return <Clock className={`${iconClass} text-gray-500`} />;
     case 'partnership_invite':
-      return <UserPlus className={`${iconClass} text-indigo-500`} />;
+      return <UserPlus className={`${iconClass} text-blue-700`} />;
     case 'partnership_accepted':
-      return <CheckCircle2 className={`${iconClass} text-green-600`} />;
+      return <CheckCircle2 className={`${iconClass} text-blue-600`} />;
     default:
       return <Bell className={`${iconClass} text-gray-500`} />;
   }
@@ -61,7 +61,7 @@ export const NotificationsDropdown: React.FC = () => {
         >
           <Bell className="h-5 w-5" />
           {unreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-red-500 rounded-full text-[10px] text-white flex items-center justify-center px-1 font-semibold">
+            <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-blue-600 rounded-full text-[10px] text-white flex items-center justify-center px-1 font-semibold">
               {unreadCount > 99 ? '99+' : unreadCount}
             </span>
           )}

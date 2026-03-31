@@ -34,7 +34,7 @@ const FeaturesSection = () => {
                 <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-blue-600 rounded-3xl flex items-center justify-center mx-auto shadow-xl group-hover:scale-110 transition-transform duration-300">
                   <Building className="h-12 w-12 text-white" />
                 </div>
-                <div className="absolute -top-2 -right-2 w-8 h-8 bg-emerald-500 rounded-full flex items-center justify-center">
+                <div className="absolute -top-2 -right-2 w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
                   <CheckCircle className="h-4 w-4 text-white" />
                 </div>
               </div>
@@ -85,10 +85,10 @@ const FeaturesSection = () => {
           </div>
 
           {/* Para Compradores - Enhanced */}
-          <div className="group hover:bg-white hover:shadow-2xl rounded-3xl p-8 transition-all duration-500 border border-transparent hover:border-emerald-100">
+          <div className="group hover:bg-white hover:shadow-2xl rounded-3xl p-8 transition-all duration-500 border border-transparent hover:border-blue-100">
             <div className="text-center space-y-6">
               <div className="relative">
-                <div className="w-24 h-24 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-3xl flex items-center justify-center mx-auto shadow-xl group-hover:scale-110 transition-transform duration-300">
+                <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-blue-600 rounded-3xl flex items-center justify-center mx-auto shadow-xl group-hover:scale-110 transition-transform duration-300">
                   <Target className="h-12 w-12 text-white" />
                 </div>
                 <div className="absolute -top-2 -right-2 w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
@@ -106,8 +106,8 @@ const FeaturesSection = () => {
               </div>
               <div className="space-y-4 text-left">
                 <div className="flex items-start space-x-4">
-                  <div className="w-6 h-6 bg-emerald-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <CheckCircle className="h-4 w-4 text-emerald-600" />
+                  <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <CheckCircle className="h-4 w-4 text-blue-600" />
                   </div>
                   <div>
                     <div className="font-semibold text-slate-900">Descoberta Inteligente</div>
@@ -115,8 +115,8 @@ const FeaturesSection = () => {
                   </div>
                 </div>
                 <div className="flex items-start space-x-4">
-                  <div className="w-6 h-6 bg-emerald-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <CheckCircle className="h-4 w-4 text-emerald-600" />
+                  <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <CheckCircle className="h-4 w-4 text-blue-600" />
                   </div>
                   <div>
                     <div className="font-semibold text-slate-900">Perfis Detalhados</div>
@@ -124,8 +124,8 @@ const FeaturesSection = () => {
                   </div>
                 </div>
                 <div className="flex items-start space-x-4">
-                  <div className="w-6 h-6 bg-emerald-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <CheckCircle className="h-4 w-4 text-emerald-600" />
+                  <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <CheckCircle className="h-4 w-4 text-blue-600" />
                   </div>
                   <div>
                     <div className="font-semibold text-slate-900">Conexão Direta</div>
@@ -134,7 +134,7 @@ const FeaturesSection = () => {
                 </div>
               </div>
               <Link to="/dashboard" className="block pt-4">
-                <Button className="w-full bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white font-semibold py-3 shadow-lg hover:shadow-xl transition-all duration-300">
+                <Button className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold py-3 shadow-lg hover:shadow-xl transition-all duration-300">
                   Descobrir Talentos
                 </Button>
               </Link>
@@ -142,13 +142,13 @@ const FeaturesSection = () => {
           </div>
 
           {/* Cobertura Nacional - Enhanced */}
-          <div className="group hover:bg-white hover:shadow-2xl rounded-3xl p-8 transition-all duration-500 border border-transparent hover:border-purple-100">
+          <div className="group hover:bg-white hover:shadow-2xl rounded-3xl p-8 transition-all duration-500 border border-transparent hover:border-blue-100">
             <div className="text-center space-y-6">
               <div className="relative">
-                <div className="w-24 h-24 bg-gradient-to-br from-purple-500 to-purple-600 rounded-3xl flex items-center justify-center mx-auto shadow-xl group-hover:scale-110 transition-transform duration-300">
+                <div className="w-24 h-24 bg-gradient-to-br from-blue-700 to-blue-900 rounded-3xl flex items-center justify-center mx-auto shadow-xl group-hover:scale-110 transition-transform duration-300">
                   <Globe className="h-12 w-12 text-white" />
                 </div>
-                <div className="absolute -top-2 -right-2 w-8 h-8 bg-yellow-500 rounded-full flex items-center justify-center">
+                <div className="absolute -top-2 -right-2 w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
                   <TrendingUp className="h-4 w-4 text-white" />
                 </div>
               </div>
@@ -163,8 +163,8 @@ const FeaturesSection = () => {
               </div>
               <div className="space-y-4 text-left">
                 <div className="flex items-start space-x-4">
-                  <div className="w-6 h-6 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <CheckCircle className="h-4 w-4 text-purple-600" />
+                  <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <CheckCircle className="h-4 w-4 text-blue-700" />
                   </div>
                   <div>
                     <div className="font-semibold text-slate-900">Brasil Inteiro</div>
@@ -172,8 +172,8 @@ const FeaturesSection = () => {
                   </div>
                 </div>
                 <div className="flex items-start space-x-4">
-                  <div className="w-6 h-6 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <CheckCircle className="h-4 w-4 text-purple-600" />
+                  <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <CheckCircle className="h-4 w-4 text-blue-700" />
                   </div>
                   <div>
                     <div className="font-semibold text-slate-900">156+ Criadores</div>
@@ -181,8 +181,8 @@ const FeaturesSection = () => {
                   </div>
                 </div>
                 <div className="flex items-start space-x-4">
-                  <div className="w-6 h-6 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <CheckCircle className="h-4 w-4 text-purple-600" />
+                  <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <CheckCircle className="h-4 w-4 text-blue-700" />
                   </div>
                   <div>
                     <div className="font-semibold text-slate-900">12M+ Admirações</div>
@@ -191,7 +191,7 @@ const FeaturesSection = () => {
                 </div>
               </div>
               <Link to="/buscar" className="block pt-4">
-                <Button className="w-full bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white font-semibold py-3 shadow-lg hover:shadow-xl transition-all duration-300">
+                <Button className="w-full bg-gradient-to-r from-blue-700 to-blue-900 hover:from-blue-800 hover:to-blue-900 text-white font-semibold py-3 shadow-lg hover:shadow-xl transition-all duration-300">
                   Explorar Animais
                 </Button>
               </Link>

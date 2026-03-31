@@ -63,7 +63,7 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ users, onUserClick, className = '
       img.onerror = () => {
         // Fallback para avatar padrão se a imagem falhar
         el.innerHTML = '';
-        el.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+        el.style.background = 'linear-gradient(135deg, #1d4ed8 0%, #1e3a8a 100%)';
         el.innerHTML = `<span style="color: white; font-weight: bold; font-size: 18px;">${user.name.charAt(0).toUpperCase()}</span>`;
       };
       el.appendChild(img);

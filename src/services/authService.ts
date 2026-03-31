@@ -45,6 +45,8 @@ class AuthService {
   // Cache de perfil para evitar chamadas duplicadas ao Supabase
   private profileCache: { data: Profile | null; userId: string; timestamp: number } | null = null;
   private readonly PROFILE_CACHE_TTL = 5_000; // 5 segundos — suficiente para deduplicar chamadas no bootstrap
+  // Deduplicação de fetches em-voo: múltiplos chamadores recebem a mesma Promise
+  private profileFetchInFlight = new Map<string, Promise<Profile | null>>();
 
   private getCachedProfile(userId: string): Profile | null {
     if (
@@ -287,24 +289,27 @@ class AuthService {
     try {
       diagnostics.debug('auth-service', 'getCurrentUser started');
       const supabase = await getSupabaseClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      
-      if (!user) {
+      // getSession() lê do localStorage (~1ms) e NÃO adquire o lock interno
+      // do GoTrueClient — diferente de getUser() que bloqueia enquanto
+      // _initialize() + token refresh estiverem em andamento (~8s cold start).
+      const { data: { session } } = await supabase.auth.getSession()
+
+      if (!session?.user) {
         diagnostics.debug('auth-service', 'getCurrentUser resolved without user');
         return null
       }
 
-      const profile = await this.getProfile(user.id)
+      const profile = await this.getProfile(session.user.id)
       if (!profile) {
         // Evita oscilação user -> null -> user quando o Auth já existe,
         // mas o profile falha temporariamente ao reidratar.
         throw new ProfileFetchError('Perfil indisponível temporariamente')
       }
 
-      diagnostics.debug('auth-service', 'getCurrentUser resolved with profile', { userId: user.id });
+      diagnostics.debug('auth-service', 'getCurrentUser resolved with profile', { userId: session.user.id });
       return {
-        id: user.id,
-        email: user.email!,
+        id: session.user.id,
+        email: session.user.email!,
         profile
       }
     } catch (error) {
@@ -313,39 +318,54 @@ class AuthService {
     }
   }
 
-  // Obter perfil do usuário (com cache de deduplicação)
+  // Obter perfil do usuário (com cache + deduplicação de chamadas simultâneas)
   async getProfile(userId: string): Promise<Profile | null> {
-    // Verificar cache para evitar chamadas duplicadas no bootstrap
+    // 1. Cache de resultado (evita query se já temos o dado recente)
     const cached = this.getCachedProfile(userId);
     if (cached !== null) {
       return cached;
     }
 
-    try {
-      const supabase = await getSupabaseClient()
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single()
-
-      if (error) {
-        if (error.code === 'PGRST116') {
-          return null // Perfil não encontrado
-        }
-        throw new ProfileFetchError(handleSupabaseError(error).message)
-      }
-
-      const profile = data as Profile;
-      this.setCachedProfile(userId, profile);
-      return profile;
-    } catch (error) {
-      logSupabaseOperation('Get profile error', null, error)
-      if (error instanceof ProfileFetchError) {
-        throw error
-      }
-      throw new ProfileFetchError()
+    // 2. Deduplicação de in-flight: se já existe um fetch em andamento para o
+    //    mesmo userId, retorna a mesma Promise — apenas 1 request ao Supabase.
+    const inFlight = this.profileFetchInFlight.get(userId);
+    if (inFlight) {
+      return inFlight;
     }
+
+    const fetchPromise = (async () => {
+      try {
+        const supabase = await getSupabaseClient()
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', userId)
+          .single()
+
+        if (error) {
+          if (error.code === 'PGRST116') {
+            return null // Perfil não encontrado
+          }
+          throw new ProfileFetchError(handleSupabaseError(error).message)
+        }
+
+        const profile = data as Profile;
+        this.setCachedProfile(userId, profile);
+        return profile;
+      } catch (error) {
+        logSupabaseOperation('Get profile error', null, error)
+        if (error instanceof ProfileFetchError) {
+          throw error
+        }
+        throw new ProfileFetchError()
+      } finally {
+        // Remove da map após completar (sucesso ou erro) para liberar memória
+        this.profileFetchInFlight.delete(userId);
+      }
+    })();
+
+    this.profileFetchInFlight.set(userId, fetchPromise);
+    return fetchPromise;
   }
 
   // Atualizar perfil
@@ -466,7 +486,9 @@ class AuthService {
       
       if (session?.user) {
         try {
-          // Timeout de 3s no getProfile para nunca deixar o callback pendente.
+          // Timeout de 3s no getProfile do listener. Com getSession() no getCurrentUser(),
+          // o perfil já foi cacheado antes deste evento disparar, então retorna em <1ms.
+          // Em caso de cache miss, 3s é suficiente para uma query Supabase quente.
           const profile = await Promise.race([
             this.getProfile(session.user.id),
             new Promise<never>((_, reject) =>

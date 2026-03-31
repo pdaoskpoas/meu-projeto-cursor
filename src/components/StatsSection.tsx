@@ -47,10 +47,10 @@ const StatsSection = () => {
           </div>
           
           <div className="text-center group">
-            <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+            <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
               <Shield className="h-8 w-8 text-white" />
             </div>
-            <div className="text-4xl sm:text-5xl font-bold text-emerald-300 mb-2">
+            <div className="text-4xl sm:text-5xl font-bold text-blue-300 mb-2">
               156+
             </div>
             <div className="text-lg font-semibold text-white mb-1">
@@ -62,10 +62,10 @@ const StatsSection = () => {
           </div>
           
           <div className="text-center group">
-            <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+            <div className="w-16 h-16 bg-gradient-to-br from-blue-700 to-blue-900 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
               <MapPin className="h-8 w-8 text-white" />
             </div>
-            <div className="text-4xl sm:text-5xl font-bold text-purple-300 mb-2">
+            <div className="text-4xl sm:text-5xl font-bold text-blue-300 mb-2">
               23
             </div>
             <div className="text-lg font-semibold text-white mb-1">
@@ -77,10 +77,10 @@ const StatsSection = () => {
           </div>
           
           <div className="text-center group">
-            <div className="w-16 h-16 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+            <div className="w-16 h-16 bg-gradient-to-br from-gray-400 to-gray-500 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
               <TrendingUp className="h-8 w-8 text-white" />
             </div>
-            <div className="text-4xl sm:text-5xl font-bold text-yellow-300 mb-2">
+            <div className="text-4xl sm:text-5xl font-bold text-gray-200 mb-2">
               12M+
             </div>
             <div className="text-lg font-semibold text-white mb-1">
@@ -97,7 +97,7 @@ const StatsSection = () => {
           <h3 className="text-2xl lg:text-3xl font-bold text-center mb-8">Por Que Somos a Escolha dos Profissionais</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             <div className="flex items-start space-x-4">
-              <div className="w-12 h-12 bg-emerald-500 rounded-xl flex items-center justify-center flex-shrink-0">
+              <div className="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center flex-shrink-0">
                 <CheckCircle className="h-6 w-6 text-white" />
               </div>
               <div>
@@ -115,7 +115,7 @@ const StatsSection = () => {
               </div>
             </div>
             <div className="flex items-start space-x-4">
-              <div className="w-12 h-12 bg-purple-500 rounded-xl flex items-center justify-center flex-shrink-0">
+              <div className="w-12 h-12 bg-blue-700 rounded-xl flex items-center justify-center flex-shrink-0">
                 <Star className="h-6 w-6 text-white" />
               </div>
               <div>
@@ -128,7 +128,7 @@ const StatsSection = () => {
 
         {/* Market Leadership */}
         <div className="mt-16 text-center">
-          <div className="inline-flex items-center space-x-2 bg-gradient-to-r from-blue-600/20 to-emerald-600/20 px-6 py-3 rounded-full border border-blue-400/30">
+          <div className="inline-flex items-center space-x-2 bg-gradient-to-r from-blue-600/20 to-blue-800/20 px-6 py-3 rounded-full border border-blue-400/30">
             <Calendar className="h-5 w-5 text-blue-400" />
             <span className="text-blue-300 font-semibold">Líderes desde 2018 no mercado digital equestre</span>
           </div>

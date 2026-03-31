@@ -113,7 +113,7 @@ const ReportDialog: React.FC<ReportDialogProps> = ({ animalId, animalName }) => 
         <Button 
           variant="outline" 
           size="sm" 
-          className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700 hover:border-red-300"
+          className="text-gray-700 border-gray-200 hover:bg-gray-100 hover:text-gray-900 hover:border-gray-300"
         >
           <Flag className="h-4 w-4 mr-2" />
           Denunciar anúncio
@@ -121,7 +121,7 @@ const ReportDialog: React.FC<ReportDialogProps> = ({ animalId, animalName }) => 
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="flex items-center text-red-600">
+          <DialogTitle className="flex items-center text-gray-900">
             <AlertTriangle className="h-5 w-5 mr-2" />
             Denunciar Anúncio
           </DialogTitle>

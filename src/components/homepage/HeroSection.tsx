@@ -62,7 +62,7 @@ const HeroSection: React.FC = () => {
             <div className="space-y-3">
               <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold text-white leading-[1.1]">
                 A maior vitrine{' '}
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300">
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-blue-300">
                   equestre do Brasil
                 </span>
               </h1>
@@ -192,7 +192,7 @@ const HeroSection: React.FC = () => {
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-pink-100 to-pink-200 flex items-center justify-center">
+                    <div className="w-full h-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center">
                       <span className="text-4xl">♀</span>
                     </div>
                   )}
@@ -204,7 +204,7 @@ const HeroSection: React.FC = () => {
                   )}
                 </div>
                 <div className="p-4">
-                  <p className="text-[10px] uppercase tracking-wider text-pink-600 font-semibold mb-0.5">Top Doadora do mês</p>
+                  <p className="text-[10px] uppercase tracking-wider text-blue-600 font-semibold mb-0.5">Top Doadora do mês</p>
                   <p className="font-bold text-slate-900 text-sm truncate">{topFemale?.name || 'Carregando...'}</p>
                   <p className="text-xs text-slate-500 mt-1 truncate">
                     {topFemale ? `${topFemale.breed} · ${topFemale.harasName}` : '—'}
@@ -216,8 +216,8 @@ const HeroSection: React.FC = () => {
               {siteVisitsThisMonth > 0 && (
                 <div className="absolute bottom-8 left-12 bg-white/95 backdrop-blur-sm rounded-xl px-4 py-3 shadow-lg border border-slate-100">
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                      <Users className="h-4 w-4 text-green-600" />
+                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                      <Users className="h-4 w-4 text-blue-600" />
                     </div>
                     <div>
                       <p className="text-xs font-bold text-slate-900">

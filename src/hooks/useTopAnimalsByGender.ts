@@ -108,6 +108,17 @@ export const useTopAnimalsByGender = (
         })
         .slice(0, limit);
 
+      // Fallback: se nenhum animal do gênero estava entre os top impressionados no mês,
+      // usa ranking all-time para não deixar a seção vazia
+      if (sorted.length === 0) {
+        const { data: fallback, error: fbError } = await buildBaseQuery()
+          .order('impression_count', { ascending: false })
+          .limit(limit);
+        if (fbError) throw fbError;
+        setAnimals(normalizeAnimals(fallback || []));
+        return;
+      }
+
       setAnimals(normalizeAnimals(sorted));
     } catch (err) {
       console.error(`Error fetching top ${gender} animals:`, err);

@@ -14,49 +14,41 @@ const BreedShowcase = () => {
       id: 'mangalarga-marchador',
       name: 'Mangalarga Marchador',
       image: 'https://images.unsplash.com/photo-1544966503-7cc5ac882d5f?w=400&h=250&fit=crop',
-      color: 'from-blue-500 to-blue-600'
     },
     {
       id: 'thoroughbred',
       name: 'Thoroughbred',
       image: 'https://images.unsplash.com/photo-1553284965-83fd3e82fa5a?w=400&h=250&fit=crop',
-      color: 'from-red-500 to-red-600'
     },
     {
       id: 'quarter-horse',
       name: 'Quarter Horse',
       image: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=250&fit=crop',
-      color: 'from-emerald-500 to-emerald-600'
     },
     {
       id: 'crioulo',
       name: 'Crioulo',
       image: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=250&fit=crop',
-      color: 'from-purple-500 to-purple-600'
     },
     {
       id: 'arabian',
       name: 'Árabe',
       image: 'https://images.unsplash.com/photo-1544966503-7cc5ac882d5f?w=400&h=250&fit=crop',
-      color: 'from-orange-500 to-orange-600'
     },
     {
       id: 'appaloosa',
       name: 'Appaloosa',
       image: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=250&fit=crop',
-      color: 'from-pink-500 to-pink-600'
     },
     {
       id: 'paint-horse',
       name: 'Paint Horse',
       image: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=250&fit=crop',
-      color: 'from-indigo-500 to-indigo-600'
     },
     {
       id: 'mustang',
       name: 'Mustang',
       image: 'https://images.unsplash.com/photo-1544966503-7cc5ac882d5f?w=400&h=250&fit=crop',
-      color: 'from-yellow-500 to-yellow-600'
     }
   ];
 
@@ -81,7 +73,7 @@ const BreedShowcase = () => {
                     className="group block"
                   >
                     <div className="flex items-center space-x-1.5 sm:space-x-2 bg-slate-50 hover:bg-blue-50 border border-slate-200 hover:border-blue-300 rounded-md sm:rounded-lg px-2 sm:px-3 lg:px-4 py-1.5 sm:py-2 transition-all duration-200 whitespace-nowrap">
-                      <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-gradient-to-br from-slate-400 to-slate-500 flex items-center justify-center flex-shrink-0">
+                      <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0">
                         <span className="text-white text-xs"></span>
                       </div>
                       <span className="text-xs sm:text-sm font-medium text-slate-700 group-hover:text-blue-700">

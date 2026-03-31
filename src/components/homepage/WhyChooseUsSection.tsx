@@ -15,14 +15,14 @@ const features = [
     title: 'Seus animais apresentados com qualidade profissional',
     description:
       'Galeria, genealogia de até 4 gerações, títulos e ficha completa — o padrão que seu plantel merece.',
-    color: 'bg-emerald-100 text-emerald-600',
+    color: 'bg-blue-100 text-blue-800',
   },
   {
     icon: Users,
     title: 'As pessoas certas chegam até você',
     description:
       'Rankings, busca avançada, mapa de criadores e contato direto — seu haras encontrado por quem realmente importa.',
-    color: 'bg-amber-100 text-amber-700',
+    color: 'bg-gray-200 text-gray-700',
   },
 ];
 

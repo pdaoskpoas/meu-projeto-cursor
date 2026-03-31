@@ -13,57 +13,62 @@ export const getBoostSourceLabel = (source: string | null): string => {
 
 export const getBoostSourceColor = (source: string | null): string => {
   switch (source) {
-    case 'admin': return 'bg-red-100 text-red-800';
+    case 'admin': return 'bg-gray-900 text-white';
     case 'plano_pro': return 'bg-blue-100 text-blue-800';
-    case 'plano_ultra': return 'bg-purple-100 text-purple-800';
-    case 'plano_vip': return 'bg-yellow-100 text-yellow-800';
-    case 'comprado': return 'bg-green-100 text-green-800';
+    case 'plano_ultra': return 'bg-blue-700 text-white';
+    case 'plano_vip': return 'bg-blue-900 text-white';
+    case 'comprado': return 'bg-blue-500 text-white';
     default: return 'bg-gray-100 text-gray-800';
   }
 };
 
 export const getStatusColor = (status: string): string => {
   switch (status) {
-    case 'ativo': return 'bg-green-100 text-green-800';
-    case 'pausado': return 'bg-yellow-100 text-yellow-800';
-    case 'inativo': return 'bg-gray-100 text-gray-800';
-    case 'suspenso': return 'bg-red-100 text-red-800';
+    case 'ativo': return 'bg-blue-100 text-blue-800';
+    case 'pausado': return 'bg-gray-200 text-gray-700';
+    case 'inativo': return 'bg-gray-100 text-gray-500';
+    case 'suspenso': return 'bg-gray-900 text-white';
     default: return 'bg-gray-100 text-gray-800';
   }
 };
 
 export const getNewsStatusColor = (status: string): string => {
   switch (status) {
-    case 'publicado': return 'bg-green-100 text-green-800';
-    case 'rascunho': return 'bg-yellow-100 text-yellow-800';
-    case 'agendado': return 'bg-blue-100 text-blue-800';
-    case 'arquivado': return 'bg-gray-100 text-gray-800';
+    case 'publicado': return 'bg-blue-100 text-blue-800';
+    case 'rascunho': return 'bg-gray-200 text-gray-700';
+    case 'agendado': return 'bg-blue-50 text-blue-600';
+    case 'arquivado': return 'bg-gray-100 text-gray-500';
     default: return 'bg-gray-100 text-gray-800';
   }
 };
 
 export const getCategoryColor = (category: string): string => {
   const colors = [
-    'bg-red-100 text-red-800', 'bg-blue-100 text-blue-800', 'bg-green-100 text-green-800',
-    'bg-yellow-100 text-yellow-800', 'bg-purple-100 text-purple-800', 'bg-pink-100 text-pink-800',
-    'bg-indigo-100 text-indigo-800', 'bg-teal-100 text-teal-800'
+    'bg-blue-100 text-blue-800',
+    'bg-blue-200 text-blue-900',
+    'bg-blue-50 text-blue-700',
+    'bg-gray-100 text-gray-700',
+    'bg-gray-200 text-gray-800',
+    'bg-blue-700 text-white',
+    'bg-blue-900 text-white',
+    'bg-gray-900 text-white',
   ];
-  
+
   const hash = category.split('').reduce((a, b) => {
     a = ((a << 5) - a) + b.charCodeAt(0);
     return a & a;
   }, 0);
-  
+
   return colors[Math.abs(hash) % colors.length];
 };
 
 export const getBoostColor = (boostType: string | null): string => {
   switch (boostType) {
     case 'Pro': return 'bg-blue-100 text-blue-800';
-    case 'Ultra': return 'bg-purple-100 text-purple-800';
-    case 'VIP': return 'bg-yellow-100 text-yellow-800';
+    case 'Ultra': return 'bg-blue-700 text-white';
+    case 'VIP': return 'bg-blue-900 text-white';
     case 'Free': return 'bg-gray-100 text-gray-800';
-    case 'Admin': return 'bg-red-100 text-red-800';
+    case 'Admin': return 'bg-gray-900 text-white';
     default: return 'bg-gray-100 text-gray-800';
   }
 };

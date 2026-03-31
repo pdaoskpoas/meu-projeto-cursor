@@ -62,9 +62,9 @@ const AdminSystemActivity: React.FC = () => {
 
   if (error) {
     return (
-      <Card className="p-6 bg-red-50 border-red-200">
-        <h3 className="text-lg font-semibold text-red-900 mb-2">Erro ao carregar atividade</h3>
-        <p className="text-red-700">{error}</p>
+      <Card className="p-6 bg-gray-900 border-gray-300">
+        <h3 className="text-lg font-semibold text-white mb-2">Erro ao carregar atividade</h3>
+        <p className="text-gray-200">{error}</p>
       </Card>
     );
   }

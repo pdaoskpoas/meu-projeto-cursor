@@ -12,41 +12,41 @@ interface SuspensionNoticeProps {
 export function SuspensionNotice({ suspensionDate, suspensionReason }: SuspensionNoticeProps) {
   return (
     <div className="w-full max-w-4xl mx-auto p-4">
-      <Card className="border-red-200 bg-red-50">
+      <Card className="border-gray-300 bg-gray-900">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
-            <ShieldX className="h-16 w-16 text-red-600" />
+            <ShieldX className="h-16 w-16 text-white" />
           </div>
-          <CardTitle className="text-2xl text-red-800">
+          <CardTitle className="text-2xl text-white">
             Usuário Bloqueado
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
-          <Alert className="border-red-300 bg-red-100">
-            <AlertDescription className="text-red-800">
+          <Alert className="border-gray-600 bg-gray-800">
+            <AlertDescription className="text-white">
               Após constatarmos que você infringiu algumas de nossas normas, decidimos suspender o seu acesso à nossa plataforma.
             </AlertDescription>
           </Alert>
 
-          <div className="bg-white p-6 rounded-lg border border-red-200">
+          <div className="bg-white p-6 rounded-lg border border-gray-200">
             <h3 className="text-lg font-semibold text-gray-800 mb-4">
               O que acontece com sua conta suspensa:
             </h3>
             <ul className="space-y-3 text-gray-700">
               <li className="flex items-start gap-2">
-                <span className="text-red-500 font-bold">•</span>
+                <span className="text-gray-900 font-bold">•</span>
                 <span>Todos os seus anúncios foram removidos do ar</span>
               </li>
               <li className="flex items-start gap-2">
-                <span className="text-red-500 font-bold">•</span>
+                <span className="text-gray-900 font-bold">•</span>
                 <span>Sociedades foram removidas do seu perfil</span>
               </li>
               <li className="flex items-start gap-2">
-                <span className="text-red-500 font-bold">•</span>
+                <span className="text-gray-900 font-bold">•</span>
                 <span>Você não pode criar uma nova conta com este email ou CPF</span>
               </li>
               <li className="flex items-start gap-2">
-                <span className="text-red-500 font-bold">•</span>
+                <span className="text-gray-900 font-bold">•</span>
                 <span>Seu acesso está limitado apenas à visualização</span>
               </li>
             </ul>

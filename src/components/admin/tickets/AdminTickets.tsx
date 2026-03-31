@@ -54,10 +54,10 @@ const AdminTickets: React.FC = () => {
 
   const getPriorityColor = (priority: string) => {
     const colors: Record<string, string> = {
-      low: 'bg-gray-100 text-gray-700',
+      low: 'bg-gray-100 text-gray-600',
       normal: 'bg-blue-100 text-blue-700',
-      high: 'bg-orange-100 text-orange-700',
-      urgent: 'bg-red-100 text-red-700'
+      high: 'bg-blue-700 text-white',
+      urgent: 'bg-gray-900 text-white'
     };
     return colors[priority] || colors.normal;
   };

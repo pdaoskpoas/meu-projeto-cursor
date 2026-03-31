@@ -48,8 +48,8 @@ export function SuspensionModal({ user, isOpen, onClose, onConfirm }: Suspension
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <div className="flex items-center gap-2">
-            <ShieldX className="h-5 w-5 text-red-600" />
-            <DialogTitle className="text-red-800">Suspender Usuário</DialogTitle>
+            <ShieldX className="h-5 w-5 text-gray-900" />
+            <DialogTitle className="text-gray-900">Suspender Usuário</DialogTitle>
           </div>
           <DialogDescription>
             Você está prestes a suspender o usuário <strong>{user.name}</strong> ({user.email}).
@@ -57,9 +57,9 @@ export function SuspensionModal({ user, isOpen, onClose, onConfirm }: Suspension
         </DialogHeader>
 
         <div className="space-y-4">
-          <Alert className="border-red-200 bg-red-50">
-            <AlertTriangle className="h-4 w-4 text-red-600" />
-            <AlertDescription className="text-red-800">
+          <Alert className="border-gray-300 bg-gray-900">
+            <AlertTriangle className="h-4 w-4 text-white" />
+            <AlertDescription className="text-white">
               <strong>Atenção:</strong> Esta ação irá:
               <ul className="mt-2 space-y-1 text-sm">
                 <li>• Remover todos os anúncios do usuário</li>

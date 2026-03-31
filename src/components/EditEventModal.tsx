@@ -36,13 +36,13 @@ interface EventFormData {
 }
 
 const eventCategories = [
-  { value: 'Copa de Marcha', label: 'Copa de Marcha', icon: '', color: 'bg-yellow-100 text-yellow-700 border-yellow-200' },
-  { value: 'Competição', label: 'Competição', icon: '', color: 'bg-blue-100 text-blue-700 border-blue-200' },
-  { value: 'Poeirão', label: 'Poeirão', icon: '', color: 'bg-green-100 text-green-700 border-green-200' },
-  { value: 'Leilão', label: 'Leilão', icon: '', color: 'bg-purple-100 text-purple-700 border-purple-200' },
-  { value: 'Exposição', label: 'Exposição', icon: '', color: 'bg-red-100 text-red-700 border-red-200' },
-  { value: 'Curso Presencial', label: 'Curso Presencial', icon: '', color: 'bg-indigo-100 text-indigo-700 border-indigo-200' },
-  { value: 'Feira', label: 'Feira', icon: '', color: 'bg-orange-100 text-orange-700 border-orange-200' }
+  { value: 'Copa de Marcha', label: 'Copa de Marcha', icon: '', color: 'bg-blue-50 text-blue-700 border-blue-200' },
+  { value: 'Competição', label: 'Competição', icon: '', color: 'bg-blue-100 text-blue-800 border-blue-300' },
+  { value: 'Poeirão', label: 'Poeirão', icon: '', color: 'bg-gray-100 text-gray-700 border-gray-200' },
+  { value: 'Leilão', label: 'Leilão', icon: '', color: 'bg-blue-700 text-white border-blue-700' },
+  { value: 'Exposição', label: 'Exposição', icon: '', color: 'bg-gray-200 text-gray-800 border-gray-300' },
+  { value: 'Curso Presencial', label: 'Curso Presencial', icon: '', color: 'bg-blue-900 text-white border-blue-900' },
+  { value: 'Feira', label: 'Feira', icon: '', color: 'bg-gray-50 text-gray-700 border-gray-200' }
 ];
 
 const EditEventModal: React.FC<EditEventModalProps> = ({ isOpen, onClose, onSuccess, event }) => {

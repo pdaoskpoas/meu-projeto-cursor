@@ -13,9 +13,9 @@ const AdminDashboard: React.FC = () => {
   if (error) {
     return (
       <div className="p-6">
-        <Card className="p-6 bg-red-50 border-red-200">
-          <h3 className="text-lg font-semibold text-red-900 mb-2">Erro ao carregar dados</h3>
-          <p className="text-red-700">{error.message}</p>
+        <Card className="p-6 bg-gray-50 border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">Erro ao carregar dados</h3>
+          <p className="text-gray-700">{error.message}</p>
         </Card>
       </div>
     );
@@ -66,33 +66,33 @@ const AdminDashboard: React.FC = () => {
                     {stats?.activeUsers || 0} ativos • {stats?.freeUsers || 0} free
                   </p>
                 </Card>
-                <Card className="p-4 bg-green-50 border-green-200">
-                  <h4 className="font-medium text-green-900 flex items-center gap-2">
+                <Card className="p-4 bg-blue-100 border-blue-300">
+                  <h4 className="font-medium text-blue-900 flex items-center gap-2">
                     <BarChart3 className="h-4 w-4" />
                     Usuários Pagos
                   </h4>
-                  <p className="text-3xl font-bold text-green-800 mt-2">{stats?.paidUsers || 0}</p>
-                  <p className="text-sm text-green-600 mt-1">
+                  <p className="text-3xl font-bold text-blue-900 mt-2">{stats?.paidUsers || 0}</p>
+                  <p className="text-sm text-blue-700 mt-1">
                     {stats?.recentSubscriptions || 0} novos em 30 dias
                   </p>
                 </Card>
-                <Card className="p-4 bg-purple-50 border-purple-200">
-                  <h4 className="font-medium text-purple-900 flex items-center gap-2">
+                <Card className="p-4 bg-gray-50 border-gray-200">
+                  <h4 className="font-medium text-gray-900 flex items-center gap-2">
                     <Activity className="h-4 w-4" />
                     Animais Cadastrados
                   </h4>
-                  <p className="text-3xl font-bold text-purple-800 mt-2">{stats?.totalAnimals || 0}</p>
-                  <p className="text-sm text-purple-600 mt-1">
+                  <p className="text-3xl font-bold text-gray-900 mt-2">{stats?.totalAnimals || 0}</p>
+                  <p className="text-sm text-gray-600 mt-1">
                     {stats?.activeAnimals || 0} ativos
                   </p>
                 </Card>
-                <Card className="p-4 bg-orange-50 border-orange-200">
-                  <h4 className="font-medium text-orange-900 flex items-center gap-2">
+                <Card className="p-4 bg-gray-100 border-gray-200">
+                  <h4 className="font-medium text-gray-900 flex items-center gap-2">
                     <Calendar className="h-4 w-4" />
                     Eventos
                   </h4>
-                  <p className="text-3xl font-bold text-orange-800 mt-2">{stats?.totalEvents || 0}</p>
-                  <p className="text-sm text-orange-600 mt-1">
+                  <p className="text-3xl font-bold text-gray-900 mt-2">{stats?.totalEvents || 0}</p>
+                  <p className="text-sm text-gray-600 mt-1">
                     Total cadastrados
                   </p>
                 </Card>
@@ -100,43 +100,43 @@ const AdminDashboard: React.FC = () => {
 
               {/* Estatísticas de engagement */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-                <Card className="p-4 bg-sky-50 border-sky-200">
-                  <h4 className="font-medium text-sky-900 flex items-center gap-2">
+                <Card className="p-4 bg-blue-50 border-blue-200">
+                  <h4 className="font-medium text-blue-900 flex items-center gap-2">
                     <Globe className="h-4 w-4" />
                     Acessos ao Site
                   </h4>
-                  <p className="text-3xl font-bold text-sky-800 mt-2">{stats?.siteVisitsThisMonth || 0}</p>
-                  <p className="text-sm text-sky-600 mt-1">Este mes</p>
+                  <p className="text-3xl font-bold text-blue-800 mt-2">{stats?.siteVisitsThisMonth || 0}</p>
+                  <p className="text-sm text-blue-600 mt-1">Este mes</p>
                 </Card>
-                <Card className="p-4 bg-teal-50 border-teal-200">
-                  <h4 className="font-medium text-teal-900 flex items-center gap-2">
+                <Card className="p-4 bg-white border-gray-200">
+                  <h4 className="font-medium text-gray-900 flex items-center gap-2">
                     <House className="h-4 w-4" />
                     Acessos a Home
                   </h4>
-                  <p className="text-3xl font-bold text-teal-800 mt-2">{stats?.homeVisitsThisMonth || 0}</p>
-                  <p className="text-sm text-teal-600 mt-1">Este mes</p>
+                  <p className="text-3xl font-bold text-gray-900 mt-2">{stats?.homeVisitsThisMonth || 0}</p>
+                  <p className="text-sm text-gray-500 mt-1">Este mes</p>
                 </Card>
-                <Card className="p-4 bg-indigo-50 border-indigo-200">
-                  <h4 className="font-medium text-indigo-900 flex items-center gap-2">
+                <Card className="p-4 bg-white border-gray-200">
+                  <h4 className="font-medium text-gray-900 flex items-center gap-2">
                     <Eye className="h-4 w-4" />
                     Total de Visualizações
                   </h4>
-                  <p className="text-3xl font-bold text-indigo-800 mt-2">{stats?.totalViews || 0}</p>
+                  <p className="text-3xl font-bold text-gray-900 mt-2">{stats?.totalViews || 0}</p>
                 </Card>
-                <Card className="p-4 bg-pink-50 border-pink-200">
-                  <h4 className="font-medium text-pink-900 flex items-center gap-2">
+                <Card className="p-4 bg-white border-gray-200">
+                  <h4 className="font-medium text-gray-900 flex items-center gap-2">
                     <MousePointerClick className="h-4 w-4" />
                     Total de Cliques
                   </h4>
-                  <p className="text-3xl font-bold text-pink-800 mt-2">{stats?.totalClicks || 0}</p>
+                  <p className="text-3xl font-bold text-gray-900 mt-2">{stats?.totalClicks || 0}</p>
                 </Card>
-                <Card className="p-4 bg-amber-50 border-amber-200">
-                  <h4 className="font-medium text-amber-900 flex items-center gap-2">
+                <Card className="p-4 bg-gray-900 border-gray-700">
+                  <h4 className="font-medium text-white flex items-center gap-2">
                     <BarChart3 className="h-4 w-4" />
                     Planos Expirando
                   </h4>
-                  <p className="text-3xl font-bold text-amber-800 mt-2">{stats?.expiringSoon || 0}</p>
-                  <p className="text-sm text-amber-600 mt-1">Próximos 7 dias</p>
+                  <p className="text-3xl font-bold text-white mt-2">{stats?.expiringSoon || 0}</p>
+                  <p className="text-sm text-gray-400 mt-1">Próximos 7 dias</p>
                 </Card>
               </div>
             </>

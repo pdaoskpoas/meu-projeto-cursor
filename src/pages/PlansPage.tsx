@@ -115,7 +115,7 @@ const PlansPage = () => {
               }`}
             >
               Anual
-              <span className="ml-2 text-xs text-green-600 font-semibold">
+              <span className="ml-2 text-xs text-blue-600 font-semibold">
                 Economize
               </span>
             </button>
@@ -209,7 +209,7 @@ const PlansPage = () => {
                     <li key={index} className="flex items-start gap-3">
                       <Check
                         className={`h-5 w-5 flex-shrink-0 ${
-                          plan.popular ? 'text-blue-400' : 'text-green-600'
+                          plan.popular ? 'text-blue-400' : 'text-blue-600'
                         }`}
                       />
                       <span
@@ -231,11 +231,11 @@ const PlansPage = () => {
       {/* Garantia */}
       <div className="bg-slate-50 py-10 px-4">
         <div className="max-w-4xl mx-auto">
-          <div className="flex items-center justify-center gap-4 bg-green-50 border border-green-200 rounded-xl p-6 text-center">
-            <Shield className="h-10 w-10 text-green-600 flex-shrink-0" />
+          <div className="flex items-center justify-center gap-4 bg-blue-50 border border-blue-200 rounded-xl p-6 text-center">
+            <Shield className="h-10 w-10 text-blue-600 flex-shrink-0" />
             <div className="text-left">
-              <p className="font-bold text-green-900 text-base">Garantia de 7 dias</p>
-              <p className="text-sm text-green-700">
+              <p className="font-bold text-blue-900 text-base">Garantia de 7 dias</p>
+              <p className="text-sm text-blue-700">
                 Se não ficar satisfeito nos primeiros 7 dias, devolvemos 100% do valor. Sem perguntas.
               </p>
             </div>

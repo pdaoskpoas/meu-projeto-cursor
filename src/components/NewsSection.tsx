@@ -46,20 +46,8 @@ const ArticleCard = ({ article }: { article: Article }) => {
     };
   }, [article.id, hasBeenViewed]);
 
-  const getCategoryColor = (category: string) => {
-    const colors: { [key: string]: string } = {
-      'Reprodução': 'bg-pink-500',
-      'Nutrição': 'bg-green-500',
-      'Manejo': 'bg-blue-500',
-      'Competições': 'bg-purple-500',
-      'Veterinária': 'bg-red-500',
-      'Mercado': 'bg-yellow-500',
-      'Genética': 'bg-indigo-500',
-      'Treinamento': 'bg-orange-500',
-      'Tecnologia': 'bg-cyan-500',
-      'Sustentabilidade': 'bg-emerald-500'
-    };
-    return colors[category] || 'bg-gray-500';
+  const getCategoryColor = (_category: string) => {
+    return 'bg-blue-500';
   };
 
   const getTimeAgo = (dateString: string) => {
@@ -108,7 +96,7 @@ const ArticleCard = ({ article }: { article: Article }) => {
           )}
 
           {/* Title */}
-          <h3 className="text-lg font-bold text-slate-900 leading-tight group-hover:text-red-600 transition-colors line-clamp-2">
+          <h3 className="text-lg font-bold text-slate-900 leading-tight group-hover:text-blue-600 transition-colors line-clamp-2">
             {article.title}
           </h3>
 
@@ -177,16 +165,8 @@ const NewsSection = () => {
     return `${Math.floor(diffInDays / 7)} semanas atrás`;
   };
 
-  const getCategoryColor = (category: string) => {
-    switch (category) {
-      case 'Mercado Equestre': return 'bg-blue-500';
-      case 'Tecnologia': return 'bg-purple-500';
-      case 'Competições': return 'bg-emerald-500';
-      case 'Sustentabilidade': return 'bg-green-500';
-      case 'Recordes': return 'bg-orange-500';
-      case 'Exportação': return 'bg-red-500';
-      default: return 'bg-slate-500';
-    }
+  const getCategoryColor = (_category: string) => {
+    return 'bg-blue-500';
   };
 
   return (
@@ -194,12 +174,12 @@ const NewsSection = () => {
       <div className="container-responsive">
         {/* Header */}
         <div className="text-center space-content mb-10 sm:mb-14">
-          <p className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-red-500 mb-3">
+          <p className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-blue-500 mb-3">
             Conteúdo exclusivo
           </p>
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900 text-balance">
             O que está acontecendo no{' '}
-            <span className="bg-gradient-to-r from-red-600 to-orange-600 bg-clip-text text-transparent">mercado equestre</span>
+            <span className="text-blue-600">mercado equestre</span>
           </h2>
           <p className="text-base sm:text-lg text-slate-600 max-w-2xl mx-auto leading-relaxed mt-3">
             Novidades, tendências e histórias que importam para quem vive o cavalo.
@@ -209,7 +189,7 @@ const NewsSection = () => {
         {/* Loading State */}
         {isLoading && (
           <div className="flex justify-center items-center py-20">
-            <Loader2 className="h-12 w-12 animate-spin text-red-600" />
+            <Loader2 className="h-12 w-12 animate-spin text-blue-600" />
           </div>
         )}
 
@@ -243,7 +223,7 @@ const NewsSection = () => {
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Link to="/noticias">
-                  <Button className="bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700 text-white px-8 py-4 text-lg font-bold shadow-xl hover:shadow-2xl transition-all duration-300 group">
+                  <Button className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 text-lg font-bold shadow-xl hover:shadow-2xl transition-all duration-300 group">
                     Ver Todas as Notícias
                     <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
                   </Button>
@@ -252,7 +232,7 @@ const NewsSection = () => {
                   type="button"
                   onClick={() => setNewsletterOpen((prev) => !prev)}
                   variant="outline"
-                  className="border-2 border-slate-300 hover:border-red-500 hover:text-red-600 px-8 py-4 text-lg font-bold transition-all duration-300"
+                  className="border-2 border-gray-300 hover:border-blue-500 hover:text-blue-600 px-8 py-4 text-lg font-bold transition-all duration-300"
                 >
                   Assinar Newsletter
                 </Button>

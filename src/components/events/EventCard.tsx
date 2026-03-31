@@ -114,7 +114,7 @@ const EventCard: React.FC<EventCardProps> = ({ event, status = 'active', showSta
       }`}
     >
       {/* Imagem de Capa */}
-      <div className="relative h-48 sm:h-56 bg-gradient-to-br from-purple-100 to-blue-100 overflow-hidden">
+      <div className="relative h-48 sm:h-56 bg-gradient-to-br from-blue-100 to-blue-200 overflow-hidden">
         {event.cover_image_url ? (
           <img
             src={event.cover_image_url}
@@ -137,7 +137,7 @@ const EventCard: React.FC<EventCardProps> = ({ event, status = 'active', showSta
             className={
               isEnded
                 ? 'bg-slate-600 text-white'
-                : 'bg-emerald-600 text-white'
+                : 'bg-blue-100 text-blue-800'
             }
           >
             {isEnded ? 'Encerrado' : 'Ativo'}
@@ -145,7 +145,7 @@ const EventCard: React.FC<EventCardProps> = ({ event, status = 'active', showSta
         </div>
         <div className="absolute top-3 right-3 flex flex-col gap-2 items-end">
           {event.is_boosted && (
-            <Badge className="bg-yellow-500 text-white">
+            <Badge className="bg-blue-500 text-white">
               Em Destaque
             </Badge>
           )}
@@ -187,7 +187,7 @@ const EventCard: React.FC<EventCardProps> = ({ event, status = 'active', showSta
           {/* Local */}
           {(event.city || event.state) && (
             <div className={`flex items-center gap-2 text-sm ${isEnded ? 'text-slate-600' : 'text-gray-700'}`}>
-              <MapPin className={`h-4 w-4 ${isEnded ? 'text-slate-500' : 'text-red-600'}`} />
+              <MapPin className={`h-4 w-4 ${isEnded ? 'text-slate-500' : 'text-blue-600'}`} />
               <span>
                 {event.city}
                 {event.city && event.state && ', '}
@@ -199,7 +199,7 @@ const EventCard: React.FC<EventCardProps> = ({ event, status = 'active', showSta
           {/* Limite de Participantes */}
           {event.max_participants && (
             <div className={`flex items-center gap-2 text-sm ${isEnded ? 'text-slate-600' : 'text-gray-700'}`}>
-              <Users className={`h-4 w-4 ${isEnded ? 'text-slate-500' : 'text-green-600'}`} />
+              <Users className={`h-4 w-4 ${isEnded ? 'text-slate-500' : 'text-blue-600'}`} />
               <span>Limite: {event.max_participants} participantes</span>
             </div>
           )}
