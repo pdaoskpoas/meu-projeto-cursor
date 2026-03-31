@@ -25,7 +25,7 @@ const AboutPage = () => {
         </div>
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20 lg:py-28">
-          <div className="grid lg:grid-cols-[1fr_340px] gap-12 lg:gap-16 items-center">
+          <div className="grid lg:grid-cols-[1fr_500px] gap-12 lg:gap-16 items-center">
 
             {/* Texto */}
             <div>
@@ -64,56 +64,26 @@ const AboutPage = () => {
               </div>
             </div>
 
-            {/* Card visual com logo */}
-            <div className="hidden lg:flex flex-col items-center">
-              <div className="w-full rounded-2xl overflow-hidden shadow-2xl shadow-black/20 bg-gradient-to-br from-white/[0.08] to-white/[0.02] backdrop-blur-sm border border-white/10 aspect-[4/5] flex flex-col items-center justify-center p-8 relative">
-                <div className="absolute inset-0 opacity-[0.05]">
-                  <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
-                    <defs>
-                      <pattern id="card-dots" width="16" height="16" patternUnits="userSpaceOnUse">
-                        <circle cx="8" cy="8" r="0.8" fill="white" />
-                      </pattern>
-                    </defs>
-                    <rect width="100%" height="100%" fill="url(#card-dots)" />
-                  </svg>
-                </div>
-
-                <div className="relative text-center text-white">
-                  <div className="w-24 h-24 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center mx-auto mb-5">
-                    <img
-                      src="/logo.png.png"
-                      alt="Logo Vitrine do Cavalo"
-                      className="w-14 h-14 object-contain"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.style.display = 'none';
-                      }}
-                    />
-                  </div>
-                  <h3 className="text-2xl font-bold">Vitrine do Cavalo</h3>
-                  <p className="text-blue-200/70 text-sm mt-2 font-medium tracking-wide">Plataforma do Mercado Equestre</p>
-                </div>
+            {/* Imagem Vitrine — desktop */}
+            <div className="hidden lg:flex justify-center">
+              <div className="rounded-2xl overflow-hidden shadow-2xl shadow-black/40 border border-white/10 ring-1 ring-white/5 max-w-[593px] w-full">
+                <img
+                  src="/teste.png"
+                  alt="Plataforma Vitrine do Cavalo"
+                  className="w-full h-auto block"
+                  style={{ imageRendering: 'auto' }}
+                />
               </div>
             </div>
 
-            {/* Logo card mobile — versão compacta */}
-            <div className="lg:hidden flex justify-center">
-              <div className="inline-flex items-center gap-4 bg-white/[0.07] backdrop-blur-sm border border-white/10 rounded-2xl px-6 py-4">
-                <div className="w-14 h-14 rounded-full bg-white/10 border border-white/20 flex items-center justify-center flex-shrink-0">
-                  <img
-                    src="/logo.png.png"
-                    alt="Logo Vitrine do Cavalo"
-                    className="w-8 h-8 object-contain"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.style.display = 'none';
-                    }}
-                  />
-                </div>
-                <div className="text-white">
-                  <h3 className="text-lg font-bold">Vitrine do Cavalo</h3>
-                  <p className="text-blue-200/70 text-xs font-medium tracking-wide">Plataforma do Mercado Equestre</p>
-                </div>
+            {/* Imagem Vitrine — mobile */}
+            <div className="lg:hidden">
+              <div className="rounded-2xl overflow-hidden shadow-xl shadow-black/40 border border-white/10">
+                <img
+                  src="/teste.png"
+                  alt="Plataforma Vitrine do Cavalo"
+                  className="w-full h-auto object-cover block"
+                />
               </div>
             </div>
 
