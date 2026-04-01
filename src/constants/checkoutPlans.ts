@@ -40,7 +40,7 @@ export const CHECKOUT_PLANS: CheckoutPlan[] = [
     id: 'essencial',
     name: 'Essencial',
     description: 'Para quem está começando',
-    monthlyPrice: 39.90,
+    monthlyPrice: 37.90,
     annualTotal: 399.00,
     animalLimit: 1,
     boostsPerMonth: 0,

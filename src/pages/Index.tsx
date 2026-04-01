@@ -20,6 +20,13 @@ const Index = () => {
       {/* Hero — primeiro contato, CTA claro */}
       <HeroSection />
 
+      {/* Patrocinadores — logo após o hero */}
+      <LazySection minHeight="220px">
+        <Suspense fallback={<div className="min-h-[220px]" />}>
+          <SponsorsCarousel />
+        </Suspense>
+      </LazySection>
+
       {/* Animais mais buscados — prova visual imediata logo após o hero */}
       <FavoritesProviderBoundary>
         <LazySection minHeight="400px">
@@ -91,13 +98,6 @@ const Index = () => {
             <AuctionCarousel />
           </Suspense>
         </SectionContainer>
-      </LazySection>
-
-      {/* Patrocinadores */}
-      <LazySection minHeight="220px">
-        <Suspense fallback={<div className="min-h-[220px]" />}>
-          <SponsorsCarousel />
-        </Suspense>
       </LazySection>
 
       {/* Notícias e conteúdo */}

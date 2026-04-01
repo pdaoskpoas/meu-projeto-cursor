@@ -84,10 +84,10 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
                 </Badge>
               </div>
               <p className="text-2xl font-bold mb-3">
-                A partir de R$ 39,90<span className="text-sm font-normal opacity-80">/mês</span>
+                A partir de R$ 37,90<span className="text-sm font-normal opacity-80">/mês</span>
               </p>
               <div className="space-y-1.5 text-sm opacity-90">
-                <p>Essencial: 1 animal por R$ 39,90/mês</p>
+                <p>Essencial: 1 animal por R$ 37,90/mês</p>
                 <p>Criador: 5 animais + 2 turbinares por R$ 97,90/mês</p>
                 <p>Haras Destaque: 10 animais + 5 turbinares por R$ 197,90/mês</p>
                 <p>Elite: 25 animais + 10 turbinares por R$ 397,90/mês</p>

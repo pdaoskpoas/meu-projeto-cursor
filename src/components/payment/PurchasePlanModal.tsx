@@ -4,7 +4,7 @@
  * =================================================================
  *
  * Modelo 100% baseado em planos:
- * - Essencial: R$ 39,90/mês | R$ 399,00/ano → 1 animal
+ * - Essencial: R$ 37,90/mês | R$ 399,00/ano → 1 animal
  * - Criador: R$ 97,90/mês | R$ 997,00/ano → 5 animais + 2 turbinares
  * - Haras Destaque: R$ 197,90/mês | R$ 1.997,00/ano → 10 animais + 5 turbinares
  * - Elite: R$ 397,90/mês | R$ 3.997,00/ano → 25 animais + 10 turbinares

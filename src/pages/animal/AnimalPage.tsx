@@ -363,7 +363,7 @@ const AnimalPage = () => {
                 <div className="flex items-center gap-2">
                   <Calendar className="h-4 w-4 text-gray-500" />
                   <span className="text-sm text-gray-600">Nascimento:</span>
-                  <span className="font-medium">{new Date(horse.birthDate).toLocaleDateString('pt-BR')}</span>
+                  <span className="font-medium">{horse.birthDate ? String(horse.birthDate).split('-').reverse().join('/') : '—'}</span>
                 </div>
                 
                 <div className="flex items-center gap-2">

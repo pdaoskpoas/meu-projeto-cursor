@@ -20,7 +20,7 @@ export const usePlansData = () => {
       name: 'Essencial',
       ads: 1,
       boostsPerMonth: 0,
-      monthlyPrice: 39.90,
+      monthlyPrice: 37.90,
       annualPrice: 399.00,
       features: [
         'Cadastre até 1 animal ativo',

@@ -77,12 +77,17 @@ export const useTopAnimalsByGender = (
       if (impError) throw impError;
 
       if (!monthImpressions || monthImpressions.length === 0) {
-        // Sem dados no mês ainda: fallback para all-time
+        // Sem dados no mês ainda: fallback para all-time mas sem exibir contagem
+        // (não queremos mostrar impression_count geral como se fosse do mês)
         const { data: fallback, error: fbError } = await buildBaseQuery()
           .order('impression_count', { ascending: false })
           .limit(limit);
         if (fbError) throw fbError;
-        setAnimals(normalizeAnimals(fallback || []));
+        const withoutCount = (fallback || []).map(a => ({
+          ...(a as Record<string, unknown>),
+          impressions: 0,
+        }));
+        setAnimals(normalizeAnimals(withoutCount));
         return;
       }
 
@@ -109,17 +114,27 @@ export const useTopAnimalsByGender = (
         .slice(0, limit);
 
       // Fallback: se nenhum animal do gênero estava entre os top impressionados no mês,
-      // usa ranking all-time para não deixar a seção vazia
+      // usa ranking all-time para não deixar a seção vazia, mas sem contagem
       if (sorted.length === 0) {
         const { data: fallback, error: fbError } = await buildBaseQuery()
           .order('impression_count', { ascending: false })
           .limit(limit);
         if (fbError) throw fbError;
-        setAnimals(normalizeAnimals(fallback || []));
+        const withoutCount = (fallback || []).map(a => ({
+          ...(a as Record<string, unknown>),
+          impressions: 0,
+        }));
+        setAnimals(normalizeAnimals(withoutCount));
         return;
       }
 
-      setAnimals(normalizeAnimals(sorted));
+      // Substituir impressions pelo count do mês para exibição correta no badge
+      const enriched = sorted.map(a => ({
+        ...(a as Record<string, unknown>),
+        impressions: countMap[(a as Record<string, unknown>).id as string] || 0,
+      }));
+
+      setAnimals(normalizeAnimals(enriched));
     } catch (err) {
       console.error(`Error fetching top ${gender} animals:`, err);
       setError(err as Error);

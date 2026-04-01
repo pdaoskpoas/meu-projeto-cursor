@@ -6,7 +6,8 @@ const getUnitLabel = (value: number, singular: string, plural: string): string =
   `${value} ${value === 1 ? singular : plural}`;
 
 export const getDetailedAge = (birthDate: string): string => {
-  const birth = new Date(birthDate);
+  const [y, m, d] = birthDate.split('-').map(Number);
+  const birth = new Date(y, m - 1, d);
   if (Number.isNaN(birth.getTime())) return 'Idade não informada';
 
   const today = new Date();
