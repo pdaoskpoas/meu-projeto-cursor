@@ -27,6 +27,7 @@ export interface EventFormData {
   title: string;
   event_type: string;
   description: string;
+  cep: string;
   start_date: string;
   end_date: string;
   location: string;
@@ -52,6 +53,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ isOpen, onClose, on
     title: '',
     event_type: '',
     description: '',
+    cep: '',
     start_date: '',
     end_date: '',
     location: '',
@@ -117,6 +119,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ isOpen, onClose, on
           title: formData.title,
           event_type: formData.event_type,
           description: formData.description,
+          cep: formData.cep,
           start_date: formData.start_date,
           end_date: formData.end_date,
           location: formData.location,
@@ -139,15 +142,13 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ isOpen, onClose, on
     setFormData(prev => ({ ...prev, [field]: value }));
   }, []);
 
-  // Verificar se há dados preenchidos
   const hasFormData = useCallback(() => {
-    return formData.title.trim() !== '' || 
-           formData.event_type.trim() !== '' || 
+    return formData.title.trim() !== '' ||
+           formData.event_type.trim() !== '' ||
            formData.description.trim() !== '' ||
            formData.start_date.trim() !== '';
   }, [formData]);
 
-  // Interceptar tentativa de fechar
   const handleCloseAttempt = () => {
     if (hasFormData()) {
       setShowCancelDialog(true);
@@ -156,25 +157,22 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ isOpen, onClose, on
     }
   };
 
-  // Confirmar cancelamento
   const handleConfirmCancel = async () => {
     setShowCancelDialog(false);
-
     resetForm();
     onClose();
   };
 
-  // Continuar preenchimento
   const handleContinueEditing = () => {
     setShowCancelDialog(false);
   };
 
-  // Função para resetar formulário
   const resetForm = () => {
     setFormData({
       title: '',
       event_type: '',
       description: '',
+      cep: '',
       start_date: '',
       end_date: '',
       location: '',
@@ -191,10 +189,29 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ isOpen, onClose, on
   const handlePublish = async () => {
     console.log('🚀 Iniciando publicação de evento...');
     setIsSubmitting(true);
-    
+
     try {
       if (!user) {
         throw new Error('Usuário não autenticado');
+      }
+
+      if (!formData.title.trim()) {
+        throw new Error('O título do evento é obrigatório');
+      }
+      if (!formData.event_type.trim()) {
+        throw new Error('O tipo do evento é obrigatório');
+      }
+      if (!formData.start_date) {
+        throw new Error('A data de início é obrigatória');
+      }
+      if (!formData.end_date) {
+        throw new Error('A data de término é obrigatória');
+      }
+      if (!formData.city.trim()) {
+        throw new Error('A cidade é obrigatória');
+      }
+      if (!formData.state.trim()) {
+        throw new Error('O estado é obrigatório');
       }
 
       const limitCheck = await eventLimitsService.checkEventLimit(user.id);
@@ -206,29 +223,35 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ isOpen, onClose, on
         });
         return;
       }
-      
-      console.log('📝 Criando evento ativo...');
-      
-      const now = new Date();
-      const expiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
 
-      // 1. Criar evento como ativo (sem pagamento individual)
+      console.log('📝 Criando evento ativo...');
+
+      // expires_at = data de término do evento
+      const expiresAt = formData.end_date
+        ? new Date(formData.end_date + 'T23:59:59').toISOString()
+        : null;
+
       const eventData = {
-        title: formData.title,
-        event_type: formData.event_type,
-        description: formData.description || null,
+        title: formData.title.trim(),
+        event_type: formData.event_type.trim(),
+        description: formData.description.trim() || null,
         start_date: formData.start_date,
         end_date: formData.end_date || null,
-        location: formData.location || null,
-        city: formData.city,
-        state: formData.state,
+        location: formData.location.trim() || null,
+        city: formData.city.trim(),
+        state: formData.state.trim(),
         max_participants: formData.max_participants ? parseInt(formData.max_participants) : null,
         registration_deadline: formData.registration_deadline || null,
         organizer_id: user.id,
         ad_status: 'active',
         is_individual_paid: false,
+        // Usuário com plano ativo = publicação incluída no plano → status 'completed'
+        payment_status: 'completed',
+        published_at: new Date().toISOString(),
         expires_at: expiresAt,
       };
+
+      console.log('📦 Dados do evento:', eventData);
 
       const { data: createdEvent, error: createError } = await supabase
         .from('events')
@@ -238,24 +261,23 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ isOpen, onClose, on
 
       if (createError) {
         console.error('❌ Erro ao criar evento:', createError);
-        throw createError;
+        throw new Error(createError.message || 'Erro ao salvar evento no banco de dados');
       }
 
       console.log('✅ Evento criado:', createdEvent.id);
 
-      // 2. Upload da imagem de capa, se houver
+      // Upload da imagem de capa, se houver
       if (formData.cover_image) {
         try {
           console.log('📸 Fazendo upload da imagem de capa...');
           const uploadStart = Date.now();
           const maxRetries = uploadRetryEnabled ? 3 : 1;
           const baseDelayMs = 1000;
-          
+
           const fileExt = formData.cover_image.name.split('.').pop();
           const fileName = `${createdEvent.id}-${Date.now()}.${fileExt}`;
           const filePath = `${user.id}/${fileName}`;
 
-          // Upload no bucket de eventos
           let uploadError: Error | null = null;
           let attempt = 1;
 
@@ -283,9 +305,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ isOpen, onClose, on
             }
 
             uploadError = attemptError;
-            if (attempt >= maxRetries) {
-              break;
-            }
+            if (attempt >= maxRetries) break;
             const delay = baseDelayMs * Math.pow(2, attempt - 1);
             await new Promise(resolve => setTimeout(resolve, delay));
           }
@@ -302,54 +322,49 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ isOpen, onClose, on
               success: false,
               errorMessage: uploadError.message,
             });
-            throw uploadError;
+            // Não falhar a criação por causa da imagem
+          } else {
+            logUploadMetric({
+              type: 'upload',
+              context: 'event',
+              fileName: formData.cover_image.name,
+              sizeBytes: formData.cover_image.size,
+              durationMs: Date.now() - uploadStart,
+              retries: attempt - 1,
+              success: true,
+            });
+
+            const { data: urlData } = supabase.storage
+              .from('events')
+              .getPublicUrl(filePath);
+
+            await supabase
+              .from('events')
+              .update({ cover_image_url: urlData.publicUrl })
+              .eq('id', createdEvent.id);
+
+            console.log('✅ Imagem de capa atualizada');
           }
-
-          console.log('✅ Imagem enviada:', filePath);
-          logUploadMetric({
-            type: 'upload',
-            context: 'event',
-            fileName: formData.cover_image.name,
-            sizeBytes: formData.cover_image.size,
-            durationMs: Date.now() - uploadStart,
-            retries: attempt - 1,
-            success: true,
-          });
-
-          // Obter URL pública
-          const { data: urlData } = supabase.storage
-            .from('events')
-            .getPublicUrl(filePath);
-
-          console.log('🔗 URL pública:', urlData.publicUrl);
-
-          // Atualizar evento com a URL da imagem
-          await supabase
-            .from('events')
-            .update({ cover_image_url: urlData.publicUrl })
-            .eq('id', createdEvent.id);
-
-          console.log('✅ URL da imagem atualizada no evento');
         } catch (uploadError) {
           console.error('⚠️ Erro ao fazer upload da imagem (não crítico):', uploadError);
-          // Não falhar a criação do evento por causa da imagem
         }
-      } else {
-        console.log('ℹ️ Nenhuma imagem de capa foi fornecida');
       }
 
       toast({
         title: 'Evento publicado!',
-        description: 'Seu evento já está na página de eventos. Para destacar na home por 24h, use o botão Turbinar.',
+        description: 'Seu evento já está na página de eventos. Para destacar na home, use o botão Turbinar.',
       });
 
       resetForm();
       onSuccess();
       onClose();
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : 'Erro desconhecido';
+      const message = error instanceof Error
+        ? error.message
+        : (error as { message?: string })?.message || 'Erro desconhecido';
+
       console.error('❌ Erro fatal ao publicar evento:', error);
-      
+
       toast({
         title: 'Erro ao publicar evento',
         description: message,
@@ -367,7 +382,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ isOpen, onClose, on
       description: 'Título, tipo e descrição do evento',
       icon: Calendar,
       component: () => (
-        <EventBasicInfoStep 
+        <EventBasicInfoStep
           formData={{
             title: formData.title,
             event_type: formData.event_type,
@@ -384,8 +399,9 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ isOpen, onClose, on
       description: 'Quando e onde será o evento',
       icon: MapPin,
       component: () => (
-        <EventDateLocationStep 
+        <EventDateLocationStep
           formData={{
+            cep: formData.cep,
             start_date: formData.start_date,
             end_date: formData.end_date,
             location: formData.location,
@@ -395,7 +411,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ isOpen, onClose, on
           onInputChange={handleInputChange}
         />
       ),
-      isValid: !!(formData.start_date && formData.city && formData.state)
+      isValid: !!(formData.start_date && formData.end_date && formData.city && formData.state)
     },
     {
       id: 'details',
@@ -403,7 +419,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ isOpen, onClose, on
       description: 'Inscrições e limite de participantes',
       icon: FileText,
       component: () => (
-        <EventDetailsStep 
+        <EventDetailsStep
           formData={{
             max_participants: formData.max_participants,
             registration_deadline: formData.registration_deadline,
@@ -413,7 +429,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ isOpen, onClose, on
         />
       ),
       isOptional: true,
-      isValid: true // Steps opcionais são sempre válidos
+      isValid: true
     },
     {
       id: 'review',
@@ -421,17 +437,12 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ isOpen, onClose, on
       description: 'Confirme os dados e publique',
       icon: CheckCircle,
       component: () => (
-        <EventReviewStep 
-          formData={formData}
-          onPublish={handlePublish}
-          isSubmitting={isSubmitting}
-        />
+        <EventReviewStep formData={formData} />
       ),
-      isValid: true,
-      hideActions: true // Oculta botões padrão, componente tem os próprios
+      isValid: true
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  ], [formData, handleInputChange, isSubmitting]);
+  ], [formData, handleInputChange]);
 
   const handleCancel = () => {
     handleCloseAttempt();
@@ -456,7 +467,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ isOpen, onClose, on
             <div className={planBlocked ? 'blur-[2px] pointer-events-none select-none opacity-60' : ''}>
               <StepWizard
                 steps={steps}
-                onComplete={async () => {}}
+                onComplete={handlePublish}
                 onCancel={handleCancel}
                 isSubmitting={isSubmitting}
               />
@@ -501,7 +512,6 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ isOpen, onClose, on
         </DialogContent>
       </Dialog>
 
-      {/* Dialog de confirmação de cancelamento */}
       {!planBlocked && (
         <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
           <AlertDialogContent>
@@ -528,7 +538,6 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ isOpen, onClose, on
           </AlertDialogContent>
         </AlertDialog>
       )}
-
     </>
   );
 };

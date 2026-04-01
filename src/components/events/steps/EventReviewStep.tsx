@@ -1,49 +1,50 @@
 import React from 'react';
 import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Calendar, MapPin, Users, Info } from 'lucide-react';
 import { EventFormData } from '../CreateEventModal';
 import { Badge } from '@/components/ui/badge';
 
 interface EventReviewStepProps {
   formData: EventFormData;
-  onPublish: () => void;
-  isSubmitting?: boolean;
 }
 
-const EventReviewStep: React.FC<EventReviewStepProps> = ({ 
-  formData, 
-  onPublish, 
-  isSubmitting = false 
-}) => {
+const formatDate = (dateString: string) => {
+  if (!dateString) return '';
+  // Handle both "YYYY-MM-DD" and ISO strings
+  const [year, month, day] = dateString.split('T')[0].split('-');
+  return new Date(Number(year), Number(month) - 1, Number(day)).toLocaleDateString('pt-BR', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric'
+  });
+};
+
+const EventReviewStep: React.FC<EventReviewStepProps> = ({ formData }) => {
   return (
     <div className="space-y-5">
-      {/* Resumo do Evento - Minimalista */}
+      {/* Resumo do Evento */}
       <Card className="p-5 border-slate-200">
         <div className="space-y-4">
           <div>
             <p className="text-xl font-bold text-slate-900 mb-1">{formData.title}</p>
             <Badge variant="secondary" className="text-xs">{formData.event_type}</Badge>
           </div>
-          
+
           <div className="flex items-center gap-2 text-sm text-slate-600">
             <Calendar className="h-4 w-4 shrink-0" />
             <span>
-              {new Date(formData.start_date).toLocaleDateString('pt-BR', {
-                day: '2-digit',
-                month: 'long',
-                year: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-              })}
+              {formData.start_date ? formatDate(formData.start_date) : '—'}
+              {formData.end_date && formData.end_date !== formData.start_date
+                ? ` até ${formatDate(formData.end_date)}`
+                : ''}
             </span>
           </div>
-          
+
           <div className="flex items-center gap-2 text-sm text-slate-600">
             <MapPin className="h-4 w-4 shrink-0" />
-            <span>{formData.city}, {formData.state}</span>
+            <span>{formData.city}{formData.state ? `, ${formData.state}` : ''}</span>
           </div>
-          
+
           {formData.max_participants && (
             <div className="flex items-center gap-2 text-sm text-slate-600">
               <Users className="h-4 w-4 shrink-0" />
@@ -62,7 +63,7 @@ const EventReviewStep: React.FC<EventReviewStepProps> = ({
             <ul className="text-sm text-slate-700 space-y-1.5">
               <li className="flex items-start gap-2">
                 <span className="text-blue-600 font-bold">•</span>
-                <span>Seu evento ficará <strong>ativo por 30 dias</strong></span>
+                <span>Seu evento ficará <strong>ativo até a data de término</strong> informada</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-blue-600 font-bold">•</span>
@@ -70,36 +71,20 @@ const EventReviewStep: React.FC<EventReviewStepProps> = ({
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-blue-600 font-bold">•</span>
-                <span>Para aparecer na home por 24h, use o botão <strong>Turbinar</strong></span>
+                <span>Para aparecer na home, use o botão <strong>Turbinar</strong></span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-blue-600 font-bold">•</span>
-                <span>Você tem <strong>24 horas para editar</strong> após publicar</span>
+                <span>Após a data de término, o evento é marcado como <strong>expirado</strong> automaticamente</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-blue-600 font-bold">•</span>
-                <span>Após 30 dias, o evento pausa automaticamente</span>
+                <span>Se sua assinatura for cancelada, o evento fica <strong>pausado</strong></span>
               </li>
             </ul>
           </div>
         </div>
       </Card>
-
-      {/* Botão de Publicar */}
-      <Button 
-        onClick={onPublish}
-        disabled={isSubmitting}
-        className="w-full h-12 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold text-base rounded-lg shadow-lg shadow-blue-600/30 hover:shadow-xl hover:shadow-blue-600/40"
-      >
-        {isSubmitting ? (
-          <>
-            <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-            Publicando...
-          </>
-        ) : (
-          'Publicar Agora'
-        )}
-      </Button>
     </div>
   );
 };

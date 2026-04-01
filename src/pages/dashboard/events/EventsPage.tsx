@@ -219,14 +219,13 @@ const EventsPage = () => {
     if (event.ad_status === 'paused') {
       return <Badge variant="outline" className="border-orange-500 text-orange-700">⏸️ Pausado</Badge>;
     }
-    if (event.ad_status === 'expired') {
+    // Expirado: status do banco OU data de término já passou
+    const isExpiredByDate = event.end_date && new Date(event.end_date) < new Date();
+    if (event.ad_status === 'expired' || isExpiredByDate) {
       return <Badge variant="destructive">🔴 Expirado</Badge>;
     }
-    if (event.days_remaining !== undefined && event.days_remaining <= 7) {
-      return <Badge className="bg-yellow-500">Expira em {event.days_remaining}d</Badge>;
-    }
     if (event.is_boosted) {
-      return <Badge className="bg-purple-600">Turbinado</Badge>;
+      return <Badge className="bg-purple-600">⚡ Turbinado</Badge>;
     }
     return <Badge className="bg-green-600">🟢 Ativo</Badge>;
   };
@@ -471,12 +470,12 @@ const EventsPage = () => {
                       size="sm"
                       variant="outline"
                       onClick={() => navigate(`/dashboard/events/edit/${event.id}`)}
-                      disabled={event.ad_status === 'expired'}
+                      disabled={event.ad_status === 'expired' || !!(event.end_date && new Date(event.end_date) < new Date())}
                     >
                       <Edit className="h-3 w-3" />
                     </Button>
-                    {/* Botão de boost - sempre visível quando ativo */}
-                    {event.ad_status === 'active' && (
+                    {/* Botão de boost - visível apenas quando ativo e não expirado */}
+                    {event.ad_status === 'active' && !(event.end_date && new Date(event.end_date) < new Date()) && (
                       <Button
                         size="sm"
                         onClick={() => handleBoost(event.id)}

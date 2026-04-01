@@ -149,18 +149,19 @@ class EventLimitsService {
   }
   
   /**
-   * Verifica se um evento pode ser editado (24h após publicação)
+   * Verifica se um evento pode ser editado.
+   * Eventos ativos podem ser editados livremente pelo organizador.
+   * Eventos expirados não podem ser editados.
    */
   async canEditEvent(eventId: string, userId: string): Promise<{
     can_edit: boolean;
     reason: string;
     message: string;
-    can_edit_until?: string;
   }> {
     try {
       const { data: event, error } = await supabase
         .from('events')
-        .select('id, organizer_id, can_edit_until, published_at')
+        .select('id, organizer_id, ad_status, end_date')
         .eq('id', eventId)
         .eq('organizer_id', userId)
         .single();
@@ -173,36 +174,18 @@ class EventLimitsService {
         };
       }
 
-      // Verificar se ainda está dentro do prazo de 24h
-      if (!event.can_edit_until) {
+      if (event.ad_status === 'expired') {
         return {
           can_edit: false,
-          reason: 'no_edit_period',
-          message: 'Este evento não possui prazo de edição definido.',
+          reason: 'event_expired',
+          message: 'Este evento já expirou e não pode ser editado.',
         };
       }
 
-      const now = new Date();
-      const canEditUntil = new Date(event.can_edit_until);
-
-      if (now > canEditUntil) {
-        return {
-          can_edit: false,
-          reason: 'edit_period_expired',
-          message: 'O prazo de 24h para edição deste evento expirou.',
-          can_edit_until: event.can_edit_until,
-        };
-      }
-
-      // Pode editar
-      const hoursRemaining = Math.floor((canEditUntil.getTime() - now.getTime()) / (1000 * 60 * 60));
-      const minutesRemaining = Math.floor(((canEditUntil.getTime() - now.getTime()) % (1000 * 60 * 60)) / (1000 * 60));
-      
       return {
         can_edit: true,
-        reason: 'within_edit_period',
-        message: `Você pode editar este evento por mais ${hoursRemaining}h ${minutesRemaining}min.`,
-        can_edit_until: event.can_edit_until,
+        reason: 'allowed',
+        message: 'Você pode editar este evento.',
       };
     } catch (error) {
       console.error('Erro ao verificar permissão de edição:', error);
