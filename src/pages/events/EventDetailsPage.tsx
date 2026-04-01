@@ -138,11 +138,11 @@ const EventDetailsPage: React.FC = () => {
     switch (type) {
       case 'Competição': return '';
       case 'Leilão': return '';
-      case 'Exposição': return '🎖️';
+      case 'Exposição': return '';
       case 'Copa': return '';
-      case 'Curso': return '📚';
-      case 'Encontro': return '🤝';
-      default: return '📅';
+      case 'Curso': return '';
+      case 'Encontro': return '';
+      default: return '';
     }
   };
 

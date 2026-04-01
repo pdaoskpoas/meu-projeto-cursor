@@ -9,8 +9,13 @@ interface EventDetailsStepProps {
     max_participants: string;
     registration_deadline: string;
     cover_image?: File | null;
+    promotora: string;
+    organizadora: string;
+    contact_name: string;
+    contact_phone: string;
+    contact_email: string;
   };
-  onInputChange: (field: string, value: string | number | boolean) => void;
+  onInputChange: (field: string, value: string | number | boolean | File | null) => void;
 }
 
 const EventDetailsStep: React.FC<EventDetailsStepProps> = ({ formData, onInputChange }) => {
@@ -145,6 +150,81 @@ const EventDetailsStep: React.FC<EventDetailsStepProps> = ({ formData, onInputCh
             type="datetime-local"
             value={formData.registration_deadline}
             onChange={(e) => onInputChange('registration_deadline', e.target.value)}
+            className="h-11 border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-lg"
+          />
+        </div>
+
+        {/* Promotora */}
+        <div className="space-y-1.5">
+          <Label htmlFor="promotora" className="text-sm font-medium text-slate-700">
+            Promotora <span className="text-slate-400 font-normal">(opcional)</span>
+          </Label>
+          <Input
+            id="promotora"
+            type="text"
+            placeholder="Ex: Associação C.C.M.M. do Estado do RJ"
+            value={formData.promotora}
+            onChange={(e) => onInputChange('promotora', e.target.value)}
+            className="h-11 border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-lg"
+          />
+        </div>
+
+        {/* Organizadora */}
+        <div className="space-y-1.5">
+          <Label htmlFor="organizadora" className="text-sm font-medium text-slate-700">
+            Organizadora <span className="text-slate-400 font-normal">(opcional)</span>
+          </Label>
+          <Input
+            id="organizadora"
+            type="text"
+            placeholder="Ex: Expresso Eventos"
+            value={formData.organizadora}
+            onChange={(e) => onInputChange('organizadora', e.target.value)}
+            className="h-11 border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-lg"
+          />
+        </div>
+
+        {/* Contato */}
+        <div className="space-y-1.5">
+          <Label htmlFor="contact_name" className="text-sm font-medium text-slate-700">
+            Contato <span className="text-slate-400 font-normal">(opcional)</span>
+          </Label>
+          <Input
+            id="contact_name"
+            type="text"
+            placeholder="Nome do contato"
+            value={formData.contact_name}
+            onChange={(e) => onInputChange('contact_name', e.target.value)}
+            className="h-11 border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-lg"
+          />
+        </div>
+
+        {/* Telefone */}
+        <div className="space-y-1.5">
+          <Label htmlFor="contact_phone" className="text-sm font-medium text-slate-700">
+            Telefone <span className="text-slate-400 font-normal">(opcional)</span>
+          </Label>
+          <Input
+            id="contact_phone"
+            type="tel"
+            placeholder="Ex: 21-97233-4495"
+            value={formData.contact_phone}
+            onChange={(e) => onInputChange('contact_phone', e.target.value)}
+            className="h-11 border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-lg"
+          />
+        </div>
+
+        {/* Email de Contato */}
+        <div className="space-y-1.5">
+          <Label htmlFor="contact_email" className="text-sm font-medium text-slate-700">
+            Email de Contato <span className="text-slate-400 font-normal">(opcional)</span>
+          </Label>
+          <Input
+            id="contact_email"
+            type="email"
+            placeholder="contato@exemplo.com"
+            value={formData.contact_email}
+            onChange={(e) => onInputChange('contact_email', e.target.value)}
             className="h-11 border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-lg"
           />
         </div>

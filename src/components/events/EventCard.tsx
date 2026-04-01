@@ -95,11 +95,11 @@ const EventCard: React.FC<EventCardProps> = ({ event, status = 'active', showSta
     switch (type) {
       case 'Competição': return '';
       case 'Leilão': return '';
-      case 'Exposição': return '🎖️';
+      case 'Exposição': return '';
       case 'Copa': return '';
-      case 'Curso': return '📚';
-      case 'Encontro': return '🤝';
-      default: return '📅';
+      case 'Curso': return '';
+      case 'Encontro': return '';
+      default: return '';
     }
   };
 
@@ -114,12 +114,12 @@ const EventCard: React.FC<EventCardProps> = ({ event, status = 'active', showSta
       }`}
     >
       {/* Imagem de Capa */}
-      <div className="relative h-48 sm:h-56 bg-gradient-to-br from-blue-100 to-blue-200 overflow-hidden">
+      <div className="relative h-48 sm:h-56 bg-white overflow-hidden">
         {event.cover_image_url ? (
           <img
             src={event.cover_image_url}
             alt={event.title}
-            className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ${
+            className={`w-full h-full object-contain group-hover:scale-105 transition-transform duration-500 ${
               isEnded ? 'grayscale opacity-80' : ''
             }`}
           />

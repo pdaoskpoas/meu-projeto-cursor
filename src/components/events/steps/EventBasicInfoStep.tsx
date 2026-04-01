@@ -71,9 +71,11 @@ const EventBasicInfoStep: React.FC<EventBasicInfoStepProps> = ({ formData, onInp
             id="description"
             placeholder="Detalhes do evento, premiações, regras..."
             value={formData.description}
-            onChange={(e) => onInputChange('description', e.target.value)}
+            onChange={(e) => onInputChange('description', e.target.value.slice(0, 300))}
             className="min-h-[100px] border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-lg resize-none text-sm"
+            maxLength={300}
           />
+          <p className="text-xs text-slate-400 text-right">{formData.description.length}/300</p>
         </div>
       </div>
 

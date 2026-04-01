@@ -36,6 +36,11 @@ export interface EventFormData {
   max_participants: string;
   registration_deadline: string;
   cover_image?: File | null;
+  promotora: string;
+  organizadora: string;
+  contact_name: string;
+  contact_phone: string;
+  contact_email: string;
 }
 
 const CreateEventModal: React.FC<CreateEventModalProps> = ({ isOpen, onClose, onSuccess }) => {
@@ -61,7 +66,12 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ isOpen, onClose, on
     state: '',
     max_participants: '',
     registration_deadline: '',
-    cover_image: null
+    cover_image: null,
+    promotora: '',
+    organizadora: '',
+    contact_name: '',
+    contact_phone: '',
+    contact_email: ''
   });
 
   const isFormEmpty = useCallback(() => {
@@ -127,7 +137,12 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ isOpen, onClose, on
           state: formData.state,
           max_participants: formData.max_participants,
           registration_deadline: formData.registration_deadline,
-          cover_image: null
+          cover_image: null,
+          promotora: formData.promotora,
+          organizadora: formData.organizadora,
+          contact_name: formData.contact_name,
+          contact_phone: formData.contact_phone,
+          contact_email: formData.contact_email
         };
         sessionStorage.setItem('eventDraft', JSON.stringify(dataToSave));
       } catch (error) {
@@ -181,6 +196,11 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ isOpen, onClose, on
       max_participants: '',
       registration_deadline: '',
       cover_image: null,
+      promotora: '',
+      organizadora: '',
+      contact_name: '',
+      contact_phone: '',
+      contact_email: ''
     });
     sessionStorage.removeItem('eventDraft');
     draftLoadedRef.current = false;
@@ -245,10 +265,14 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ isOpen, onClose, on
         organizer_id: user.id,
         ad_status: 'active',
         is_individual_paid: false,
-        // Usuário com plano ativo = publicação incluída no plano → status 'completed'
         payment_status: 'completed',
         published_at: new Date().toISOString(),
         expires_at: expiresAt,
+        promotora: formData.promotora.trim() || null,
+        organizadora: formData.organizadora.trim() || null,
+        contact_name: formData.contact_name.trim() || null,
+        contact_phone: formData.contact_phone.trim() || null,
+        contact_email: formData.contact_email.trim() || null,
       };
 
       console.log('📦 Dados do evento:', eventData);
@@ -416,14 +440,19 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ isOpen, onClose, on
     {
       id: 'details',
       title: 'Detalhes Adicionais',
-      description: 'Inscrições e limite de participantes',
+      description: 'Inscrições, limite de participantes e contato',
       icon: FileText,
       component: () => (
         <EventDetailsStep
           formData={{
             max_participants: formData.max_participants,
             registration_deadline: formData.registration_deadline,
-            cover_image: formData.cover_image
+            cover_image: formData.cover_image,
+            promotora: formData.promotora,
+            organizadora: formData.organizadora,
+            contact_name: formData.contact_name,
+            contact_phone: formData.contact_phone,
+            contact_email: formData.contact_email
           }}
           onInputChange={handleInputChange}
         />

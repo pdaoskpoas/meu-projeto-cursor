@@ -19,6 +19,11 @@ export interface EventDetailsEvent {
   organizer_property?: string;
   organizer_email?: string;
   organizer_public_code?: string | null;
+  promotora?: string | null;
+  organizadora?: string | null;
+  contact_name?: string | null;
+  contact_phone?: string | null;
+  contact_email?: string | null;
 }
 
 export interface EventListItem {

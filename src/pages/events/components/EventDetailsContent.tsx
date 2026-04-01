@@ -64,6 +64,16 @@ const EventDetailsContent: React.FC<EventDetailsContentProps> = ({
                 )}
               </p>
             )}
+            {event.promotora && (
+              <p className="text-sm text-gray-600 mt-1">
+                <span className="font-semibold">Promotora:</span> {event.promotora}
+              </p>
+            )}
+            {event.organizadora && (
+              <p className="text-sm text-gray-600 mt-1">
+                <span className="font-semibold">Organizadora:</span> {event.organizadora}
+              </p>
+            )}
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -170,22 +180,32 @@ const EventDetailsContent: React.FC<EventDetailsContentProps> = ({
 
         <Card className="p-6">
           <h3 className="text-lg font-bold text-gray-900 mb-2">
-            Contato do Organizador
+            Contato
           </h3>
-          <p className="text-gray-600 mb-4">
-            Dúvidas sobre inscrições ou participação? Fale direto com o organizador.
-          </p>
-          {event.organizer_email ? (
-            <Button
-              className="w-full"
-              variant="outline"
-              onClick={() => {
-                window.location.href = `mailto:${event.organizer_email}`;
-              }}
-            >
-              <ExternalLink className="h-4 w-4 mr-2" />
-              Entrar em contato
-            </Button>
+          {(event.contact_name || event.contact_phone || event.contact_email || event.organizer_email) ? (
+            <div className="space-y-2">
+              {event.contact_name && (
+                <p className="text-sm text-gray-700">
+                  <span className="font-semibold">Contato:</span> {event.contact_name}
+                </p>
+              )}
+              {event.contact_phone && (
+                <p className="text-sm text-gray-700">
+                  <span className="font-semibold">Telefone:</span> {event.contact_phone}
+                </p>
+              )}
+              {(event.contact_email || event.organizer_email) && (
+                <p className="text-sm text-gray-700">
+                  <span className="font-semibold">Email:</span>{' '}
+                  <a
+                    href={`mailto:${event.contact_email || event.organizer_email}`}
+                    className="text-blue-600 hover:underline"
+                  >
+                    {event.contact_email || event.organizer_email}
+                  </a>
+                </p>
+              )}
+            </div>
           ) : (
             <p className="text-sm text-gray-500">
               Contato não informado.
