@@ -133,6 +133,7 @@ const AnimalPage = () => {
           image: 'mangalarga',
           images: normalizeSupabaseImages(a as Record<string, unknown>),
           views: a.impression_count ?? 0,
+          clickCount: a.click_count ?? 0,
           featured: a.is_boosted ?? false,
           publishedDate: a.published_at ?? new Date().toISOString(),
           allowMessages: a.allow_messages ?? true,
@@ -181,11 +182,11 @@ const AnimalPage = () => {
   }, [id, user?.id]);
   const canSeeViews = horse ? canViewAnimalViews(horse) : false;
   
-  // Stats para exibição
+  // Stats para exibição — dados reais do banco
   const stats = {
     impressions: horse?.views || 0,
-    clicks: Math.floor((horse?.views || 0) * 0.15), // Simulação de 15% de taxa de clique
-    clickRate: horse?.views ? Math.floor((horse?.views || 0) * 0.15) / (horse?.views || 1) * 100 : 0
+    clicks: (horse?.clickCount as number) || 0,
+    clickRate: (horse?.views || 0) > 0 ? ((horse?.clickCount as number) || 0) / (horse?.views || 1) * 100 : 0
   };
 
   // Handlers de analytics para cliques relevantes
