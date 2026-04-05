@@ -78,7 +78,9 @@ const EventCard: React.FC<EventCardProps> = ({ event, status = 'active', showSta
   // Formatar data
   const formatDate = (dateString: string): string => {
     try {
-      const date = new Date(dateString);
+      const parts = dateString.split('T')[0].split('-').map(Number);
+      if (parts.length !== 3 || parts.some(isNaN)) return 'Data a confirmar';
+      const date = new Date(parts[0], parts[1] - 1, parts[2]);
       if (isNaN(date.getTime())) return 'Data a confirmar';
       return date.toLocaleDateString('pt-BR', {
         day: '2-digit',

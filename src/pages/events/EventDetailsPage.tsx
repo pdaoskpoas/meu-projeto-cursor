@@ -22,15 +22,15 @@ const EventDetailsPage: React.FC = () => {
   // Formatar data
   const formatDate = (dateString: string): string => {
     try {
-      const date = new Date(dateString);
+      const parts = dateString.split('T')[0].split('-').map(Number);
+      if (parts.length !== 3 || parts.some(isNaN)) return 'Data a confirmar';
+      const date = new Date(parts[0], parts[1] - 1, parts[2]);
       if (isNaN(date.getTime())) return 'Data a confirmar';
       return date.toLocaleDateString('pt-BR', {
         weekday: 'long',
         day: '2-digit',
         month: 'long',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
+        year: 'numeric'
       });
     } catch {
       return 'Data a confirmar';
@@ -39,7 +39,9 @@ const EventDetailsPage: React.FC = () => {
 
   const formatShortDate = (dateString: string): string => {
     try {
-      const date = new Date(dateString);
+      const parts = dateString.split('T')[0].split('-').map(Number);
+      if (parts.length !== 3 || parts.some(isNaN)) return 'Data a confirmar';
+      const date = new Date(parts[0], parts[1] - 1, parts[2]);
       if (isNaN(date.getTime())) return 'Data a confirmar';
       return date.toLocaleDateString('pt-BR', {
         day: '2-digit',

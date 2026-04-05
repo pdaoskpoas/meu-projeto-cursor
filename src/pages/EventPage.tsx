@@ -46,22 +46,27 @@ const EventPage = () => {
 
   const getImageSrc = (imageName: string) => eventImages[imageName] || fallbackImage;
 
+  const parseLocalDate = (dateString: string): Date => {
+    const parts = dateString.split('T')[0].split('-').map(Number);
+    return new Date(parts[0], parts[1] - 1, parts[2]);
+  };
+
   const formatDate = (dateString: string, endDate?: string) => {
-    const date = new Date(dateString);
+    const date = parseLocalDate(dateString);
     const formattedDate = date.toLocaleDateString('pt-BR', {
       day: '2-digit',
       month: 'long',
       year: 'numeric'
     });
-    
+
     if (endDate) {
-      const endDateFormatted = new Date(endDate).toLocaleDateString('pt-BR', {
+      const endDateFormatted = parseLocalDate(endDate).toLocaleDateString('pt-BR', {
         day: '2-digit',
         month: 'long'
       });
       return `${formattedDate} a ${endDateFormatted}`;
     }
-    
+
     return formattedDate;
   };
 

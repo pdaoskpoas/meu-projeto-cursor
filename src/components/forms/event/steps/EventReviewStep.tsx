@@ -15,7 +15,9 @@ const EventReviewStep: React.FC<EventReviewStepProps> = ({ formData }) => {
 
   const formatDate = (dateString: string) => {
     if (!dateString) return '';
-    return new Date(dateString).toLocaleDateString('pt-BR');
+    const parts = dateString.split('T')[0].split('-').map(Number);
+    if (parts.length !== 3 || parts.some(isNaN)) return dateString;
+    return new Date(parts[0], parts[1] - 1, parts[2]).toLocaleDateString('pt-BR');
   };
 
   const formatTime = (timeString: string) => {
