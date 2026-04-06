@@ -63,12 +63,13 @@ const HeroSection: React.FC = () => {
           {/* ── Coluna esquerda: copy + CTAs ── */}
           <div className="space-y-6 sm:space-y-8">
 
-            {/* Badge de contexto */}
-            <div className="inline-flex items-center gap-2 bg-blue-500/15 border border-blue-400/20 rounded-full px-3.5 py-1.5">
-              <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
-              <span className="text-xs font-medium text-blue-300 tracking-wide">
+            {/* Eyebrow — editorial treatment */}
+            <div className="inline-flex items-center gap-3">
+              <span className="w-8 h-px bg-blue-400/40" />
+              <span className="text-[11px] font-semibold text-blue-300/80 tracking-[0.22em] uppercase">
                 A maior vitrine equestre do Brasil
               </span>
+              <span className="w-8 h-px bg-blue-400/40" />
             </div>
 
             {/* Headline */}

@@ -96,9 +96,11 @@ export const useTopAnimalsByGender = (
         countMap[row.content_id] = (countMap[row.content_id] || 0) + 1;
       }
 
+      // Pegar os top 500 IDs por impressões (generoso para cobrir ambos os gêneros)
+      // Não aplicar slice pequeno antes do filtro de gênero para não excluir animais válidos
       const topIds = Object.entries(countMap)
         .sort(([, a], [, b]) => b - a)
-        .slice(0, limit * 5)
+        .slice(0, 500)
         .map(([id]) => id);
 
       const { data, error: fetchError } = await buildBaseQuery().in('id', topIds);
