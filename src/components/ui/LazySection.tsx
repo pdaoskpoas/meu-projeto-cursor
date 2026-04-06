@@ -55,7 +55,7 @@ const LazySection: React.FC<LazySectionProps> = ({
 
   return (
     <section ref={elementRef} className={cn('content-visibility-auto', className)}>
-      {isVisible ? children : (fallback || <CarouselSkeleton minHeight={minHeight} />)}
+      {isVisible ? children : (fallback !== undefined ? fallback : <CarouselSkeleton minHeight={minHeight} />)}
     </section>
   );
 };

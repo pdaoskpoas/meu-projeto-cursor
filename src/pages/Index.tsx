@@ -91,13 +91,11 @@ const Index = () => {
         </SectionContainer>
       </LazySection>
 
-      {/* Eventos */}
-      <LazySection minHeight="350px">
-        <SectionContainer variant="default" size="default">
-          <Suspense fallback={null}>
-            <AuctionCarousel />
-          </Suspense>
-        </SectionContainer>
+      {/* Eventos turbinados — renderiza apenas quando há eventos ativos */}
+      <LazySection minHeight="0" fallback={null}>
+        <Suspense fallback={null}>
+          <AuctionCarousel />
+        </Suspense>
       </LazySection>
 
       {/* Notícias e conteúdo */}
