@@ -37,6 +37,8 @@ export interface Sponsor {
   display_locations: string[];
   click_count: number;
   impression_count: number;
+  linked_profile_id?: string;
+  click_action_enabled: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -50,6 +52,8 @@ export interface CreateSponsorData {
   start_date?: string;
   end_date?: string;
   display_locations?: string[];
+  linked_profile_id?: string | null;
+  click_action_enabled?: boolean;
 }
 
 export interface UploadLogosData {

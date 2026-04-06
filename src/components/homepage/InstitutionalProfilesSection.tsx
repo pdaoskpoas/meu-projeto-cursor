@@ -28,20 +28,47 @@ const InstitutionalProfilesSection: React.FC = () => {
   useEffect(() => {
     const fetchProfiles = async () => {
       try {
-        // Buscar perfis institucionais ativos com plano pago
-        const { data, error } = await supabase
-          .from('public_profiles')
-          .select('id, property_name, avatar_url, city, state, property_type')
-          .eq('account_type', 'institutional')
-          .eq('is_active', true)
-          .eq('is_suspended', false)
-          .neq('plan', 'free')
-          .order('created_at', { ascending: false })
-          .limit(12);
+        // 1. Buscar todas as visitas a páginas de haras (all-time)
+        const { data: visits } = await supabase
+          .from('page_visits')
+          .select('page_path')
+          .eq('page_key', 'haras_detail')
+          .limit(10000);
 
-        if (error) throw error;
+        // 2. Agrupar por path e contar visitas
+        const counts: Record<string, number> = {};
+        for (const visit of visits || []) {
+          counts[visit.page_path] = (counts[visit.page_path] || 0) + 1;
+        }
 
-        // Buscar contagem total
+        // 3. Ordenar por visitas, pegar top 12, extrair IDs
+        const topIds = Object.entries(counts)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 12)
+          .map(([path]) => path.split('/haras/')[1]?.split('?')[0])
+          .filter(Boolean) as string[];
+
+        // 4. Buscar perfis para os IDs mais visitados
+        if (topIds.length > 0) {
+          const { data, error } = await supabase
+            .from('public_profiles')
+            .select('id, property_name, avatar_url, city, state, property_type')
+            .in('id', topIds)
+            .eq('account_type', 'institutional')
+            .eq('is_active', true)
+            .eq('is_suspended', false);
+
+          if (error) throw error;
+
+          // Manter ordem de popularidade
+          const sorted = topIds
+            .map(id => (data || []).find(p => p.id === id))
+            .filter(Boolean) as InstitutionalProfile[];
+
+          setProfiles(sorted);
+        }
+
+        // 5. Contagem total de haras ativos
         const { count } = await supabase
           .from('public_profiles')
           .select('id', { count: 'exact', head: true })
@@ -50,13 +77,6 @@ const InstitutionalProfilesSection: React.FC = () => {
           .eq('is_suspended', false)
           .neq('plan', 'free');
 
-        // Priorizar perfis com logo/avatar para maior impacto visual
-        const sorted = (data || []).sort((a, b) => {
-          if (a.avatar_url && !b.avatar_url) return -1;
-          if (!a.avatar_url && b.avatar_url) return 1;
-          return 0;
-        });
-        setProfiles(sorted);
         setTotalCount(count || 0);
       } catch (error) {
         console.error('Erro ao carregar perfis institucionais:', error);

@@ -13,7 +13,9 @@ import {
   MousePointerClick,
   CheckCircle2,
   Image as ImageIcon,
+  Search,
 } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
@@ -29,20 +31,33 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import SponsorService, { Sponsor, CreateSponsorData } from '@/services/sponsorService';
 
+interface HarasOption {
+  id: string;
+  label: string;
+}
+
 const AdminSponsors: React.FC = () => {
   const [sponsors, setSponsors] = useState<Sponsor[]>([]);
   const [loading, setLoading] = useState(true);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingSponsor, setEditingSponsor] = useState<Sponsor | null>(null);
-  
-  // Form state (simplificado)
+
+  // Form state
   const [formData, setFormData] = useState({
     name: '',
     website_url: '',
     is_active: false,
+    linked_profile_id: '' as string,
+    click_action_enabled: false,
   });
-  
+
+  // Haras search
+  const [harasOptions, setHarasOptions] = useState<HarasOption[]>([]);
+  const [harasSearch, setHarasSearch] = useState('');
+  const [harasSearchResults, setHarasSearchResults] = useState<HarasOption[]>([]);
+  const [showHarasDropdown, setShowHarasDropdown] = useState(false);
+
   // Logo files
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string>('');
@@ -50,7 +65,33 @@ const AdminSponsors: React.FC = () => {
 
   useEffect(() => {
     loadSponsors();
+    loadHarasOptions();
   }, []);
+
+  useEffect(() => {
+    if (!harasSearch.trim()) {
+      setHarasSearchResults(harasOptions.slice(0, 8));
+      return;
+    }
+    const q = harasSearch.toLowerCase();
+    setHarasSearchResults(harasOptions.filter(h => h.label.toLowerCase().includes(q)).slice(0, 8));
+  }, [harasSearch, harasOptions]);
+
+  const loadHarasOptions = async () => {
+    const { data } = await supabase
+      .from('profiles')
+      .select('id, property_name, name')
+      .eq('account_type', 'institutional')
+      .order('property_name', { ascending: true });
+    if (data) {
+      setHarasOptions(data.map(p => ({
+        id: p.id,
+        label: p.property_name || p.name,
+      })));
+    }
+  };
+
+  const selectedHarasLabel = harasOptions.find(h => h.id === formData.linked_profile_id)?.label || '';
 
   const loadSponsors = async () => {
     setLoading(true);
@@ -82,8 +123,10 @@ const AdminSponsors: React.FC = () => {
         name: formData.name,
         website_url: formData.website_url || undefined,
         is_active: formData.is_active,
-        display_priority: 0, // Todos têm a mesma prioridade
+        display_priority: 0,
         display_locations: ['home'],
+        linked_profile_id: formData.linked_profile_id || null,
+        click_action_enabled: formData.click_action_enabled,
       });
       
       if (!result.success || !result.sponsor) {
@@ -125,6 +168,8 @@ const AdminSponsors: React.FC = () => {
         name: formData.name,
         website_url: formData.website_url || undefined,
         is_active: formData.is_active,
+        linked_profile_id: formData.linked_profile_id || null,
+        click_action_enabled: formData.click_action_enabled,
       });
       
       if (!result.success) {
@@ -201,7 +246,10 @@ const AdminSponsors: React.FC = () => {
       name: sponsor.name,
       website_url: sponsor.website_url || '',
       is_active: sponsor.is_active,
+      linked_profile_id: sponsor.linked_profile_id || '',
+      click_action_enabled: sponsor.click_action_enabled,
     });
+    setHarasSearch('');
     setLogoPreview(sponsor.logo_url || '');
     setIsEditModalOpen(true);
   };
@@ -211,7 +259,10 @@ const AdminSponsors: React.FC = () => {
       name: '',
       website_url: '',
       is_active: false,
+      linked_profile_id: '',
+      click_action_enabled: false,
     });
+    setHarasSearch('');
     setLogoFile(null);
     setLogoPreview('');
   };
@@ -511,6 +562,91 @@ const AdminSponsors: React.FC = () => {
               <p className="text-xs text-muted-foreground mt-1">
                 Se informado, o banner será clicável e levará os usuários para este link
               </p>
+            </div>
+
+            {/* Vincular a perfil de haras */}
+            <div>
+              <label className="text-sm font-medium mb-2 block">
+                Vincular ao perfil do haras no site
+                <span className="text-xs text-muted-foreground ml-2">(opcional)</span>
+              </label>
+              <div className="relative">
+                {formData.linked_profile_id ? (
+                  <div className="flex items-center gap-2 border rounded-md px-3 py-2 bg-blue-50 border-blue-200">
+                    <Building2 className="h-4 w-4 text-blue-500 shrink-0" />
+                    <span className="text-sm flex-1 truncate">{selectedHarasLabel}</span>
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, linked_profile_id: '' })}
+                      className="text-muted-foreground hover:text-foreground"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      value={harasSearch}
+                      onChange={(e) => {
+                        setHarasSearch(e.target.value);
+                        setShowHarasDropdown(true);
+                      }}
+                      onFocus={() => setShowHarasDropdown(true)}
+                      onBlur={() => setTimeout(() => setShowHarasDropdown(false), 150)}
+                      placeholder="Buscar haras cadastrado..."
+                      className="pl-10"
+                    />
+                    {showHarasDropdown && harasSearchResults.length > 0 && (
+                      <div className="absolute z-50 w-full mt-1 bg-background border rounded-md shadow-md max-h-48 overflow-y-auto">
+                        {harasSearchResults.map(h => (
+                          <button
+                            key={h.id}
+                            type="button"
+                            className="w-full text-left px-3 py-2 text-sm hover:bg-accent flex items-center gap-2"
+                            onMouseDown={() => {
+                              setFormData({ ...formData, linked_profile_id: h.id });
+                              setHarasSearch('');
+                              setShowHarasDropdown(false);
+                            }}
+                          >
+                            <Building2 className="h-4 w-4 text-muted-foreground shrink-0" />
+                            {h.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Se vinculado, o clique no logo redireciona para a página do haras no site (prioridade sobre o website externo)
+              </p>
+            </div>
+
+            {/* Ação de clique */}
+            <div className="space-y-2 rounded-lg border p-3">
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="click_action_enabled"
+                  checked={formData.click_action_enabled}
+                  onChange={(e) => setFormData({ ...formData, click_action_enabled: e.target.checked })}
+                  className="h-4 w-4"
+                />
+                <label htmlFor="click_action_enabled" className="text-sm font-medium cursor-pointer">
+                  Ativar ação ao clicar no logo
+                </label>
+              </div>
+              {formData.click_action_enabled && (
+                <p className="text-xs text-muted-foreground pl-6">
+                  {formData.linked_profile_id
+                    ? 'Clique vai redirecionar para o perfil do haras no site'
+                    : formData.website_url
+                      ? 'Clique vai abrir o website externo'
+                      : 'Informe um haras vinculado ou website para ativar o redirecionamento'}
+                </p>
+              )}
             </div>
 
             {/* Status Ativo */}

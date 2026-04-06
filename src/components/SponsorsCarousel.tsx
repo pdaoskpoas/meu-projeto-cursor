@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { Award } from 'lucide-react';
 import { LogoCarousel, type Logo } from '@/components/sponsors/LogoCarousel';
 import SponsorService from '@/services/sponsorService';
 
@@ -42,13 +41,21 @@ const SponsorsCarousel: React.FC = () => {
       // Converter para formato esperado pelo LogoCarousel
       const sponsorLogos: Logo[] = sponsors
         .filter(s => s.logo_url) // Apenas sponsors com logo
-        .map((sponsor, index) => ({
-          id: index + 1,
-          name: sponsor.name,
-          img: sponsor.logo_url || '',
-          url: sponsor.website_url,
-          sponsorId: sponsor.id,
-        }));
+        .map((sponsor, index) => {
+          const linkedProfileId = (sponsor as Record<string, unknown>).linked_profile_id as string | undefined;
+          const clickActionEnabled = (sponsor as Record<string, unknown>).click_action_enabled as boolean | undefined;
+          return {
+            id: index + 1,
+            name: sponsor.name,
+            img: sponsor.logo_url || '',
+            url: sponsor.website_url,
+            sponsorId: sponsor.id,
+            linkedProfileId,
+            // Se a coluna ainda não existe na view (migration pendente),
+            // ativa automaticamente quando há destino configurado
+            clickActionEnabled: clickActionEnabled ?? !!(linkedProfileId || sponsor.website_url),
+          };
+        });
 
       setLogos(sponsorLogos);
       
@@ -90,13 +97,16 @@ const SponsorsCarousel: React.FC = () => {
       <div className="container-responsive">
         <div className="space-y-6 sm:space-y-8">
           {/* Header */}
-          <div className="text-center space-y-3">
-            <div className="inline-flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-full px-4 py-2 text-sm font-medium text-blue-700">
-              <Award className="h-4 w-4" aria-hidden="true" />
-              <span>Parceiros de confiança</span>
+          <div className="text-center space-y-4">
+            <div className="inline-flex items-center gap-4">
+              <span className="block w-10 h-px bg-blue-400" />
+              <span className="text-xs font-semibold tracking-[0.25em] uppercase text-blue-600">
+                Patrocinadores Oficiais
+              </span>
+              <span className="block w-10 h-px bg-blue-400" />
             </div>
             <h2 className="text-2xl sm:text-3xl font-bold text-slate-900">
-              Empresas que confiam na <span className="text-blue-600">Vitrine do Cavalo</span>
+              Marcas que impulsionam e fortalecem a <span className="text-blue-600">Vitrine do Cavalo</span>
             </h2>
           </div>
 

@@ -73,7 +73,7 @@ const ALLOWED_MIME_TYPES = {
   'animal-images': ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'],
   'avatars': ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'],
   'event-images': ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'],
-  'sponsor-logos': ['image/png', 'image/svg+xml', 'image/webp'],
+  'sponsor-logos': ['image/png', 'image/jpeg', 'image/jpg', 'image/svg+xml', 'image/webp'],
 };
 
 const DEFAULT_COMPRESSION_QUALITY = 0.8;
@@ -106,10 +106,16 @@ export class StorageServiceV2 {
       // 2. Comprimir se necessário
       let fileToUpload = config.file;
       let compressedSize: number | undefined;
-      
-      if (config.options?.compress !== false && this.shouldCompress(config.file)) {
+
+      // sponsor-logos não aceita JPEG — converter para PNG
+      const needsConversion =
+        config.bucket === 'sponsor-logos' &&
+        (config.file.type === 'image/jpeg' || config.file.type === 'image/jpg');
+
+      if (needsConversion || (config.options?.compress !== false && this.shouldCompress(config.file))) {
         console.log('[StorageV2] 🗜️  Comprimindo imagem...');
-        const compressed = await this.compressImage(config.file, config.options);
+        const outputMimeType = needsConversion ? 'image/png' : undefined;
+        const compressed = await this.compressImage(config.file, config.options, outputMimeType);
         fileToUpload = compressed;
         compressedSize = compressed.size;
         console.log(`[StorageV2] ✅ Compressão concluída: ${this.formatBytes(config.file.size)} → ${this.formatBytes(compressed.size)} (${this.calculateReduction(config.file.size, compressed.size)}% redução)`);
@@ -251,10 +257,11 @@ export class StorageServiceV2 {
     // 4. Verificar dimensões
     if (file.type.startsWith('image/') && file.type !== 'image/svg+xml') {
       const dimensions = await this.getImageDimensions(file);
-      if (dimensions.width < 200 || dimensions.height < 200) {
+      const minSize = bucket === 'sponsor-logos' ? 50 : 200;
+      if (dimensions.width < minSize || dimensions.height < minSize) {
         return {
           valid: false,
-          error: 'Imagem muito pequena. Mínimo: 200x200px',
+          error: `Imagem muito pequena. Mínimo: ${minSize}x${minSize}px`,
         };
       }
       if (dimensions.width > 4000 || dimensions.height > 4000) {
@@ -322,15 +329,16 @@ export class StorageServiceV2 {
       maxWidth?: number;
       maxHeight?: number;
       quality?: number;
-    }
+    },
+    outputMimeType?: string
   ): Promise<File> {
     return new Promise((resolve, reject) => {
       new Compressor(file, {
         quality: options?.quality ?? DEFAULT_COMPRESSION_QUALITY,
         maxWidth: options?.maxWidth ?? 1920,
         maxHeight: options?.maxHeight ?? 1920,
-        mimeType: 'image/jpeg', // Converter para JPEG para melhor compressão
-        convertSize: 1000000, // Converter para JPEG se > 1MB
+        mimeType: outputMimeType ?? 'image/jpeg',
+        convertSize: outputMimeType ? Infinity : 1000000,
         success: (result) => {
           const compressedFile = new File([result], file.name, {
             type: result.type,

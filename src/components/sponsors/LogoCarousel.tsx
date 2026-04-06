@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import SponsorService from '@/services/sponsorService';
 
 export interface Logo {
@@ -7,6 +8,8 @@ export interface Logo {
   img: React.ComponentType<React.SVGProps<SVGSVGElement>> | string;
   url?: string;
   sponsorId?: string;
+  linkedProfileId?: string;
+  clickActionEnabled?: boolean;
 }
 
 interface LogoCarouselProps {
@@ -14,40 +17,56 @@ interface LogoCarouselProps {
   speed?: number; // pixels por segundo
 }
 
+function SponsorLogoImage({ src, alt }: { src: string; alt: string }) {
+  const [isSquare, setIsSquare] = useState(false);
+
+  const handleLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    const { naturalWidth, naturalHeight } = e.currentTarget;
+    const ratio = naturalWidth / naturalHeight;
+    setIsSquare(ratio >= 0.8 && ratio <= 1.25);
+  };
+
+  return (
+    <img
+      src={src}
+      alt={alt}
+      loading="lazy"
+      decoding="async"
+      onLoad={handleLoad}
+      className={`w-full h-full object-contain opacity-70 hover:opacity-100 transition-opacity duration-300${isSquare ? ' rounded-full' : ''}`}
+    />
+  );
+}
+
 export function LogoCarousel({ logos, speed = 30 }: LogoCarouselProps) {
+  const navigate = useNavigate();
   // Duplicar os logos 3 vezes para garantir scroll infinito suave
   const duplicatedLogos = [...logos, ...logos, ...logos];
 
   const handleLogoClick = (logo: Logo) => {
-    // Registrar clique no analytics
+    if (!logo.clickActionEnabled) return;
+
     if (logo.sponsorId) {
       SponsorService.recordClick(logo.sponsorId);
     }
 
-    // Abrir URL se disponível
-    if (logo.url) {
+    // Perfil interno tem prioridade sobre website externo
+    if (logo.linkedProfileId) {
+      navigate(`/haras/${logo.linkedProfileId}`);
+    } else if (logo.url) {
       window.open(logo.url, '_blank', 'noopener,noreferrer');
     }
   };
 
   const renderLogoImage = (logo: Logo) => {
     if (typeof logo.img === 'string') {
-      // URL de imagem do Supabase
-      return (
-        <img 
-          src={logo.img} 
-          alt={logo.name}
-          loading="lazy"
-          decoding="async"
-          className="w-full h-full object-contain opacity-70 hover:opacity-100 transition-opacity duration-300"
-        />
-      );
+      return <SponsorLogoImage src={logo.img} alt={logo.name} />;
     } else {
       // Componente SVG
       const LogoComponent = logo.img;
       return (
-        <LogoComponent 
-          className="w-full h-full object-contain opacity-70 hover:opacity-100 transition-opacity duration-300" 
+        <LogoComponent
+          className="w-full h-full object-contain opacity-70 hover:opacity-100 transition-opacity duration-300"
           aria-label={logo.name}
         />
       );
@@ -68,41 +87,45 @@ export function LogoCarousel({ logos, speed = 30 }: LogoCarouselProps) {
             animationDuration: `${(logos.length * 200) / speed}s`,
           }}
         >
-          {duplicatedLogos.map((logo, index) => (
-            <div
-              key={`${logo.id}-${index}`}
-              className="flex-shrink-0 w-40 sm:w-48 lg:w-56 h-20 sm:h-24 flex items-center justify-center cursor-pointer"
-              onClick={() => handleLogoClick(logo)}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  handleLogoClick(logo);
-                }
-              }}
-            >
-              {renderLogoImage(logo)}
-            </div>
-          ))}
+          {duplicatedLogos.map((logo, index) => {
+            const isClickable = logo.clickActionEnabled && (logo.linkedProfileId || logo.url);
+            return (
+              <div
+                key={`${logo.id}-${index}`}
+                className={`flex-shrink-0 w-40 sm:w-48 lg:w-56 h-20 sm:h-24 flex items-center justify-center${isClickable ? ' cursor-pointer' : ''}`}
+                onClick={() => handleLogoClick(logo)}
+                role={isClickable ? 'button' : undefined}
+                tabIndex={isClickable ? 0 : undefined}
+                onKeyDown={isClickable ? (e) => {
+                  if (e.key === 'Enter' || e.key === ' ') handleLogoClick(logo);
+                } : undefined}
+              >
+                {renderLogoImage(logo)}
+              </div>
+            );
+          })}
         </div>
 
         {/* Segunda faixa para garantir scroll contínuo sem gaps */}
-        <div 
+        <div
           className="flex gap-8 sm:gap-12 animate-scroll"
           style={{
             animationDuration: `${(logos.length * 200) / speed}s`,
           }}
           aria-hidden="true"
         >
-          {duplicatedLogos.map((logo, index) => (
-            <div
-              key={`duplicate-${logo.id}-${index}`}
-              className="flex-shrink-0 w-40 sm:w-48 lg:w-56 h-20 sm:h-24 flex items-center justify-center cursor-pointer"
-              onClick={() => handleLogoClick(logo)}
-            >
-              {renderLogoImage(logo)}
-            </div>
-          ))}
+          {duplicatedLogos.map((logo, index) => {
+            const isClickable = logo.clickActionEnabled && (logo.linkedProfileId || logo.url);
+            return (
+              <div
+                key={`duplicate-${logo.id}-${index}`}
+                className={`flex-shrink-0 w-40 sm:w-48 lg:w-56 h-20 sm:h-24 flex items-center justify-center${isClickable ? ' cursor-pointer' : ''}`}
+                onClick={() => handleLogoClick(logo)}
+              >
+                {renderLogoImage(logo)}
+              </div>
+            );
+          })}
         </div>
       </div>
 
