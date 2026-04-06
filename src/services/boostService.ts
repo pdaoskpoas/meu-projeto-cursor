@@ -9,7 +9,7 @@
  * Regras:
  * - Turbinares do plano são consumidos primeiro
  * - Após esgotar, o usuário compra avulso
- * - Animal já turbinado não pode ser turbinado novamente (até expirar)
+ * - Turbinar um anúncio já turbinado SOMA o tempo ao período restante
  * - Destaque expira automaticamente ao final do período
  */
 
@@ -103,19 +103,8 @@ class BoostService {
    */
   async boostAnimal(userId: string, animalId: string, duration: BoostDuration = '24h'): Promise<BoostResult> {
     try {
-      // 1. Verificar se animal já está turbinado
-      const { boosted, expiresAt } = await this.isAnimalBoosted(animalId);
-      if (boosted) {
-        const expiresDate = expiresAt ? new Date(expiresAt).toLocaleString('pt-BR') : '';
-        return {
-          success: false,
-          message: `Este animal já está turbinado até ${expiresDate}. Aguarde o período expirar.`,
-        };
-      }
-
       const tier = getBoostTier(duration);
 
-      // 2. Chamar função atômica do banco de dados
       const { data, error } = await supabase.rpc('boost_animal_atomic', {
         p_user_id: userId,
         p_animal_id: animalId,
@@ -149,16 +138,6 @@ class BoostService {
     try {
       if (quantity < 1) {
         return { success: false, message: 'Quantidade deve ser pelo menos 1.' };
-      }
-
-      // Verificar se animal já está turbinado
-      const { boosted, expiresAt } = await this.isAnimalBoosted(animalId);
-      if (boosted) {
-        const expiresDate = expiresAt ? new Date(expiresAt).toLocaleString('pt-BR') : '';
-        return {
-          success: false,
-          message: `Este animal já está turbinado até ${expiresDate}. Aguarde o período expirar.`,
-        };
       }
 
       let lastResult: BoostResult = { success: false, message: '' };

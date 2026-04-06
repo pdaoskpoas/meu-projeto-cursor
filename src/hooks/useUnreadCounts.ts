@@ -119,11 +119,31 @@ export const useUnreadCounts = () => {
     // Atualizar com frequência moderada para evitar saturação
     const interval = setInterval(fetchUnreadCounts, 30000);
 
-    // Listener para atualização forçada
+    // Listener para atualização forçada (re-fetch completo)
     const handleForceUpdate = () => {
       fetchUnreadCounts();
     };
     window.addEventListener('forceUpdateUnreadCounts', handleForceUpdate);
+
+    // Decremento otimista imediato ao marcar uma notificação como lida
+    const handleRead = () => {
+      setCounts(prev => ({
+        ...prev,
+        notifications: Math.max(0, prev.notifications - 1)
+      }));
+    };
+    // Zerar imediatamente ao marcar todas como lidas
+    const handleAllRead = () => {
+      setCounts(prev => ({ ...prev, notifications: 0 }));
+    };
+    // Decrementar ao deletar (se não estava lida)
+    const handleDeleted = () => {
+      // Forçar re-fetch pois não sabemos se a deletada era não lida
+      fetchUnreadCounts();
+    };
+    window.addEventListener('notification_marked_read', handleRead);
+    window.addEventListener('notifications_all_marked_read', handleAllRead);
+    window.addEventListener('notification_deleted', handleDeleted);
 
     const scheduleFetch = () => {
       if (visibilityDebounceRef.current) {
@@ -174,6 +194,9 @@ export const useUnreadCounts = () => {
         visibilityDebounceRef.current = null;
       }
       window.removeEventListener('forceUpdateUnreadCounts', handleForceUpdate);
+      window.removeEventListener('notification_marked_read', handleRead);
+      window.removeEventListener('notifications_all_marked_read', handleAllRead);
+      window.removeEventListener('notification_deleted', handleDeleted);
       window.removeEventListener('focus', scheduleFetch);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       notificationsSubscription.unsubscribe();

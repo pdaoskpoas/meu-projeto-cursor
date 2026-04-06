@@ -149,7 +149,7 @@ const NotificationsPage: React.FC = () => {
                 <p className="font-medium text-blue-900 mb-1">Sobre as Notificações</p>
                 <ul className="text-blue-700 space-y-1 text-xs">
                   <li>• Você é notificado quando alguém favorita seus anúncios</li>
-                  <li>• A cada 10 visualizações você é notificado sobre o desempenho</li>
+                  <li>• Uma vez por semana você recebe o resumo de visualizações dos seus anúncios</li>
                   <li>• Recebe alertas sobre convites de sociedade</li>
                   <li>• Notificações antigas são removidas automaticamente após 30 dias</li>
                 </ul>

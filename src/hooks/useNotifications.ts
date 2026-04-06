@@ -99,7 +99,38 @@ export const useNotifications = (): UseNotificationsReturn => {
     fetchNotifications();
   }, [fetchNotifications]);
 
-  // Subscrever a mudanças em tempo real
+  // Sincronização otimista entre instâncias do hook (dropdown + página)
+  useEffect(() => {
+    const handleRead = (e: CustomEvent<{ id: string }>) => {
+      setNotifications(prev =>
+        prev.map(n =>
+          n.id === e.detail.id ? { ...n, is_read: true, read_at: new Date().toISOString() } : n
+        )
+      );
+    };
+
+    const handleAllRead = () => {
+      setNotifications(prev =>
+        prev.map(n => ({ ...n, is_read: true, read_at: new Date().toISOString() }))
+      );
+    };
+
+    const handleDeleted = (e: CustomEvent<{ id: string }>) => {
+      setNotifications(prev => prev.filter(n => n.id !== e.detail.id));
+    };
+
+    window.addEventListener('notification_marked_read', handleRead as EventListener);
+    window.addEventListener('notifications_all_marked_read', handleAllRead);
+    window.addEventListener('notification_deleted', handleDeleted as EventListener);
+
+    return () => {
+      window.removeEventListener('notification_marked_read', handleRead as EventListener);
+      window.removeEventListener('notifications_all_marked_read', handleAllRead);
+      window.removeEventListener('notification_deleted', handleDeleted as EventListener);
+    };
+  }, []);
+
+  // Subscrever a mudanças em tempo real (novas notificações vindas do servidor)
   useEffect(() => {
     if (!user?.id) return;
 
@@ -108,13 +139,12 @@ export const useNotifications = (): UseNotificationsReturn => {
       .on(
         'postgres_changes',
         {
-          event: '*',
+          event: 'INSERT',
           schema: 'public',
           table: 'notifications',
           filter: `user_id=eq.${user.id}`
         },
-        (payload) => {
-          console.log('Notificação atualizada:', payload);
+        () => {
           fetchNotifications();
         }
       )
@@ -133,50 +163,60 @@ export const useNotifications = (): UseNotificationsReturn => {
   const markAsRead = async (notificationId: string) => {
     if (!user?.id) return;
 
+    // Atualizar localmente de imediato (otimista)
+    setNotifications(prev =>
+      prev.map(n =>
+        n.id === notificationId
+          ? { ...n, is_read: true, read_at: new Date().toISOString() }
+          : n
+      )
+    );
+    // Sincronizar outras instâncias do hook imediatamente
+    window.dispatchEvent(new CustomEvent('notification_marked_read', { detail: { id: notificationId } }));
+
     try {
       const { error: updateError } = await supabase
         .from('notifications')
-        .update({ 
-          is_read: true, 
-          read_at: new Date().toISOString() 
+        .update({
+          is_read: true,
+          read_at: new Date().toISOString()
         })
         .eq('id', notificationId)
         .eq('user_id', user.id);
 
       if (updateError) throw updateError;
-
-      // Atualizar localmente
-      setNotifications(prev =>
-        prev.map(n =>
-          n.id === notificationId
-            ? { ...n, is_read: true, read_at: new Date().toISOString() }
-            : n
-        )
-      );
     } catch (err: unknown) {
       console.error('Erro ao marcar notificação como lida:', err);
+      // Reverter em caso de erro
+      setNotifications(prev =>
+        prev.map(n =>
+          n.id === notificationId ? { ...n, is_read: false, read_at: null } : n
+        )
+      );
     }
   };
 
   const markAllAsRead = async () => {
     if (!user?.id) return;
 
+    // Atualizar localmente de imediato (otimista)
+    setNotifications(prev =>
+      prev.map(n => ({ ...n, is_read: true, read_at: new Date().toISOString() }))
+    );
+    // Sincronizar outras instâncias do hook imediatamente
+    window.dispatchEvent(new Event('notifications_all_marked_read'));
+
     try {
       const { error: updateError } = await supabase
         .from('notifications')
-        .update({ 
-          is_read: true, 
-          read_at: new Date().toISOString() 
+        .update({
+          is_read: true,
+          read_at: new Date().toISOString()
         })
         .eq('user_id', user.id)
         .eq('is_read', false);
 
       if (updateError) throw updateError;
-
-      // Atualizar localmente
-      setNotifications(prev =>
-        prev.map(n => ({ ...n, is_read: true, read_at: new Date().toISOString() }))
-      );
     } catch (err: unknown) {
       console.error('Erro ao marcar todas como lidas:', err);
     }
@@ -184,6 +224,11 @@ export const useNotifications = (): UseNotificationsReturn => {
 
   const deleteNotification = async (notificationId: string) => {
     if (!user?.id) return;
+
+    // Remover localmente de imediato (otimista)
+    setNotifications(prev => prev.filter(n => n.id !== notificationId));
+    // Sincronizar outras instâncias do hook imediatamente
+    window.dispatchEvent(new CustomEvent('notification_deleted', { detail: { id: notificationId } }));
 
     try {
       const { error: deleteError } = await supabase
@@ -193,9 +238,6 @@ export const useNotifications = (): UseNotificationsReturn => {
         .eq('user_id', user.id);
 
       if (deleteError) throw deleteError;
-
-      // Remover localmente
-      setNotifications(prev => prev.filter(n => n.id !== notificationId));
     } catch (err: unknown) {
       console.error('Erro ao deletar notificação:', err);
     }
