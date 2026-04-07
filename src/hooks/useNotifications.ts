@@ -29,6 +29,7 @@ interface UseNotificationsReturn {
   markAsRead: (notificationId: string) => Promise<void>;
   markAllAsRead: () => Promise<void>;
   deleteNotification: (notificationId: string) => Promise<void>;
+  deleteAllNotifications: () => Promise<void>;
   refreshNotifications: () => Promise<void>;
 }
 
@@ -243,6 +244,28 @@ export const useNotifications = (): UseNotificationsReturn => {
     }
   };
 
+  const deleteAllNotifications = async () => {
+    if (!user?.id) return;
+
+    // Limpar localmente de imediato (otimista)
+    setNotifications([]);
+    window.dispatchEvent(new Event('notifications_all_deleted'));
+
+    try {
+      const { error: deleteError } = await supabase
+        .from('notifications')
+        .delete()
+        .eq('user_id', user.id)
+        .neq('type', 'message_received');
+
+      if (deleteError) throw deleteError;
+    } catch (err: unknown) {
+      console.error('Erro ao apagar todas as notificações:', err);
+      // Reverter em caso de erro
+      fetchNotifications();
+    }
+  };
+
   const unreadNotifications = notifications.filter(n => !n.is_read);
   const unreadCount = unreadNotifications.length;
 
@@ -255,6 +278,7 @@ export const useNotifications = (): UseNotificationsReturn => {
     markAsRead,
     markAllAsRead,
     deleteNotification,
+    deleteAllNotifications,
     refreshNotifications: fetchNotifications
   };
 };

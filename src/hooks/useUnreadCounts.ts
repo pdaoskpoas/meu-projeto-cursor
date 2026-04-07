@@ -141,9 +141,13 @@ export const useUnreadCounts = () => {
       // Forçar re-fetch pois não sabemos se a deletada era não lida
       fetchUnreadCounts();
     };
+    const handleAllDeleted = () => {
+      setCounts(prev => ({ ...prev, notifications: 0 }));
+    };
     window.addEventListener('notification_marked_read', handleRead);
     window.addEventListener('notifications_all_marked_read', handleAllRead);
     window.addEventListener('notification_deleted', handleDeleted);
+    window.addEventListener('notifications_all_deleted', handleAllDeleted);
 
     const scheduleFetch = () => {
       if (visibilityDebounceRef.current) {
@@ -197,6 +201,7 @@ export const useUnreadCounts = () => {
       window.removeEventListener('notification_marked_read', handleRead);
       window.removeEventListener('notifications_all_marked_read', handleAllRead);
       window.removeEventListener('notification_deleted', handleDeleted);
+      window.removeEventListener('notifications_all_deleted', handleAllDeleted);
       window.removeEventListener('focus', scheduleFetch);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       notificationsSubscription.unsubscribe();

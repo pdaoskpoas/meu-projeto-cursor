@@ -9,6 +9,8 @@ interface RegisterData {
   propertyName?: string;
   propertyType?: 'haras' | 'fazenda' | 'cte' | 'central-reproducao';
   cep?: string;
+  city?: string;
+  state?: string;
   cpf: string;
   email: string;
   phone: string;
@@ -77,6 +79,8 @@ export const useRegister = (): UseRegisterReturn => {
         propertyName: accountType === 'institutional' ? propertyName : undefined,
         propertyType: accountType === 'institutional' ? propertyType : undefined,
         cep: accountType === 'institutional' ? data.cep : undefined,
+        city: accountType === 'institutional' ? data.city : undefined,
+        state: accountType === 'institutional' ? data.state : undefined,
         cpf,
         email,
         phone,
@@ -89,7 +93,7 @@ export const useRegister = (): UseRegisterReturn => {
       if (success) {
         toast({
           title: "Conta criada com sucesso!",
-          description: "Bem-vindo ao Haras Elite. Redirecionando para o painel..."
+          description: "Bem-vindo ao Vitrine do Cavalo. Redirecionando para o painel..."
         });
         setTimeout(() => navigate('/dashboard'), 2000);
       } else {

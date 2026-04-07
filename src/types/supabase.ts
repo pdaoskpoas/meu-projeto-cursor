@@ -207,6 +207,9 @@ export interface ProfileInsert {
   plan?: 'free' | 'essencial' | 'criador' | 'haras' | 'elite' | 'vip' | 'basic' | 'pro' | 'ultra'
   marketing_consent?: boolean
   marketing_consent_at?: string | null
+  cep?: string | null
+  city?: string | null
+  state?: string | null
 }
 
 export interface AnimalInsert {

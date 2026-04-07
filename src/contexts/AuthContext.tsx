@@ -48,6 +48,8 @@ interface RegisterData {
   propertyName?: string;
   propertyType?: 'haras' | 'fazenda' | 'cte' | 'central-reproducao';
   cep?: string;
+  city?: string;
+  state?: string;
   cpf: string;
   email: string;
   phone: string;
@@ -217,6 +219,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         propertyName: userData.propertyName,
         propertyType: userData.propertyType,
         cep: userData.cep,
+        city: userData.city,
+        state: userData.state,
         marketingConsent: userData.marketingConsent
       });
 

@@ -2,6 +2,17 @@ import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import ModernDashboardWrapper from '@/components/layout/ModernDashboardWrapper';
 import { Bell, BellRing, CheckCheck, Loader2, Trash2 } from 'lucide-react';
@@ -18,7 +29,8 @@ const NotificationsPage: React.FC = () => {
     error,
     markAsRead,
     markAllAsRead,
-    deleteNotification
+    deleteNotification,
+    deleteAllNotifications
   } = useNotifications();
 
   const renderNotificationsList = (notificationsList: typeof notifications) => {
@@ -104,6 +116,37 @@ const NotificationsPage: React.FC = () => {
                     <CheckCheck className="h-4 w-4" />
                     Marcar todas como lidas
                   </Button>
+                )}
+                {notifications.length > 0 && (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex items-center gap-2 text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        Limpar tudo
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Apagar todas as notificações?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Esta ação irá remover todas as {notifications.length} notificações permanentemente. Não é possível desfazer.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={deleteAllNotifications}
+                          className="bg-red-600 hover:bg-red-700"
+                        >
+                          Apagar tudo
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 )}
               </div>
             </div>

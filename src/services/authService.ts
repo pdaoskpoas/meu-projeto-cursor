@@ -21,6 +21,8 @@ export interface RegisterData {
   propertyName?: string
   propertyType?: 'haras' | 'fazenda' | 'cte' | 'central-reproducao'
   cep?: string
+  city?: string
+  state?: string
   marketingConsent?: boolean
 }
 
@@ -204,6 +206,8 @@ class AuthService {
         property_name: normalizeNameForStorage(userData.propertyName),
         property_type: userData.propertyType,
         cep: userData.cep || null,
+        city: userData.city || null,
+        state: userData.state || null,
         property_id: userData.accountType === 'institutional' ? authData.user.id : null,
         public_code: publicCode,
         plan: 'free'

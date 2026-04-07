@@ -48,8 +48,13 @@ const SettingsPage = () => {
 
   const [institutionalData, setInstitutionalData] = useState({
     propertyName: user?.propertyName || '',
-    propertyType: user?.propertyType || 'haras'
+    propertyType: user?.propertyType || 'haras',
+    cep: user?.cep || '',
+    city: '',
+    state: ''
   });
+
+  const [cepLookup, setCepLookup] = useState<{ loading: boolean; error: string | null }>({ loading: false, error: null });
 
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
@@ -226,13 +231,16 @@ const SettingsPage = () => {
       try {
         const { data, error } = await supabase
           .from('profiles')
-          .select('property_name, property_type')
+          .select('property_name, property_type, cep, city, state')
           .eq('id', user.id)
           .single();
         if (error) throw error;
         setInstitutionalData({
           propertyName: data?.property_name || '',
-          propertyType: data?.property_type || 'haras'
+          propertyType: data?.property_type || 'haras',
+          cep: data?.cep || '',
+          city: data?.city || '',
+          state: data?.state || ''
         });
       } catch (error) {
         console.error('Erro ao carregar dados institucionais:', error);
@@ -313,11 +321,15 @@ const SettingsPage = () => {
     }
 
     try {
+      const cepClean = institutionalData.cep.replace(/\D/g, '');
       const { error } = await supabase
         .from('profiles')
         .update({
           property_name: institutionalData.propertyName.trim(),
           property_type: institutionalData.propertyType,
+          cep: cepClean || null,
+          city: institutionalData.city || null,
+          state: institutionalData.state || null,
           updated_at: new Date().toISOString()
         })
         .eq('id', user.id);
@@ -713,10 +725,61 @@ const SettingsPage = () => {
                         />
                       </div>
                     </div>
-                    
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700 flex items-center gap-1">
+                          CEP
+                        </label>
+                        <div className="relative">
+                          <Input
+                            value={institutionalData.cep}
+                            onChange={async (e) => {
+                              const raw = e.target.value.replace(/\D/g, '').slice(0, 8);
+                              const formatted = raw.length > 5 ? `${raw.slice(0, 5)}-${raw.slice(5)}` : raw;
+                              setInstitutionalData(prev => ({ ...prev, cep: formatted, city: '', state: '' }));
+                              setHasUnsavedChanges(prev => ({ ...prev, institutional: true }));
+
+                              if (raw.length === 8) {
+                                setCepLookup({ loading: true, error: null });
+                                try {
+                                  const res = await fetch(`https://viacep.com.br/ws/${raw}/json/`);
+                                  const json = await res.json();
+                                  if (json.erro) {
+                                    setCepLookup({ loading: false, error: 'CEP não encontrado.' });
+                                  } else {
+                                    setInstitutionalData(prev => ({ ...prev, city: json.localidade || '', state: json.uf || '' }));
+                                    setCepLookup({ loading: false, error: null });
+                                  }
+                                } catch {
+                                  setCepLookup({ loading: false, error: 'Erro ao consultar CEP.' });
+                                }
+                              } else {
+                                setCepLookup({ loading: false, error: null });
+                              }
+                            }}
+                            placeholder="00000-000"
+                            maxLength={9}
+                          />
+                          {cepLookup.loading && (
+                            <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-gray-400" />
+                          )}
+                        </div>
+                        {cepLookup.error && (
+                          <p className="text-xs text-red-500">{cepLookup.error}</p>
+                        )}
+                        {institutionalData.city && institutionalData.state && (
+                          <p className="text-xs text-green-600 flex items-center gap-1">
+                            <CheckCircle2 className="h-3 w-3" />
+                            {institutionalData.city}, {institutionalData.state}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
                     <div className="flex justify-end pt-4">
-                      <Button 
-                        onClick={handleSaveInstitutionalData} 
+                      <Button
+                        onClick={handleSaveInstitutionalData}
                         className="bg-green-600 hover:bg-green-700"
                         disabled={!hasUnsavedChanges.institutional}
                       >

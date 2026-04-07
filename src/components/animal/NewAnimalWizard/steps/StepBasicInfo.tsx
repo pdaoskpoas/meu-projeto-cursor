@@ -18,13 +18,30 @@ import { useWizard } from '../WizardContext';
 import type { BasicInfoData } from '@/types/animal';
 import { HORSE_BREEDS } from '@/constants/breeds';
 
-const CATEGORIES = ['Garanhão', 'Castrado', 'Doadora', 'Matriz', 'Potro', 'Potra', 'Outro'];
+const CATEGORIES_MALE   = ['Potro', 'Garanhão', 'Castrado', 'Outro'];
+const CATEGORIES_FEMALE = ['Potra', 'Doadora', 'Matriz', 'Outro'];
+const CATEGORIES_ALL    = ['Potro', 'Garanhão', 'Castrado', 'Potra', 'Doadora', 'Matriz', 'Outro'];
+
+const getCategoriesForGender = (gender: string): string[] => {
+  if (gender === 'Macho') return CATEGORIES_MALE;
+  if (gender === 'Fêmea') return CATEGORIES_FEMALE;
+  return CATEGORIES_ALL;
+};
 
 export const StepBasicInfo: React.FC = () => {
   const { state, dispatch } = useWizard();
   const { basicInfo } = state.formData;
 
   const [errors, setErrors] = useState<Partial<Record<keyof BasicInfoData, string>>>({});
+
+  const availableCategories = getCategoriesForGender(basicInfo.gender);
+
+  // Resetar categoria se não for válida para o gênero atual
+  useEffect(() => {
+    if (basicInfo.category && !availableCategories.includes(basicInfo.category)) {
+      dispatch({ type: 'UPDATE_BASIC_INFO', payload: { category: '' } });
+    }
+  }, [basicInfo.gender]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Validar campos
   const validate = (): boolean => {
@@ -235,12 +252,13 @@ export const StepBasicInfo: React.FC = () => {
             <Select
               value={basicInfo.category}
               onValueChange={(value) => updateField('category', value)}
+              disabled={!basicInfo.gender}
             >
               <SelectTrigger className="h-11 text-base">
-                <SelectValue placeholder="Selecione a categoria" />
+                <SelectValue placeholder={!basicInfo.gender ? 'Selecione o gênero primeiro' : 'Selecione a categoria'} />
               </SelectTrigger>
               <SelectContent side="bottom" align="start" avoidCollisions={false}>
-                {CATEGORIES.map((category) => (
+                {availableCategories.map((category) => (
                   <SelectItem key={category} value={category}>
                     {category}
                   </SelectItem>

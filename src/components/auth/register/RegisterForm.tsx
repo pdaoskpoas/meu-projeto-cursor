@@ -45,7 +45,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSubmit, isSubmitting, cla
   });
   const [showPassword, setShowPassword] = useState(false);
   const [isFetchingCep, setIsFetchingCep] = useState(false);
-  const [cepLocation, setCepLocation] = useState<{ city: string; state: string } | null>(null);
+  const [cepLocation, setCepLocation] = useState<{ city: string; state: string; uf: string } | null>(null);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [marketingConsent, setMarketingConsent] = useState(false);
@@ -88,7 +88,9 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSubmit, isSubmitting, cla
       await onSubmit({
         ...formData,
         accountType,
-        marketingConsent
+        marketingConsent,
+        city: cepLocation?.city,
+        state: cepLocation?.uf
       });
     } catch (error) {
       console.error('Erro no registro:', error);
@@ -114,10 +116,8 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSubmit, isSubmitting, cla
       setIsFetchingCep(false);
 
       if (result.success && result.data) {
-        const estadoCompleto = UF_TO_ESTADO[result.data.uf];
-        if (estadoCompleto) {
-          setCepLocation({ city: result.data.localidade, state: estadoCompleto });
-        }
+        const estadoCompleto = UF_TO_ESTADO[result.data.uf] || result.data.uf;
+        setCepLocation({ city: result.data.localidade, state: estadoCompleto, uf: result.data.uf });
       } else {
         setCepLocation(null);
       }
