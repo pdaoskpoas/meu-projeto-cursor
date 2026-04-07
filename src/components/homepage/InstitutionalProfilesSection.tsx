@@ -48,7 +48,7 @@ const InstitutionalProfilesSection: React.FC = () => {
           .map(([path]) => path.split('/haras/')[1]?.split('?')[0])
           .filter(Boolean) as string[];
 
-        // 4. Buscar perfis para os IDs mais visitados
+        // 4. Buscar perfis para os IDs mais visitados (ou recentes como fallback)
         if (topIds.length > 0) {
           const { data, error } = await supabase
             .from('public_profiles')
@@ -66,6 +66,19 @@ const InstitutionalProfilesSection: React.FC = () => {
             .filter(Boolean) as InstitutionalProfile[];
 
           setProfiles(sorted);
+        } else {
+          // Fallback: sem dados de visitas — mostrar perfis ativos mais recentes
+          const { data, error } = await supabase
+            .from('public_profiles')
+            .select('id, property_name, avatar_url, city, state, property_type')
+            .eq('account_type', 'institutional')
+            .eq('is_active', true)
+            .eq('is_suspended', false)
+            .neq('plan', 'free')
+            .order('created_at', { ascending: false })
+            .limit(12);
+
+          if (!error && data) setProfiles(data);
         }
 
         // 5. Contagem total de haras ativos
@@ -105,11 +118,6 @@ const InstitutionalProfilesSection: React.FC = () => {
           <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-slate-900 mb-2">
             Eles já estão na Vitrine
           </h2>
-          {totalCount > 0 && (
-            <p className="text-sm sm:text-base text-slate-500">
-              Mais de {totalCount >= 100 ? `${Math.floor(totalCount / 10) * 10}+` : totalCount} criadores já fazem parte
-            </p>
-          )}
         </div>
 
         {/* Grid de perfis */}
