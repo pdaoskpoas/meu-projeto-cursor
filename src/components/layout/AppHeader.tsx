@@ -86,9 +86,11 @@ const AppHeader: React.FC<AppHeaderProps> = ({ onToggleSidebar, sidebarOpen }) =
             {/* Logo */}
             <Link to="/" className="flex items-center space-x-2 sm:space-x-3">
               <div className="relative">
-                <img 
-                  src="/logo.png.png" 
+                <img
+                  src="/logo.png.png"
                   alt="Logo Vitrine do Cavalo"
+                  width="48"
+                  height="48"
                   className="w-10 h-10 lg:w-12 lg:h-12 object-contain drop-shadow-lg"
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
@@ -204,9 +206,11 @@ const AppHeader: React.FC<AppHeaderProps> = ({ onToggleSidebar, sidebarOpen }) =
                     className="flex items-center space-x-2 hover:bg-gray-100 px-2 sm:px-3 py-2 rounded-xl"
                   >
                     {user.avatar ? (
-                      <img 
-                        src={user.avatar} 
+                      <img
+                        src={user.avatar}
                         alt={user.name}
+                        width="32"
+                        height="32"
                         className="w-8 h-8 rounded-full object-cover"
                         onError={(e) => {
                           e.currentTarget.style.display = 'none';
