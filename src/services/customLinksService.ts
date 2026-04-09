@@ -8,6 +8,8 @@ export interface CustomLink {
   url: string;
   icon: string | null;
   is_active: boolean;
+  view_count: number;
+  click_count: number;
   created_at: string;
   updated_at: string;
 }
@@ -19,6 +21,19 @@ export interface CustomLinkInput {
   icon?: string | null;
   is_active: boolean;
 }
+
+// ─── Session helper (reutiliza o mesmo padrão do pageVisitService) ───
+function getSessionId(): string {
+  const key = 'analytics_session_id';
+  let sessionId = sessionStorage.getItem(key);
+  if (!sessionId) {
+    sessionId = `session_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
+    sessionStorage.setItem(key, sessionId);
+  }
+  return sessionId;
+}
+
+// ─── Leitura ─────────────────────────────────────────────
 
 /**
  * Busca links públicos ativos de um usuário (para a página /u/:slug).
@@ -57,31 +72,7 @@ export async function getMyLinks(userId: string): Promise<CustomLink[]> {
   return (data as CustomLink[]) || [];
 }
 
-/**
- * Salva (upsert) um link em uma posição específica.
- */
-export async function saveLink(userId: string, link: CustomLinkInput): Promise<boolean> {
-  const { error } = await supabase
-    .from('haras_custom_links')
-    .upsert(
-      {
-        user_id: userId,
-        position: link.position,
-        label: link.label,
-        url: link.url,
-        icon: link.icon || null,
-        is_active: link.is_active,
-      },
-      { onConflict: 'user_id,position' }
-    );
-
-  if (error) {
-    console.error('[customLinksService] Erro ao salvar link:', error);
-    return false;
-  }
-
-  return true;
-}
+// ─── Escrita ─────────────────────────────────────────────
 
 /**
  * Salva todos os links de uma vez (batch upsert).
@@ -108,13 +99,83 @@ export async function saveAllLinks(userId: string, links: CustomLinkInput[]): Pr
   return true;
 }
 
+// ─── Tracking ────────────────────────────────────────────
+
 /**
- * Conta visitas à página /u/ de um usuário específico.
- * Usa a tabela page_visits com page_key = 'vitrine'.
+ * Registra uma impressão (view) em um botão.
+ * Chamado quando os botões aparecem na tela do visitante.
+ */
+export async function recordLinkView(linkId: string): Promise<void> {
+  try {
+    await supabase.rpc('increment_link_view_count', { link_id: linkId });
+  } catch {
+    // Fallback: incrementar diretamente
+    // Se a RPC não existir, faz update manual
+    const { data } = await supabase
+      .from('haras_custom_links')
+      .select('view_count')
+      .eq('id', linkId)
+      .single();
+
+    if (data) {
+      await supabase
+        .from('haras_custom_links')
+        .update({ view_count: (data.view_count || 0) + 1 })
+        .eq('id', linkId);
+    }
+  }
+}
+
+/**
+ * Registra impressões em batch (todos os botões visíveis de uma vez).
+ */
+export async function recordLinkViews(links: CustomLink[]): Promise<void> {
+  // Incrementar view_count de cada link
+  await Promise.allSettled(
+    links.map(async (link) => {
+      await supabase
+        .from('haras_custom_links')
+        .update({ view_count: (link.view_count || 0) + 1 })
+        .eq('id', link.id);
+    })
+  );
+}
+
+/**
+ * Registra um clique em um botão da vitrine.
+ * Chamado quando o visitante clica no botão.
+ */
+export async function recordLinkClick(link: CustomLink): Promise<void> {
+  const sessionId = getSessionId();
+
+  try {
+    // 1. Inserir na tabela de cliques detalhada
+    await supabase.from('vitrine_link_clicks').insert({
+      link_id: link.id,
+      user_id: link.user_id,
+      session_id: sessionId,
+      referrer: typeof document !== 'undefined' ? document.referrer || null : null,
+      user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : null,
+    });
+
+    // 2. Incrementar contador no link
+    await supabase
+      .from('haras_custom_links')
+      .update({ click_count: (link.click_count || 0) + 1 })
+      .eq('id', link.id);
+  } catch (error) {
+    console.error('[customLinksService] Erro ao registrar clique:', error);
+  }
+}
+
+// ─── Estatísticas ────────────────────────────────────────
+
+/**
+ * Estatísticas gerais da vitrine (visitas à página).
  */
 export async function getVitrineStats(userId: string): Promise<{
   totalVisits: number;
-  uniqueSessions: number;
+  totalClicks: number;
   last30DaysVisits: number;
 }> {
   try {
@@ -126,25 +187,19 @@ export async function getVitrineStats(userId: string): Promise<{
       .single();
 
     if (!profile?.public_code) {
-      return { totalVisits: 0, uniqueSessions: 0, last30DaysVisits: 0 };
+      return { totalVisits: 0, totalClicks: 0, last30DaysVisits: 0 };
     }
 
     const vitrinePath = `/u/${profile.public_code}`;
 
-    // Total de visitas
-    const { data: allVisits, error } = await supabase
+    // Visitas à página
+    const { data: allVisits } = await supabase
       .from('page_visits')
-      .select('id, session_id, created_at')
+      .select('id, created_at')
       .eq('page_key', 'vitrine')
       .eq('page_path', vitrinePath);
 
-    if (error) {
-      console.error('[customLinksService] Erro ao buscar stats:', error);
-      return { totalVisits: 0, uniqueSessions: 0, last30DaysVisits: 0 };
-    }
-
     const visits = allVisits || [];
-    const uniqueSessions = new Set(visits.map((v) => v.session_id)).size;
 
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
@@ -152,15 +207,25 @@ export async function getVitrineStats(userId: string): Promise<{
       (v) => new Date(v.created_at || '') >= thirtyDaysAgo
     ).length;
 
+    // Total de cliques em todos os botões
+    const { data: clickData } = await supabase
+      .from('vitrine_link_clicks')
+      .select('id')
+      .eq('user_id', userId);
+
+    const totalClicks = clickData?.length || 0;
+
     return {
       totalVisits: visits.length,
-      uniqueSessions,
+      totalClicks,
       last30DaysVisits,
     };
   } catch {
-    return { totalVisits: 0, uniqueSessions: 0, last30DaysVisits: 0 };
+    return { totalVisits: 0, totalClicks: 0, last30DaysVisits: 0 };
   }
 }
+
+// ─── Helpers ─────────────────────────────────────────────
 
 /**
  * Monta URL de WhatsApp a partir do número.

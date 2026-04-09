@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   X,
   Eye,
-  Users,
   TrendingUp,
   Copy,
   Check,
@@ -49,7 +48,8 @@ const MinhaVitrineModal: React.FC<MinhaVitrineModalProps> = ({ open, onClose }) 
   const { toast } = useToast();
 
   const [links, setLinks] = useState<LinkFormState[]>(DEFAULT_LINKS);
-  const [stats, setStats] = useState({ totalVisits: 0, uniqueSessions: 0, last30DaysVisits: 0 });
+  const [stats, setStats] = useState({ totalVisits: 0, totalClicks: 0, last30DaysVisits: 0 });
+  const [linkMetrics, setLinkMetrics] = useState<Record<number, { views: number; clicks: number }>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -71,6 +71,13 @@ const MinhaVitrineModal: React.FC<MinhaVitrineModalProps> = ({ open, onClose }) 
         ]);
 
         setStats(vitrineStats);
+
+        // Capturar métricas por botão
+        const metrics: Record<number, { views: number; clicks: number }> = {};
+        existingLinks.forEach((l) => {
+          metrics[l.position] = { views: l.view_count || 0, clicks: l.click_count || 0 };
+        });
+        setLinkMetrics(metrics);
 
         // Mesclar links existentes com defaults
         const merged: LinkFormState[] = [1, 2, 3].map((pos) => {
@@ -252,9 +259,9 @@ const MinhaVitrineModal: React.FC<MinhaVitrineModalProps> = ({ open, onClose }) 
                     <p className="text-[10px] text-slate-500 uppercase">Total</p>
                   </div>
                   <div className="bg-green-50 rounded-xl p-3 text-center">
-                    <Users className="h-4 w-4 text-green-600 mx-auto mb-1" />
-                    <p className="text-xl font-bold text-slate-900">{stats.uniqueSessions}</p>
-                    <p className="text-[10px] text-slate-500 uppercase">Visitantes</p>
+                    <MessageCircle className="h-4 w-4 text-green-600 mx-auto mb-1" />
+                    <p className="text-xl font-bold text-slate-900">{stats.totalClicks}</p>
+                    <p className="text-[10px] text-slate-500 uppercase">Cliques</p>
                   </div>
                   <div className="bg-purple-50 rounded-xl p-3 text-center">
                     <TrendingUp className="h-4 w-4 text-purple-600 mx-auto mb-1" />
@@ -303,6 +310,25 @@ const MinhaVitrineModal: React.FC<MinhaVitrineModalProps> = ({ open, onClose }) 
                           )}
                         </button>
                       </div>
+
+                      {/* Métricas do botão */}
+                      {linkMetrics[index + 1] && (linkMetrics[index + 1].views > 0 || linkMetrics[index + 1].clicks > 0) && (
+                        <div className="flex items-center gap-3 mb-2">
+                          <span className="flex items-center gap-1 text-[11px] text-slate-400">
+                            <Eye className="h-3 w-3" />
+                            {linkMetrics[index + 1].views} views
+                          </span>
+                          <span className="flex items-center gap-1 text-[11px] text-slate-400">
+                            <MessageCircle className="h-3 w-3" />
+                            {linkMetrics[index + 1].clicks} cliques
+                          </span>
+                          {linkMetrics[index + 1].views > 0 && (
+                            <span className="text-[11px] text-slate-400">
+                              ({((linkMetrics[index + 1].clicks / linkMetrics[index + 1].views) * 100).toFixed(1)}% CTR)
+                            </span>
+                          )}
+                        </div>
+                      )}
 
                       {/* Campos */}
                       <div className="space-y-2.5">

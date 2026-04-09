@@ -18,7 +18,7 @@ import {
 import { useHarasData, type HarasAnimal } from '@/hooks/useHarasData';
 import { formatNameUppercase } from '@/utils/nameFormat';
 import { getAge } from '@/utils/animalAge';
-import { getPublicLinks, type CustomLink } from '@/services/customLinksService';
+import { getPublicLinks, recordLinkViews, recordLinkClick, type CustomLink } from '@/services/customLinksService';
 import mangalargaImg from '@/assets/mangalarga.jpg';
 
 // ─── Tipos ────────────────────────────────────────────────
@@ -383,8 +383,19 @@ const IsolatedHarasPage: React.FC = () => {
   // Buscar botões personalizados quando o perfil carregar
   useEffect(() => {
     if (!profile?.id) return;
-    getPublicLinks(profile.id).then(setCustomLinks);
+    getPublicLinks(profile.id).then((links) => {
+      setCustomLinks(links);
+      // Registrar impressões (views) dos botões visíveis
+      if (links.length > 0) {
+        recordLinkViews(links);
+      }
+    });
   }, [profile?.id]);
+
+  // Handler de clique em botão customizado — registra clique antes de abrir
+  const handleLinkClick = useCallback((link: CustomLink) => {
+    recordLinkClick(link);
+  }, []);
 
   const handleSelectAnimal = useCallback((animal: HarasAnimal) => {
     setSelectedAnimal(animal);
@@ -519,6 +530,7 @@ const IsolatedHarasPage: React.FC = () => {
                   target="_blank"
                   rel="noopener noreferrer"
                   data-action={`custom-link-${link.position}`}
+                  onClick={() => handleLinkClick(link)}
                   className="flex items-center justify-center gap-2 w-full py-3 px-4 rounded-xl bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white font-medium text-sm transition-all border border-white/10 hover:border-white/20"
                 >
                   {link.icon === 'whatsapp' && <MessageCircle className="h-4 w-4" />}
