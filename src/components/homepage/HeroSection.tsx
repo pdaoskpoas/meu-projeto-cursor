@@ -96,7 +96,7 @@ const HeroSection: React.FC = () => {
                   className="w-full sm:w-auto bg-blue-500 hover:bg-blue-400 text-white font-bold shadow-lg shadow-blue-500/30 hover:shadow-xl hover:scale-[1.02] transition-all duration-200 text-base px-6 border-0"
                   onClick={() => navigate('/register')}
                 >
-                  Destacar meu cavalo
+                  Crie sua conta
                 </Button>
 
                 {/* CTA secundário */}

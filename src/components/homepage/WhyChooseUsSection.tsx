@@ -113,7 +113,7 @@ const WhyChooseUsSection: React.FC = () => {
                 onClick={() => navigate('/planos')}
                 className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3.5 sm:py-3 rounded-full transition-all duration-200 shadow-md shadow-blue-600/25 hover:shadow-lg hover:shadow-blue-600/30 text-sm sm:text-base min-h-[48px] sm:min-h-[44px]"
               >
-                Cadastrar meu cavalo
+                Comece agora
                 <ArrowRight className="h-4 w-4" />
               </button>
               <button
