@@ -125,27 +125,9 @@ export function useHarasData({ id, slug }: { id?: string; slug?: string }): UseH
 
         if (!profileData || !mounted) return;
 
-        // Normalizar cidade/estado via CEP se necessário
-        const rawProfile = profileData as typeof profileData & { cep?: string | null };
-        let normalizedProfile = rawProfile;
-        if ((!rawProfile?.city || !rawProfile?.state) && rawProfile?.cep) {
-          const cepResult = await buscarCep(rawProfile.cep);
-          if (cepResult.success && cepResult.data) {
-            const estadoCompleto = UF_TO_ESTADO[cepResult.data.uf] || cepResult.data.uf;
-            normalizedProfile = {
-              ...rawProfile,
-              city: rawProfile.city || cepResult.data.localidade,
-              state: rawProfile.state || estadoCompleto,
-            };
-          }
-        }
-
-        if (!mounted) return;
-        setProfile(normalizedProfile);
-
-        // Buscar animais
-        const profileId = normalizedProfile.id;
-        const { data: animalsData, error: animalsError } = await withTimeout(
+        // Lançar busca de animais em paralelo com normalização de CEP
+        const profileId = profileData.id;
+        const animalsPromise = withTimeout(
           (supabase.rpc as (name: string, params: Record<string, unknown>) => ReturnType<typeof supabase.rpc>)(
             'get_profile_animals',
             { profile_user_id: profileId }
@@ -153,9 +135,38 @@ export function useHarasData({ id, slug }: { id?: string; slug?: string }): UseH
           'carregar animais do perfil'
         );
 
+        // Normalizar cidade/estado via CEP se necessário (em paralelo com animais)
+        const rawProfile = profileData as typeof profileData & { cep?: string | null };
+        let normalizedProfile = rawProfile;
+        const needsCep = (!rawProfile?.city || !rawProfile?.state) && rawProfile?.cep;
+        const cepPromise = needsCep ? buscarCep(rawProfile.cep!) : null;
+
+        // Aguardar ambos em paralelo
+        const [animalsResult, cepResult] = await Promise.all([
+          animalsPromise.catch((err) => ({ data: null, error: err })),
+          cepPromise,
+        ]);
+
+        if (!mounted) return;
+
+        // Aplicar CEP se disponível
+        if (cepResult && cepResult.success && cepResult.data) {
+          const estadoCompleto = UF_TO_ESTADO[cepResult.data.uf] || cepResult.data.uf;
+          normalizedProfile = {
+            ...rawProfile,
+            city: rawProfile.city || cepResult.data.localidade,
+            state: rawProfile.state || estadoCompleto,
+          };
+        }
+
+        setProfile(normalizedProfile);
+
+        // Processar resultado de animais
+        const animalsData = (animalsResult as { data: unknown; error: unknown }).data;
+        const animalsError = (animalsResult as { data: unknown; error: unknown }).error;
+
         if (animalsError) {
           console.error('Erro ao buscar animais:', animalsError);
-          if (!mounted) return;
           setGaranhoes([]);
           setDoadoras([]);
           setPotros([]);
@@ -163,8 +174,6 @@ export function useHarasData({ id, slug }: { id?: string; slug?: string }): UseH
           setOutros([]);
           return;
         }
-
-        if (!mounted) return;
 
         interface RPCAnimalResult {
           animal_id: string;

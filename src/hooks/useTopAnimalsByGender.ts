@@ -63,22 +63,18 @@ export const useTopAnimalsByGender = (
         return;
       }
 
-      // Mês atual: filtrar impressões do mês corrente para ranking dinâmico
-      const now = new Date();
-      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+      // Mês atual: usar RPC SECURITY DEFINER para bypassar RLS de impressions
+      // A RPC retorna apenas animal_id + contagem, sem expor dados individuais
+      const { data: rankingData, error: rankError } = await supabase
+        .rpc('get_top_animals_by_impressions', {
+          p_gender: gender,
+          p_limit: limit,
+        });
 
-      const { data: monthImpressions, error: impError } = await supabase
-        .from('impressions')
-        .select('content_id')
-        .eq('content_type', 'animal')
-        .gte('created_at', startOfMonth)
-        .limit(10000);
+      if (rankError) throw rankError;
 
-      if (impError) throw impError;
-
-      if (!monthImpressions || monthImpressions.length === 0) {
+      if (!rankingData || rankingData.length === 0) {
         // Sem dados no mês ainda: fallback para all-time mas sem exibir contagem
-        // (não queremos mostrar impression_count geral como se fosse do mês)
         const { data: fallback, error: fbError } = await buildBaseQuery()
           .order('impression_count', { ascending: false })
           .limit(limit);
@@ -91,44 +87,26 @@ export const useTopAnimalsByGender = (
         return;
       }
 
+      // Montar mapa de impressões do mês a partir da RPC
       const countMap: Record<string, number> = {};
-      for (const row of monthImpressions) {
-        countMap[row.content_id] = (countMap[row.content_id] || 0) + 1;
+      const topIds: string[] = [];
+      for (const row of rankingData as { animal_id: string; impressions: number }[]) {
+        countMap[row.animal_id] = row.impressions;
+        topIds.push(row.animal_id);
       }
 
-      // Pegar os top 500 IDs por impressões (generoso para cobrir ambos os gêneros)
-      // Não aplicar slice pequeno antes do filtro de gênero para não excluir animais válidos
-      const topIds = Object.entries(countMap)
-        .sort(([, a], [, b]) => b - a)
-        .slice(0, 500)
-        .map(([id]) => id);
-
+      // Buscar dados completos dos animais rankeados
       const { data, error: fetchError } = await buildBaseQuery().in('id', topIds);
 
       if (fetchError) throw fetchError;
 
+      // Ordenar pela contagem de impressões do mês (mesmo ordem da RPC)
       const sorted = (data || [])
         .sort((a, b) => {
           const aId = (a as Record<string, unknown>).id as string;
           const bId = (b as Record<string, unknown>).id as string;
           return (countMap[bId] || 0) - (countMap[aId] || 0);
-        })
-        .slice(0, limit);
-
-      // Fallback: se nenhum animal do gênero estava entre os top impressionados no mês,
-      // usa ranking all-time para não deixar a seção vazia, mas sem contagem
-      if (sorted.length === 0) {
-        const { data: fallback, error: fbError } = await buildBaseQuery()
-          .order('impression_count', { ascending: false })
-          .limit(limit);
-        if (fbError) throw fbError;
-        const withoutCount = (fallback || []).map(a => ({
-          ...(a as Record<string, unknown>),
-          impressions: 0,
-        }));
-        setAnimals(normalizeAnimals(withoutCount));
-        return;
-      }
+        });
 
       // Substituir impressions pelo count do mês para exibição correta no badge
       const enriched = sorted.map(a => ({

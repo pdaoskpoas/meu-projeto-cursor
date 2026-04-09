@@ -135,15 +135,15 @@ const HeroSection: React.FC = () => {
 
             {/* Prova social — números que geram confiança */}
             <div className="grid grid-cols-3 gap-2.5 sm:gap-4 pt-1">
-              <div className="bg-white/8 backdrop-blur-sm rounded-xl px-3 py-3 sm:px-4 sm:py-4 border border-white/10 text-center">
+              <div className="bg-white/8 rounded-xl px-3 py-3 sm:px-4 sm:py-4 border border-white/10 text-center">
                 <p className="text-lg sm:text-2xl font-bold text-white">8,5k+</p>
                 <p className="text-[10px] sm:text-xs text-blue-200/55 leading-tight mt-0.5">cavalos anunciados</p>
               </div>
-              <div className="bg-white/8 backdrop-blur-sm rounded-xl px-3 py-3 sm:px-4 sm:py-4 border border-white/10 text-center">
+              <div className="bg-white/8 rounded-xl px-3 py-3 sm:px-4 sm:py-4 border border-white/10 text-center">
                 <p className="text-lg sm:text-2xl font-bold text-white">150+</p>
                 <p className="text-[10px] sm:text-xs text-blue-200/55 leading-tight mt-0.5">haras cadastrados</p>
               </div>
-              <div className="bg-white/8 backdrop-blur-sm rounded-xl px-3 py-3 sm:px-4 sm:py-4 border border-white/10 text-center">
+              <div className="bg-white/8 rounded-xl px-3 py-3 sm:px-4 sm:py-4 border border-white/10 text-center">
                 <p className="text-lg sm:text-2xl font-bold text-white">27</p>
                 <p className="text-[10px] sm:text-xs text-blue-200/55 leading-tight mt-0.5">estados cobertos</p>
               </div>
@@ -256,7 +256,7 @@ const HeroSection: React.FC = () => {
 
               {/* Badge de acessos — prova de audiência ativa */}
               {siteVisitsThisMonth > 0 && (
-                <div className="absolute bottom-6 left-10 bg-white/95 backdrop-blur-sm rounded-xl px-4 py-3 shadow-xl border border-slate-100">
+                <div className="absolute bottom-6 left-10 bg-white rounded-xl px-4 py-3 shadow-xl border border-slate-100">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
                       <Users className="h-4 w-4 text-blue-600" />

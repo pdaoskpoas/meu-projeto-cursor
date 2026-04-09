@@ -326,6 +326,9 @@ const IsolatedAnimalCard: React.FC<{
           alt={displayName}
           className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
           loading="lazy"
+          decoding="async"
+          width={400}
+          height={533}
         />
       </div>
 
@@ -479,6 +482,9 @@ const IsolatedHarasPage: React.FC = () => {
                 src={displayData.logo}
                 alt={displayData.displayName}
                 className="w-full h-full object-cover"
+                width={128}
+                height={128}
+                fetchPriority="high"
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-600 to-slate-700">
@@ -543,7 +549,7 @@ const IsolatedHarasPage: React.FC = () => {
                   rel="noopener noreferrer"
                   data-action={`custom-link-${link.position}`}
                   onClick={() => handleLinkClick(link)}
-                  className="flex items-center justify-center gap-2 w-full py-3 px-4 rounded-xl bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white font-medium text-sm transition-all border border-white/10 hover:border-white/20"
+                  className="flex items-center justify-center gap-2 w-full py-3 px-4 rounded-xl bg-white/10 hover:bg-white/20 text-white font-medium text-sm transition-all border border-white/10 hover:border-white/20"
                 >
                   {link.icon === 'whatsapp' && <MessageCircle className="h-4 w-4" />}
                   {link.icon !== 'whatsapp' && <ExternalLink className="h-4 w-4 opacity-70" />}
@@ -556,13 +562,13 @@ const IsolatedHarasPage: React.FC = () => {
           {/* Contador de animais + botão compartilhar */}
           <div className="mt-5 sm:mt-6 flex items-center justify-center gap-3">
             {totalAnimals > 0 && (
-              <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-4 py-1.5 text-xs font-medium text-slate-200">
+              <div className="inline-flex items-center gap-2 bg-white/10 rounded-full px-4 py-1.5 text-xs font-medium text-slate-200">
                 <span className="font-bold text-white">{totalAnimals}</span> animais no plantel
               </div>
             )}
             <button
               onClick={handleCopyLink}
-              className="inline-flex items-center gap-1.5 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full px-3.5 py-1.5 text-xs font-medium text-slate-200 hover:text-white transition-all border border-white/10 hover:border-white/20"
+              className="inline-flex items-center gap-1.5 bg-white/10 hover:bg-white/20 rounded-full px-3.5 py-1.5 text-xs font-medium text-slate-200 hover:text-white transition-all border border-white/10 hover:border-white/20"
               aria-label="Copiar link da vitrine"
             >
               {linkCopied ? (
