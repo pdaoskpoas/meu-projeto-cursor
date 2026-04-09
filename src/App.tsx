@@ -56,6 +56,7 @@ const SocietyPage = lazy(() => import("./pages/dashboard/SocietyPage"));
 const AboutPage = lazy(() => import("./pages/AboutPage"));
 const MapPage = lazy(() => import("./pages/MapPage"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const IsolatedHarasPage = lazy(() => import("./pages/IsolatedHarasPage"));
 
 
 const App = () => (
@@ -77,6 +78,9 @@ const App = () => (
               <RouteProgressBar />
               <Suspense fallback={<PageLoadingFallback />}>
                 <Routes>
+                  {/* Rota isolada - Modo Divulgação (Linktree) - SEM AppLayout */}
+                  <Route path="/u/:slug" element={<IsolatedHarasPage />} />
+
                   <Route path="*" element={
                     <AppLayout>
                       <Routes>

@@ -1,6 +1,6 @@
 import React, { Suspense, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Users, Eye, TrendingUp, Bell, ExternalLink, BarChart3, Crown, Calendar, Award, Activity, Zap, Heart, MessageSquare, Clock, UserCog, MapPin, RefreshCw, HelpCircle } from 'lucide-react';
+import { Plus, Users, Eye, TrendingUp, Bell, ExternalLink, BarChart3, Crown, Calendar, Award, Activity, Zap, Heart, MessageSquare, Clock, UserCog, MapPin, RefreshCw, HelpCircle, LinkIcon, Check } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -179,7 +179,7 @@ const DashboardPage = () => {
                 </div>
                 
                 {/* CTA Buttons */}
-                <div className="flex gap-3 w-full lg:w-auto">
+                <div className="flex flex-wrap gap-3 w-full lg:w-auto">
                   <Button
                     onClick={() => window.location.reload()}
                     variant="outline"
@@ -195,6 +195,25 @@ const DashboardPage = () => {
                       Ver Perfil Público
                     </Button>
                   </Link>
+                  {user?.publicCode && (
+                    <Button
+                      size="lg"
+                      variant="outline"
+                      className="flex-1 lg:flex-none border-blue-300 text-blue-700 hover:bg-blue-50 hover:border-blue-400 transition-all"
+                      onClick={() => {
+                        const url = `${window.location.origin}/u/${user.publicCode}`;
+                        navigator.clipboard.writeText(url).then(() => {
+                          toast({
+                            title: 'Link copiado!',
+                            description: 'Cole em qualquer lugar para divulgar seu perfil.',
+                          });
+                        });
+                      }}
+                    >
+                      <LinkIcon className="h-4 w-4 mr-2" />
+                      Copiar Link de Divulgação
+                    </Button>
+                  )}
                 </div>
               </div>
             </div>
