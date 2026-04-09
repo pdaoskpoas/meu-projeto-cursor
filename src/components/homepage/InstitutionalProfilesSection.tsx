@@ -107,7 +107,7 @@ const InstitutionalProfilesSection: React.FC = () => {
   if (loading) return null;
 
   return (
-    <section className="py-12 sm:py-16">
+    <section id="vitrine-profiles" className="py-12 sm:py-16">
       <div className="container-responsive">
         {/* Header */}
         <div className="text-center mb-8 sm:mb-10">

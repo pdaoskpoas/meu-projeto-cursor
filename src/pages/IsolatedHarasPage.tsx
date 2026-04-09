@@ -14,6 +14,8 @@ import {
   Ruler,
   Weight,
   Award,
+  Share2,
+  Check,
 } from 'lucide-react';
 import { useHarasData, type HarasAnimal } from '@/hooks/useHarasData';
 import { formatNameUppercase } from '@/utils/nameFormat';
@@ -379,6 +381,7 @@ const IsolatedHarasPage: React.FC = () => {
 
   const [selectedAnimal, setSelectedAnimal] = useState<HarasAnimal | null>(null);
   const [customLinks, setCustomLinks] = useState<CustomLink[]>([]);
+  const [linkCopied, setLinkCopied] = useState(false);
 
   // Buscar botões personalizados quando o perfil carregar
   useEffect(() => {
@@ -395,6 +398,15 @@ const IsolatedHarasPage: React.FC = () => {
   // Handler de clique em botão customizado — registra clique antes de abrir
   const handleLinkClick = useCallback((link: CustomLink) => {
     recordLinkClick(link);
+  }, []);
+
+  // Copiar link da vitrine
+  const handleCopyLink = useCallback(() => {
+    const url = window.location.href;
+    navigator.clipboard.writeText(url).then(() => {
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 2000);
+    });
   }, []);
 
   const handleSelectAnimal = useCallback((animal: HarasAnimal) => {
@@ -541,12 +553,31 @@ const IsolatedHarasPage: React.FC = () => {
             </div>
           )}
 
-          {/* Contador de animais */}
-          {totalAnimals > 0 && (
-            <div className="mt-5 sm:mt-6 inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-4 py-1.5 text-xs font-medium text-slate-200">
-              <span className="font-bold text-white">{totalAnimals}</span> animais no plantel
-            </div>
-          )}
+          {/* Contador de animais + botão compartilhar */}
+          <div className="mt-5 sm:mt-6 flex items-center justify-center gap-3">
+            {totalAnimals > 0 && (
+              <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-4 py-1.5 text-xs font-medium text-slate-200">
+                <span className="font-bold text-white">{totalAnimals}</span> animais no plantel
+              </div>
+            )}
+            <button
+              onClick={handleCopyLink}
+              className="inline-flex items-center gap-1.5 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full px-3.5 py-1.5 text-xs font-medium text-slate-200 hover:text-white transition-all border border-white/10 hover:border-white/20"
+              aria-label="Copiar link da vitrine"
+            >
+              {linkCopied ? (
+                <>
+                  <Check className="h-3.5 w-3.5 text-green-400" />
+                  Copiado!
+                </>
+              ) : (
+                <>
+                  <Share2 className="h-3.5 w-3.5" />
+                  Compartilhar
+                </>
+              )}
+            </button>
+          </div>
         </div>
       </header>
 

@@ -96,7 +96,7 @@ const HeroSection: React.FC = () => {
                   className="w-full sm:w-auto bg-blue-500 hover:bg-blue-400 text-white font-bold shadow-lg shadow-blue-500/30 hover:shadow-xl hover:scale-[1.02] transition-all duration-200 text-base px-6 border-0"
                   onClick={() => navigate('/register')}
                 >
-                  Anunciar meu cavalo
+                  Destacar meu cavalo
                 </Button>
 
                 {/* CTA secundário */}
@@ -109,6 +109,16 @@ const HeroSection: React.FC = () => {
                   Explorar animais
                 </Button>
               </div>
+
+              {/* CTA vitrine — scroll para seção de perfis */}
+              <Button
+                size="lg"
+                className="w-full sm:w-auto bg-white/10 hover:bg-white/20 border-2 border-white/30 hover:border-white/50 text-white font-bold shadow-lg shadow-black/20 hover:shadow-xl hover:scale-[1.02] transition-all duration-200 text-sm sm:text-base px-5 sm:px-6 gap-2"
+                onClick={() => document.getElementById('vitrine-profiles')?.scrollIntoView({ behavior: 'smooth' })}
+              >
+                Ver quem já está na vitrine
+                <ChevronDown className="h-4 w-4 animate-bounce" style={{ animationDuration: '2s' }} />
+              </Button>
 
               {/* Microcopy — reduz fricção */}
               <div className="flex items-center gap-4 text-xs text-blue-300/60">
