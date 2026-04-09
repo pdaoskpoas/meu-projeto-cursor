@@ -11,6 +11,7 @@ import { SuspensionNotice } from '@/components/SuspensionNotice';
 // Lazy load de modais pesados
 const BoostPlansModal = React.lazy(() => import('@/components/BoostPlansModal'));
 const PurchaseBoostsModal = React.lazy(() => import('@/components/payment/PurchaseBoostsModal'));
+const MinhaVitrineModal = React.lazy(() => import('@/components/dashboard/MinhaVitrineModal'));
 import { animalService } from '@/services/animalService';
 import { useToast } from '@/hooks/use-toast';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
@@ -38,6 +39,7 @@ const DashboardPage = () => {
   const [showBoostPlansModal, setShowBoostPlansModal] = useState(false);
   const [showBoostCheckout, setShowBoostCheckout] = useState(false);
   const [selectedBoostQty, setSelectedBoostQty] = useState<number>(1);
+  const [showVitrineModal, setShowVitrineModal] = useState(false);
   
   if (!user) {
     return (
@@ -200,18 +202,10 @@ const DashboardPage = () => {
                       size="lg"
                       variant="outline"
                       className="flex-1 lg:flex-none border-blue-300 text-blue-700 hover:bg-blue-50 hover:border-blue-400 transition-all"
-                      onClick={() => {
-                        const url = `${window.location.origin}/u/${user.publicCode}`;
-                        navigator.clipboard.writeText(url).then(() => {
-                          toast({
-                            title: 'Link copiado!',
-                            description: 'Cole em qualquer lugar para divulgar seu perfil.',
-                          });
-                        });
-                      }}
+                      onClick={() => setShowVitrineModal(true)}
                     >
                       <LinkIcon className="h-4 w-4 mr-2" />
-                      Copiar Link de Divulgação
+                      Minha Vitrine
                     </Button>
                   )}
                 </div>
@@ -558,6 +552,11 @@ const DashboardPage = () => {
             refreshStats();
             setShowBoostCheckout(false);
           }}
+        />
+
+        <MinhaVitrineModal
+          open={showVitrineModal}
+          onClose={() => setShowVitrineModal(false)}
         />
       </Suspense>
     </ProtectedRoute>
