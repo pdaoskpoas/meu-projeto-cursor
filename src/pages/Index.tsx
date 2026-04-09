@@ -83,7 +83,7 @@ const Index = () => {
       </FavoritesProviderBoundary>
 
       {/* Quem já faz parte — perfis institucionais */}
-      <LazySection minHeight="300px">
+      <LazySection id="vitrine-profiles" minHeight="300px">
         <SectionContainer variant="default" size="default" divider="top">
           <Suspense fallback={null}>
             <InstitutionalProfilesSection />

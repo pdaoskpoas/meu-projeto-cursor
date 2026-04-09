@@ -114,7 +114,19 @@ const HeroSection: React.FC = () => {
               <Button
                 size="lg"
                 className="w-full sm:w-auto bg-white/10 hover:bg-white/20 border-2 border-white/30 hover:border-white/50 text-white font-bold shadow-lg shadow-black/20 hover:shadow-xl hover:scale-[1.02] transition-all duration-200 text-sm sm:text-base px-5 sm:px-6 gap-2"
-                onClick={() => document.getElementById('vitrine-profiles')?.scrollIntoView({ behavior: 'smooth' })}
+                onClick={() => {
+                  const el = document.getElementById('vitrine-profiles');
+                  if (!el) return;
+                  // Scroll inicial
+                  el.scrollIntoView({ behavior: 'smooth' });
+                  // Re-ajusta após conteúdo lazy carregar e alterar a altura da página
+                  let attempts = 0;
+                  const adjust = setInterval(() => {
+                    el.scrollIntoView({ behavior: 'smooth' });
+                    attempts++;
+                    if (attempts >= 3) clearInterval(adjust);
+                  }, 400);
+                }}
               >
                 Ver quem já está na vitrine
                 <ChevronDown className="h-4 w-4 animate-bounce" style={{ animationDuration: '2s' }} />

@@ -6,6 +6,7 @@ interface LazySectionProps {
   children: React.ReactNode;
   fallback?: React.ReactNode;
   className?: string;
+  id?: string;
   threshold?: number;
   rootMargin?: string;
   minHeight?: string;
@@ -43,6 +44,7 @@ const LazySection: React.FC<LazySectionProps> = ({
   children,
   fallback,
   className = '',
+  id,
   threshold = 0.1,
   rootMargin = '200px',
   minHeight = '200px'
@@ -54,7 +56,7 @@ const LazySection: React.FC<LazySectionProps> = ({
   });
 
   return (
-    <section ref={elementRef} className={cn('content-visibility-auto', className)}>
+    <section ref={elementRef} id={id} className={cn('content-visibility-auto', className)}>
       {isVisible ? children : (fallback !== undefined ? fallback : <CarouselSkeleton minHeight={minHeight} />)}
     </section>
   );
