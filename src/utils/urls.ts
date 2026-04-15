@@ -172,3 +172,50 @@ export const parseHarasParam = (param: string | undefined): HarasParam => {
 
   return { kind: 'invalid' };
 };
+
+/* ============================================================
+ * EVENTO
+ * ============================================================
+ * Padrão: /eventos/{slug-do-titulo}
+ * Ex: /eventos/copa-do-brasil-2026
+ *
+ * Compatibilidade: URLs antigas com UUID continuam válidas — a
+ * página faz redirect client-side (Navigate replace) para a URL
+ * canônica com slug.
+ */
+
+interface EventLike {
+  id?: string | null;
+  title?: string | null;
+  slug?: string | null;
+}
+
+/**
+ * Monta a URL canônica de um evento.
+ * Prioriza o campo `slug` do banco. Se não houver (legado), usa
+ * UUID como fallback.
+ */
+export const buildEventUrl = (event: EventLike | null | undefined): string => {
+  if (!event) return '/';
+  const slug = (event.slug ?? '').trim();
+  if (slug) return `/eventos/${slug}`;
+  // Fallback: gera slug a partir do title; se falhar, usa UUID.
+  const fromTitle = slugify(event.title);
+  if (fromTitle) return `/eventos/${fromTitle}`;
+  return `/eventos/${event.id ?? ''}`;
+};
+
+export type EventParam =
+  | { kind: 'uuid'; uuid: string }
+  | { kind: 'slug'; slug: string }
+  | { kind: 'invalid' };
+
+/**
+ * Interpreta o parâmetro :slug da rota /eventos/:slug.
+ * UUIDs (URLs antigas) são detectados e sinalizados para redirect.
+ */
+export const parseEventParam = (param: string | undefined): EventParam => {
+  if (!param) return { kind: 'invalid' };
+  if (isUuid(param)) return { kind: 'uuid', uuid: param };
+  return { kind: 'slug', slug: param.toLowerCase() };
+};

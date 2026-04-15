@@ -70,13 +70,13 @@ async function fetchRows(type: string, from: number, to: number): Promise<Row[] 
     case 'events': {
       const { data } = await c
         .from('events')
-        .select('id,updated_at,published_at,cover_image_url')
+        .select('id,slug,updated_at,published_at,cover_image_url')
         .neq('ad_status', 'suspended')
         .neq('ad_status', 'deleted')
         .order('start_date', { ascending: false })
         .range(from, to);
       return (data || []).map((r: any) => ({
-        loc: `/eventos/${r.id}`,
+        loc: `/eventos/${r.slug || r.id}`,
         lastmod: (r.updated_at || r.published_at || '').slice(0, 10) || undefined,
         changefreq: 'weekly',
         priority: '0.7',

@@ -133,7 +133,7 @@ const App = () => (
                     <Route path="/noticias" element={<NewsPage />} />
                     <Route path="/noticias/:slug" element={<ArticlePage />} />
                       <Route path="/eventos" element={<EventsPage />} />
-                      <Route path="/eventos/:id" element={<EventDetailsPage />} />
+                      <Route path="/eventos/:slug" element={<EventDetailsPage />} />
                       <Route path="/login" element={<LoginPage />} />
                       <Route path="/register" element={<RegisterPage />} />
                       <Route path="/dashboard" element={<DashboardPage />} />

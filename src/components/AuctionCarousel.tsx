@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Calendar, Clock, MapPin, Building2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/lib/supabase';
+import { buildEventUrl } from '@/utils/urls';
 import {
   Carousel,
   CarouselContent,
@@ -83,6 +84,7 @@ const mockAuctions = [
 
 interface BoostedEvent {
   id: string;
+  slug?: string | null;
   title: string;
   event_type: string | null;
   start_date: string;
@@ -107,7 +109,7 @@ const AuctionCarousel = () => {
       // Buscar apenas eventos turbinados ativos na home
       const { data, error } = await supabase
         .from('events')
-        .select('id, title, event_type, start_date, city, state, cover_image_url, organizer_property, is_boosted, boost_expires_at, published_at')
+        .select('id, slug, title, event_type, start_date, city, state, cover_image_url, organizer_property, is_boosted, boost_expires_at, published_at')
         .eq('ad_status', 'active')
         .eq('is_boosted', true)
         .gt('boost_expires_at', new Date().toISOString())
@@ -200,7 +202,7 @@ const AuctionCarousel = () => {
               <CarouselContent className="-ml-2 md:-ml-4">
                 {boostedEvents.map((event) => (
                   <CarouselItem key={event.id} className="pl-2 md:pl-4 basis-[85%] sm:basis-1/2 lg:basis-1/3 xl:basis-1/4 h-full flex">
-                    <Link to={`/eventos/${event.id}`} className="block w-full">
+                    <Link to={buildEventUrl(event)} className="block w-full">
                       <div className="bg-white border border-slate-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow cursor-pointer flex flex-col h-full min-h-[420px]">
                         {/* Cover Image */}
                         <div className="relative flex-shrink-0">

@@ -4,9 +4,11 @@ import { Link } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/lib/supabase';
+import { buildEventUrl } from '@/utils/urls';
 
 interface HarasEvent {
   id: string;
+  slug?: string | null;
   title: string;
   event_type: string | null;
   start_date: string;
@@ -62,7 +64,7 @@ const HarasEventsSection: React.FC<HarasEventsSectionProps> = ({ organizerId }) 
         setIsLoading(true);
         const { data, error } = await supabase
           .from('events_with_stats')
-          .select('id, title, event_type, start_date, end_date, city, state, cover_image_url, is_boosted, published_at')
+          .select('id, slug, title, event_type, start_date, end_date, city, state, cover_image_url, is_boosted, published_at')
           .eq('organizer_id', organizerId)
           .eq('ad_status', 'active')
           .order('published_at', { ascending: false });
@@ -129,7 +131,7 @@ const HarasEventsSection: React.FC<HarasEventsSectionProps> = ({ organizerId }) 
             return (
               <Link
                 key={event.id}
-                to={`/eventos/${event.id}`}
+                to={buildEventUrl(event)}
                 className="group block rounded-2xl border border-slate-200 bg-white overflow-hidden hover:shadow-xl transition-all"
               >
                 <div className="relative h-40 bg-slate-100">

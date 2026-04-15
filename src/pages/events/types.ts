@@ -1,5 +1,6 @@
 export interface EventDetailsEvent {
   id: string;
+  slug?: string | null;
   title: string;
   description: string | null;
   event_type: string | null;
@@ -28,6 +29,7 @@ export interface EventDetailsEvent {
 
 export interface EventListItem {
   id: string;
+  slug?: string | null;
   title: string;
   event_type: string | null;
   start_date: string;

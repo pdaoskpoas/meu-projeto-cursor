@@ -68,7 +68,7 @@ function buildUrlsFromRow(body: any): string[] {
   if (!rec) return [];
   if (table === 'animals' && rec.id) return [`/animal/${rec.id}`];
   if (table === 'articles' && rec.id) return [`/noticias/${rec.id}`];
-  if (table === 'events' && rec.id) return [`/eventos/${rec.id}`];
+  if (table === 'events' && rec.id) return [`/eventos/${rec.slug || rec.id}`];
   if (table === 'profiles' && rec.id) return [`/haras/${rec.id}`];
   return [];
 }

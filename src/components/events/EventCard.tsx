@@ -5,11 +5,12 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { analyticsService } from '@/services/analyticsService';
 import { useAuth } from '@/contexts/AuthContext';
-import { buildHarasUrl } from '@/utils/urls';
+import { buildHarasUrl, buildEventUrl } from '@/utils/urls';
 
 interface EventCardProps {
   event: {
     id: string;
+    slug?: string | null;
     title: string;
     event_type: string | null;
     description: string | null;
@@ -73,7 +74,7 @@ const EventCard: React.FC<EventCardProps> = ({ event, status = 'active', showSta
       clickTarget: 'event_card',
       pageUrl: window.location.href
     });
-    navigate(`/eventos/${event.id}`);
+    navigate(buildEventUrl(event));
   };
 
   // Formatar data

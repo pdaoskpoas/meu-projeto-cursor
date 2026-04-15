@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link, Navigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
@@ -9,15 +9,18 @@ import { analyticsService } from '@/services/analyticsService';
 import EventDetailsHero from './components/EventDetailsHero';
 import EventDetailsContent from './components/EventDetailsContent';
 import { EventDetailsEvent, EventListItem } from './types';
+import { buildEventUrl, parseEventParam } from '@/utils/urls';
 
 const EventDetailsPage: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
+  const { slug: routeParam } = useParams<{ slug: string }>();
+  const parsedParam = parseEventParam(routeParam);
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
   const [event, setEvent] = useState<EventDetailsEvent | null>(null);
   const [otherEvents, setOtherEvents] = useState<EventListItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [canonicalRedirect, setCanonicalRedirect] = useState<string | null>(null);
 
   // Formatar data
   const formatDate = (dateString: string): string => {
@@ -62,34 +65,50 @@ const EventDetailsPage: React.FC = () => {
     return endOfDay.getTime() < Date.now();
   };
 
-  // Carregar evento
+  // Carregar evento (aceita slug ou UUID legado)
   useEffect(() => {
-    if (!id) return;
+    if (parsedParam.kind === 'invalid') {
+      setIsLoading(false);
+      return;
+    }
 
     const loadEvent = async () => {
       try {
         setIsLoading(true);
 
-        const { data, error } = await supabase
-          .from('events_with_stats')
-          .select('*')
-          .eq('id', id)
-          .single();
+        const query = supabase.from('events_with_stats').select('*');
+        const { data, error } =
+          parsedParam.kind === 'uuid'
+            ? await query.eq('id', parsedParam.uuid).maybeSingle()
+            : await query.eq('slug', parsedParam.slug).maybeSingle();
 
         if (error) throw error;
+
+        if (!data) {
+          setEvent(null);
+          setIsLoading(false);
+          return;
+        }
+
+        // SEO: se chegou via UUID (link antigo) e o evento tem slug,
+        // redireciona para URL canônica.
+        if (parsedParam.kind === 'uuid' && data.slug) {
+          setCanonicalRedirect(buildEventUrl(data));
+          return;
+        }
 
         setEvent(data);
 
         // Registrar impressão da página de detalhes
-        analyticsService.recordImpression('event', id, user?.id, {
+        analyticsService.recordImpression('event', data.id, user?.id, {
           pageUrl: window.location.href
         });
 
         const { data: otherEventsData } = await supabase
           .from('events_with_stats')
-          .select('id, title, event_type, start_date, end_date, city, state, cover_image_url')
+          .select('id, slug, title, event_type, start_date, end_date, city, state, cover_image_url')
           .eq('ad_status', 'active')
-          .neq('id', id)
+          .neq('id', data.id)
           .order('published_at', { ascending: false })
           .limit(6);
 
@@ -109,7 +128,7 @@ const EventDetailsPage: React.FC = () => {
     };
 
     loadEvent();
-  }, [id, user?.id, toast]);
+  }, [routeParam, parsedParam.kind, user?.id, toast]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Handler de compartilhamento
   const handleShare = () => {
@@ -148,6 +167,11 @@ const EventDetailsPage: React.FC = () => {
     }
   };
 
+  // Redirect de URL antiga (UUID) para URL canônica com slug — SEO
+  if (canonicalRedirect) {
+    return <Navigate to={canonicalRedirect} replace />;
+  }
+
   if (isLoading) {
     return (
       <div className="container mx-auto px-4 py-12">
@@ -179,15 +203,15 @@ const EventDetailsPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50">
+    <div className="min-h-screen bg-slate-50">
       <EventDetailsHero
         event={event}
         onShare={handleShare}
         getEventIcon={getEventIcon}
       />
 
-      <div className="container mx-auto px-4 -mt-8 relative z-10 pb-12">
-        <div className="max-w-5xl mx-auto">
+      <div className="container mx-auto px-4 py-8 sm:py-10 pb-16">
+        <div className="max-w-6xl mx-auto">
           <EventDetailsContent
             event={event}
             formatDate={formatDate}
@@ -196,55 +220,61 @@ const EventDetailsPage: React.FC = () => {
           />
         </div>
 
-        <div className="max-w-5xl mx-auto mt-10">
-          <Card className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-gray-900">
+        <div className="max-w-6xl mx-auto mt-12">
+          <div className="flex items-end justify-between mb-5">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-blue-600 mb-1">
+                Continue explorando
+              </p>
+              <h3 className="text-xl sm:text-2xl font-bold text-slate-900">
                 Outros eventos ativos
               </h3>
-              <span className="text-sm text-gray-500">
-                {otherEvents.length} disponíveis
-              </span>
             </div>
-            {otherEvents.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {otherEvents.map((otherEvent) => (
-                  <Link
-                    key={otherEvent.id}
-                    to={`/eventos/${otherEvent.id}`}
-                    className="block rounded-lg border border-slate-200 overflow-hidden hover:border-blue-200 hover:shadow-md transition-all bg-white"
-                  >
-                    <div className="h-36 bg-slate-100 flex items-center justify-center">
-                      {otherEvent.cover_image_url ? (
-                        <img
-                          src={otherEvent.cover_image_url}
-                          alt={otherEvent.title}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <span className="text-3xl">
-                          {getEventIcon(otherEvent.event_type)}
-                        </span>
-                      )}
-                    </div>
-                    <div className="p-3">
-                      <p className="font-semibold text-slate-900 line-clamp-2">
-                        {otherEvent.title}
-                      </p>
-                      <p className="text-xs text-slate-500 mt-2">
-                        {formatShortDate(otherEvent.start_date)}
-                        {otherEvent.end_date && ` - ${formatShortDate(otherEvent.end_date)}`}
-                      </p>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-gray-500">
+            <span className="text-sm text-slate-500 shrink-0">
+              {otherEvents.length} {otherEvents.length === 1 ? 'disponível' : 'disponíveis'}
+            </span>
+          </div>
+
+          {otherEvents.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+              {otherEvents.map((otherEvent) => (
+                <Link
+                  key={otherEvent.id}
+                  to={buildEventUrl(otherEvent)}
+                  className="group block rounded-xl border border-slate-200 overflow-hidden hover:border-blue-300 hover:shadow-lg transition-all bg-white"
+                >
+                  <div className="aspect-[16/10] bg-slate-100 flex items-center justify-center overflow-hidden">
+                    {otherEvent.cover_image_url ? (
+                      <img
+                        src={otherEvent.cover_image_url}
+                        alt={otherEvent.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                    ) : (
+                      <span className="text-4xl opacity-60">
+                        {getEventIcon(otherEvent.event_type)}
+                      </span>
+                    )}
+                  </div>
+                  <div className="p-4">
+                    <p className="font-semibold text-slate-900 line-clamp-2 group-hover:text-blue-600 transition-colors">
+                      {otherEvent.title}
+                    </p>
+                    <p className="text-xs text-slate-500 mt-2">
+                      {formatShortDate(otherEvent.start_date)}
+                      {otherEvent.end_date && ` – ${formatShortDate(otherEvent.end_date)}`}
+                    </p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <Card className="p-8 text-center border-dashed">
+              <p className="text-sm text-slate-500">
                 Nenhum outro evento ativo no momento.
               </p>
-            )}
-          </Card>
+            </Card>
+          )}
         </div>
       </div>
     </div>

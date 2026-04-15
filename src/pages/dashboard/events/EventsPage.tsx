@@ -19,9 +19,11 @@ import { eventLimitsService } from '@/services/eventLimitsService';
 import { boostService } from '@/services/boostService';
 import { supabase } from '@/lib/supabase';
 import { useUserBoosts } from '@/hooks/useUserBoosts';
+import { buildEventUrl } from '@/utils/urls';
 
 interface UserEvent {
   id: string;
+  slug?: string | null;
   title: string;
   event_type: string | null;
   start_date: string;
@@ -462,7 +464,7 @@ const EventsPage = () => {
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => navigate(`/eventos/${event.id}`)}
+                      onClick={() => navigate(buildEventUrl(event))}
                       className="flex-1"
                     >
                       <Eye className="h-3 w-3 mr-1" />

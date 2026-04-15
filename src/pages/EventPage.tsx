@@ -13,6 +13,7 @@ import {
 import BackButton from '@/components/ui/BackButton';
 import { mockEvents, getUpcomingEvents } from '@/data/eventsData';
 import { sanitizeRichText } from '@/utils/sanitize';
+import { buildEventUrl } from '@/utils/urls';
 import heroHorse from '@/assets/hero-horse.jpg';
 import mangalarga from '@/assets/mangalarga.jpg';
 import quarterHorse from '@/assets/quarter-horse.jpg';
@@ -247,7 +248,7 @@ const EventPage = () => {
                 {mockEvents.slice(0, 5).map((event, index) => (
                   <Link
                     key={event.id}
-                    to={`/eventos/${event.id}`}
+                    to={buildEventUrl(event)}
                     className="block group p-4 rounded-lg hover:bg-slate-50 transition-colors"
                   >
                     <div className="flex items-center gap-4">

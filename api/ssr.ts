@@ -281,14 +281,14 @@ function matchEvent(path: string) {
   const m = path.match(/^\/eventos\/([^\/]+)\/?$/);
   if (!m) return null;
   return async () => {
-    const id = safeDecode(m[1]);
-    if (!isUuid(id)) return null;
-    const { data } = await sb()
+    const param = safeDecode(m[1]);
+    if (!param) return null;
+    const query = sb()
       .from('events')
-      .select('id,title,description,cover_image_url,start_date,end_date,city,state,location,ad_status,published_at,updated_at')
-      .eq('id', id)
-      .limit(1)
-      .maybeSingle();
+      .select('id,slug,title,description,cover_image_url,start_date,end_date,city,state,location,ad_status,published_at,updated_at');
+    const { data } = isUuid(param)
+      ? await query.eq('id', param).limit(1).maybeSingle()
+      : await query.eq('slug', param).limit(1).maybeSingle();
     if (!data || data.ad_status === 'suspended' || data.ad_status === 'deleted') return null;
 
     const place = [data.location, data.city, data.state].filter(Boolean).join(', ');
@@ -321,7 +321,7 @@ function matchEvent(path: string) {
       breadcrumb([
         { name: 'Início', url: `${SITE}/` },
         { name: 'Eventos', url: `${SITE}/eventos` },
-        { name: data.title, url: `${SITE}/eventos/${data.id}` },
+        { name: data.title, url: `${SITE}/eventos/${data.slug || data.id}` },
       ]),
     ];
 
@@ -336,7 +336,7 @@ ${place ? `<p><strong>Local:</strong> ${esc(place)}</p>` : ''}
     return renderHtml({
       title,
       description: desc,
-      path: `/eventos/${data.id}`,
+      path: `/eventos/${data.slug || data.id}`,
       image: data.cover_image_url,
       imageAlt: data.title,
       type: 'article',
