@@ -80,6 +80,7 @@ class NewsService {
       const articles: Article[] = (data || []).map(article => ({
         id: article.id,
         title: article.title,
+        slug: article.slug,
         content: article.content,
         excerpt: article.excerpt,
         authorId: article.author_id,

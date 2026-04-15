@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, Navigate } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { ArrowLeft, Eye, Award, Calendar, MapPin, Crown, Share2, Heart, Flag, Users } from 'lucide-react';
+import { buildAnimalUrl, buildHarasUrl, parseAnimalParam } from '@/utils/urls';
 import BackButton from '@/components/ui/BackButton';
 import { formatNameUppercase } from '@/utils/nameFormat';
 import { normalizeSupabaseImages } from '@/utils/animalCard';
@@ -25,7 +27,9 @@ import quarterHorseImg from '@/assets/quarter-horse.jpg';
 import { getAge } from '@/utils/animalAge';
 
 const AnimalPage = () => {
-  const { id } = useParams();
+  const { id: routeParam } = useParams();
+  const parsedParam = parseAnimalParam(routeParam);
+  const [canonicalRedirect, setCanonicalRedirect] = useState<string | null>(null);
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [showChatModal, setShowChatModal] = useState(false);
   const [showStickyContact, setShowStickyContact] = useState(false);
@@ -41,6 +45,7 @@ const AnimalPage = () => {
     gender?: string;
     images?: string[];
     harasId?: string;
+    share_code?: string | null;
     [key: string]: unknown;
   }
   
@@ -69,15 +74,18 @@ const AnimalPage = () => {
   useEffect(() => {
     let mounted = true;
     (async () => {
-      if (!id) {
+      if (parsedParam.kind === 'invalid') {
         setIsLoading(false);
         return;
       }
 
       setIsLoading(true);
-      
+
       try {
-        const a = await animalService.getAnimalById(id);
+        const a =
+          parsedParam.kind === 'uuid'
+            ? await animalService.getAnimalById(parsedParam.uuid)
+            : await animalService.getAnimalByShareCode(parsedParam.shareCode);
         
         if (!mounted) return;
 
@@ -87,7 +95,16 @@ const AnimalPage = () => {
           }
           return;
         }
-        
+
+        // SEO: se usuário chegou via UUID (link antigo), redireciona para URL canônica
+        if (parsedParam.kind === 'uuid' && a.share_code) {
+          const canonical = buildAnimalUrl(a);
+          if (canonical && canonical !== `/animal/${parsedParam.uuid}`) {
+            setCanonicalRedirect(canonical);
+            return;
+          }
+        }
+
         // Determinar nome correto do proprietário baseado no tipo de conta
         const ownerAccountType = a.owner_account_type ?? 'personal';
         const ownerDisplayName = ownerAccountType === 'institutional' 
@@ -97,6 +114,7 @@ const AnimalPage = () => {
         setHorseDb({
           id: a.id,
           name: a.name,
+          share_code: (a as { share_code?: string | null }).share_code ?? null,
           breed: a.breed,
           gender: a.gender,
           birthDate: a.birth_date ?? '2000-01-01',
@@ -157,7 +175,7 @@ const AnimalPage = () => {
         }
 
         // Buscar sócios do animal
-        const animalPartners = await partnershipService.getAnimalPartners(id);
+        const animalPartners = await partnershipService.getAnimalPartners(a.id);
         if (mounted) {
           setPartners(animalPartners || []);
           
@@ -179,7 +197,7 @@ const AnimalPage = () => {
       }
     })();
     return () => { mounted = false; };
-  }, [id, user?.id]);
+  }, [routeParam, parsedParam.kind, user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
   const canSeeViews = horse ? canViewAnimalViews(horse) : false;
   
   // Stats para exibição — dados reais do banco
@@ -199,10 +217,10 @@ const AnimalPage = () => {
   
   // Registrar impressão do detalhe quando a página carregar
   useEffect(() => {
-    if (horse && id) {
-      analyticsService.recordImpression('animal', id, user?.id);
+    if (horse?.id) {
+      analyticsService.recordImpression('animal', horse.id, user?.id);
     }
-  }, [horse, id, user?.id]);
+  }, [horse?.id, user?.id]);
 
   const getImageSrc = (imageName: string) => {
     switch (imageName) {
@@ -253,6 +271,11 @@ const AnimalPage = () => {
     return () => observer.disconnect();
   }, [shouldShowContact, horse]);
 
+  // Redirect de URL antiga (UUID) para URL canônica (slug-code) — SEO
+  if (canonicalRedirect) {
+    return <Navigate to={canonicalRedirect} replace />;
+  }
+
   // Estado de carregamento
   if (isLoading) {
     return (
@@ -280,8 +303,44 @@ const AnimalPage = () => {
     );
   }
 
+  // Metadata para SEO
+  const canonicalPath = buildAnimalUrl({
+    id: horse.id,
+    name: horse.name,
+    share_code: horse.share_code ?? undefined,
+  });
+  const canonicalUrl = `${window.location.origin}${canonicalPath}`;
+  const seoTitle = `${displayHorseName}${horse.breed ? ` - ${horse.breed}` : ''} | Vitrine do Cavalo`;
+  const seoDescription = [
+    displayHorseName,
+    horse.breed,
+    horse.gender,
+    haras?.name ? `do ${haras.name}` : null,
+    horse.currentLocation?.city && horse.currentLocation?.state
+      ? `em ${horse.currentLocation.city}, ${horse.currentLocation.state}`
+      : null,
+  ]
+    .filter(Boolean)
+    .join(' — ');
+  const seoImage = animalPhotos?.[0];
+
   return (
     <main className={`container mx-auto px-4 py-6 min-h-screen bg-background ${shouldShowContact ? 'pb-24 lg:pb-6' : ''}`}>
+      <Helmet>
+        <title>{seoTitle}</title>
+        <meta name="description" content={seoDescription} />
+        <link rel="canonical" href={canonicalUrl} />
+        <meta property="og:type" content="profile" />
+        <meta property="og:title" content={seoTitle} />
+        <meta property="og:description" content={seoDescription} />
+        <meta property="og:url" content={canonicalUrl} />
+        {seoImage && <meta property="og:image" content={seoImage} />}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={seoTitle} />
+        <meta name="twitter:description" content={seoDescription} />
+        {seoImage && <meta name="twitter:image" content={seoImage} />}
+      </Helmet>
+
       {/* Back Navigation */}
       <div className="mb-6">
         <BackButton fallbackPath="/" label="Voltar" className="text-blue-600 hover:text-blue-800" />
@@ -571,7 +630,13 @@ const AnimalPage = () => {
                   <span>{haras.location}</span>
                 </div>
                 <Link
-                  to={`/haras/${haras.id}`}
+                  to={buildHarasUrl({
+                    id: haras.id,
+                    name: haras.name,
+                    property_name: horse.ownerPropertyName as string | null,
+                    account_type: horse.ownerAccountType as string | null,
+                    public_code: horse.ownerPublicCode as string | null,
+                  })}
                   onClick={() => analyticsService.recordClick('animal', horse.id, user?.id, { clickTarget: 'haras_link' })}
                   className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 text-sm"
                 >

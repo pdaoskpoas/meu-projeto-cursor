@@ -5,6 +5,7 @@ import { MapPin, Eye, Users, CheckCircle2, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useTopAnimalsByGender } from '@/hooks/useTopAnimalsByGender';
 import { mapAnimalRecordToCard } from '@/utils/animalCard';
+import { buildAnimalUrl } from '@/utils/urls';
 import LazyImage from '@/components/ui/LazyImage';
 import { supabase } from '@/lib/supabase';
 
@@ -173,7 +174,7 @@ const HeroSection: React.FC = () => {
 
               {/* Card top garanhão */}
               <Link
-                to={topMale ? `/animal/${topMale.id}` : '/ranking'}
+                to={topMale ? buildAnimalUrl(topMale) : '/ranking'}
                 className="absolute top-4 left-8 w-[265px] bg-white rounded-2xl shadow-2xl overflow-hidden transform -rotate-3 hover:rotate-0 hover:scale-[1.02] transition-all duration-500 block group"
               >
                 <div className="h-[185px] bg-slate-200 overflow-hidden relative">
@@ -202,7 +203,7 @@ const HeroSection: React.FC = () => {
 
                 <div className="p-4">
                   <p className="text-[10px] uppercase tracking-wider text-blue-600 font-semibold mb-0.5">
-                    Top Garanhão do mês
+                    Macho mais visto do mês
                   </p>
                   <p className="font-bold text-slate-900 text-sm truncate">
                     {topMale?.name || 'Carregando...'}
@@ -221,7 +222,7 @@ const HeroSection: React.FC = () => {
 
               {/* Card top doadora */}
               <Link
-                to={topFemale ? `/animal/${topFemale.id}` : '/ranking'}
+                to={topFemale ? buildAnimalUrl(topFemale) : '/ranking'}
                 className="absolute top-14 right-4 w-[265px] bg-white rounded-2xl shadow-2xl overflow-hidden transform rotate-2 hover:rotate-0 hover:scale-[1.02] transition-all duration-500 block group"
               >
                 <div className="h-[185px] bg-slate-200 overflow-hidden relative">
@@ -249,7 +250,7 @@ const HeroSection: React.FC = () => {
 
                 <div className="p-4">
                   <p className="text-[10px] uppercase tracking-wider text-blue-600 font-semibold mb-0.5">
-                    Top Doadora do mês
+                    Fêmea mais vista do mês
                   </p>
                   <p className="font-bold text-slate-900 text-sm truncate">
                     {topFemale?.name || 'Carregando...'}

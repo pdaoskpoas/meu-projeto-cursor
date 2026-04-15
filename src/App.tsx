@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { HelmetProvider } from "react-helmet-async";
 import { AuthProvider } from "@/contexts/AuthContext";
 import AppLayout from "@/components/layout/AppLayout";
 import SessionTimeoutManager from "@/components/SessionTimeoutManager";
@@ -61,6 +62,7 @@ const IsolatedHarasPage = lazy(() => import("./pages/IsolatedHarasPage"));
 
 const App = () => (
   <ErrorBoundary>
+    <HelmetProvider>
     <QueryClientProvider client={queryClient}>
         <AuthProvider>
             <TooltipProvider>
@@ -189,6 +191,7 @@ const App = () => (
             </TooltipProvider>
         </AuthProvider>
       </QueryClientProvider>
+    </HelmetProvider>
   </ErrorBoundary>
 );
 

@@ -17,6 +17,7 @@ import {
 import PhotoGallery from '@/components/PhotoGallery';
 import { supabase } from '@/lib/supabase';
 import { AnimalCardData, getPlaceholderGallery, mapAnimalRecordToCard } from '@/utils/animalCard';
+import { buildAnimalUrl } from '@/utils/urls';
 import AnimalImpressionTracker from '@/components/tracking/AnimalImpressionTracker';
 import CarouselSwipeIndicator from '@/components/ui/CarouselSwipeIndicator';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -194,7 +195,7 @@ const FeaturedCarousel = () => {
                       analyticsService.recordClick('animal', horse.id);
                     }}
                   >
-                    <Link to={`/animal/${horse.id}`} className="block w-full">
+                    <Link to={buildAnimalUrl(horse)} className="block w-full">
                       <div className="bg-white border-2 border-amber-200/60 rounded-xl overflow-hidden hover:shadow-xl hover:shadow-amber-100/50 transition-all duration-300 cursor-pointer flex flex-col ring-1 ring-amber-100/40">
                       {/* Image Gallery */}
                       <div className="relative flex-shrink-0">

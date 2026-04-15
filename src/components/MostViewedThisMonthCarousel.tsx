@@ -16,6 +16,7 @@ import {
 import PhotoGallery from '@/components/PhotoGallery';
 import { getAge } from '@/utils/animalAge';
 import { getPlaceholderGallery } from '@/utils/animalCard';
+import { buildAnimalUrl } from '@/utils/urls';
 import CarouselSwipeIndicator from '@/components/ui/CarouselSwipeIndicator';
 
 // 🔒 Componente seguro: rastreia impressões via Supabase
@@ -114,7 +115,7 @@ const MostViewedThisMonthCarousel = () => {
                     carouselIndex={index}
                     onAnimalClick={() => {}}
                   >
-                    <Link to={`/animal/${horse.id}`} className="block w-full">
+                    <Link to={buildAnimalUrl(horse)} className="block w-full">
                       <div className="bg-white border border-slate-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow cursor-pointer flex flex-col">
                       {/* Image Gallery */}
                       <div className="relative flex-shrink-0">

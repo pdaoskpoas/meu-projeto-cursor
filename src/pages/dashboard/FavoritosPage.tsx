@@ -10,6 +10,7 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFavorites } from '@/contexts/FavoritesContext';
 import { Link } from 'react-router-dom';
+import { buildAnimalUrl } from '@/utils/urls';
 import mangalargaImg from '@/assets/mangalarga.jpg';
 import thoroughbredImg from '@/assets/thoroughbred.jpg';
 import quarterHorseImg from '@/assets/quarter-horse.jpg';
@@ -241,7 +242,7 @@ const FavoritosPage = () => {
                 {filteredAnimals.map((animal) => (
                   <Link 
                     key={animal.id}
-                    to={`/animal/${animal.id}`}
+                    to={buildAnimalUrl(animal)}
                     className={`bg-white rounded-2xl shadow-lg border border-slate-200 hover:shadow-xl transition-all duration-300 group cursor-pointer overflow-hidden flex flex-col ${
                       removingAnimalId === animal.id ? 'opacity-0 scale-95' : 'opacity-100 scale-100'
                     }`}

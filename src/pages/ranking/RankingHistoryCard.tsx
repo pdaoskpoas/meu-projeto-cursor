@@ -6,10 +6,12 @@ import { useToast } from '@/hooks/use-toast';
 import PhotoGallery from '@/components/PhotoGallery';
 import { formatNameUppercase } from '@/utils/nameFormat';
 import { getPlaceholderGallery } from '@/utils/animalCard';
+import { buildAnimalUrl } from '@/utils/urls';
 
 interface RankingHistoryCardProps {
   animalId: string;
   animalName: string;
+  animalShareCode?: string | null;
   animalImages: string[];
   category: 'Garanhão' | 'Doadora' | 'Potro' | 'Potra';
   monthName: string;
@@ -21,6 +23,7 @@ interface RankingHistoryCardProps {
 const RankingHistoryCard: React.FC<RankingHistoryCardProps> = ({
   animalId,
   animalName,
+  animalShareCode,
   animalImages,
   category,
   monthName,
@@ -52,7 +55,7 @@ const RankingHistoryCard: React.FC<RankingHistoryCardProps> = ({
 
   const handleCardClick = () => {
     if (isActive) {
-      navigate(`/animal/${animalId}`);
+      navigate(buildAnimalUrl({ id: animalId, name: animalName, share_code: animalShareCode }));
     } else {
       toast({
         title: 'Anúncio não disponível',

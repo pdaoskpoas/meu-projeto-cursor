@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { EventDetailsEvent } from '../types';
 import EventReportDialog from '@/components/events/EventReportDialog';
+import { buildHarasUrl } from '@/utils/urls';
 
 interface EventDetailsContentProps {
   event: EventDetailsEvent;
@@ -52,7 +53,13 @@ const EventDetailsContent: React.FC<EventDetailsContentProps> = ({
                 Publicado por:{' '}
                 {event.organizer_public_code || event.organizer_id ? (
                   <Link
-                    to={event.organizer_public_code ? `/profile/${event.organizer_public_code}` : `/haras/${event.organizer_id}`}
+                    to={buildHarasUrl({
+                      id: event.organizer_id ?? null,
+                      name: event.organizer_name ?? null,
+                      property_name: event.organizer_property ?? null,
+                      public_code: event.organizer_public_code ?? null,
+                      account_type: event.organizer_property ? 'institutional' : 'personal',
+                    })}
                     className="font-semibold text-blue-600 hover:text-blue-700"
                   >
                     {event.organizer_property || event.organizer_name}

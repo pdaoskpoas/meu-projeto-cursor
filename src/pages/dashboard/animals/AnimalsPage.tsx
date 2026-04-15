@@ -1,5 +1,6 @@
 import React, { Suspense, useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { buildAnimalUrl } from '@/utils/urls';
 import { Plus, Eye, Edit3, Trash2, MapPin, Trophy, Zap, RefreshCw, Clock, AlertTriangle, Minus } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -597,7 +598,7 @@ const AnimalsPage = () => {
 
                   {/* Ações */}
                   <div className="flex flex-wrap gap-2">
-                    <Link to={`/animal/${animal.id}`}>
+                    <Link to={buildAnimalUrl(animal)}>
                       <Button size="sm" variant="outline" className="flex items-center">
                         <Eye className="h-4 w-4 mr-1" />
                         <span className="text-xs">Ver</span>

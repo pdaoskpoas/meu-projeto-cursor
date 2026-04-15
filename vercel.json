@@ -6,57 +6,55 @@
     {
       "source": "/(.*)",
       "headers": [
-        {
-          "key": "X-Frame-Options",
-          "value": "DENY"
-        },
-        {
-          "key": "X-Content-Type-Options",
-          "value": "nosniff"
-        },
-        {
-          "key": "Referrer-Policy",
-          "value": "strict-origin-when-cross-origin"
-        },
-        {
-          "key": "Strict-Transport-Security",
-          "value": "max-age=31536000; includeSubDomains"
-        },
-        {
-          "key": "Permissions-Policy",
-          "value": "geolocation=(), microphone=(), camera=()"
-        }
+        { "key": "X-Frame-Options", "value": "DENY" },
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+        { "key": "Strict-Transport-Security", "value": "max-age=31536000; includeSubDomains" },
+        { "key": "Permissions-Policy", "value": "geolocation=(), microphone=(), camera=()" }
+      ]
+    },
+    {
+      "source": "/(sitemap.*\\.xml)",
+      "headers": [
+        { "key": "Content-Type", "value": "application/xml; charset=utf-8" },
+        { "key": "Cache-Control", "value": "public, s-maxage=3600, stale-while-revalidate=86400" }
+      ]
+    },
+    {
+      "source": "/robots.txt",
+      "headers": [
+        { "key": "Content-Type", "value": "text/plain; charset=utf-8" },
+        { "key": "Cache-Control", "value": "public, s-maxage=86400" }
       ]
     }
   ],
   "redirects": [
     {
       "source": "/:path(.*)",
-      "has": [
-        {
-          "type": "host",
-          "value": "vitrinedocavalo.com"
-        }
-      ],
+      "has": [{ "type": "host", "value": "vitrinedocavalo.com" }],
       "destination": "https://www.vitrinedocavalo.com.br/:path",
       "permanent": true
     },
     {
       "source": "/:path(.*)",
-      "has": [
-        {
-          "type": "host",
-          "value": "www.vitrinedocavalo.com"
-        }
-      ],
+      "has": [{ "type": "host", "value": "www.vitrinedocavalo.com" }],
+      "destination": "https://www.vitrinedocavalo.com.br/:path",
+      "permanent": true
+    },
+    {
+      "source": "/:path(.*)",
+      "has": [{ "type": "host", "value": "vitrinedocavalo.com.br" }],
       "destination": "https://www.vitrinedocavalo.com.br/:path",
       "permanent": true
     }
   ],
   "rewrites": [
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
-    }
+    { "source": "/sitemap.xml", "destination": "/api/sitemap.xml" },
+    { "source": "/sitemap-static.xml", "destination": "/api/sitemap-static.xml" },
+    { "source": "/sitemap-animals-:p.xml", "destination": "/api/sitemap-entity.xml?type=animals&p=:p" },
+    { "source": "/sitemap-articles-:p.xml", "destination": "/api/sitemap-entity.xml?type=articles&p=:p" },
+    { "source": "/sitemap-events-:p.xml", "destination": "/api/sitemap-entity.xml?type=events&p=:p" },
+    { "source": "/sitemap-haras-:p.xml", "destination": "/api/sitemap-entity.xml?type=haras&p=:p" },
+    { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

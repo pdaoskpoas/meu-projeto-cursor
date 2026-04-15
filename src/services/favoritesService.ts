@@ -9,6 +9,7 @@ type FavoriteInsert = Database['public']['Tables']['favorites']['Insert'];
 export interface FavoriteAnimalData {
   id: string;
   name: string;
+  share_code: string | null;
   breed: string;
   harasName: string;
   location: string;
@@ -43,6 +44,7 @@ class FavoritesService {
           animals!inner (
             id,
             name,
+            share_code,
             breed,
             gender,
             coat,
@@ -106,6 +108,7 @@ class FavoritesService {
           return {
             id: animal.id,
             name: animal.name || 'Animal sem nome',
+            share_code: (animal.share_code as string | null) ?? null,
             breed: animal.breed || 'Raça não informada',
             harasName: ownerDisplayName,
             location: `${animal.current_city || ''}, ${animal.current_state || ''}`.trim() || 'Localização não informada',

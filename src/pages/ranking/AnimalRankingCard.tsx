@@ -12,10 +12,12 @@ import thoroughbredImg from '@/assets/thoroughbred.jpg';
 import quarterHorseImg from '@/assets/quarter-horse.jpg';
 import { formatNameUppercase } from '@/utils/nameFormat';
 import { getAge } from '@/utils/animalAge';
+import { buildAnimalUrl } from '@/utils/urls';
 
 interface Animal {
   id: string;
   name: string;
+  share_code?: string | null;
   breed: string;
   birthDate: string;
   gender: 'Macho' | 'Fêmea';
@@ -139,7 +141,7 @@ const AnimalRankingCard: React.FC<AnimalRankingCardProps> = ({ animal, index, is
   const isVerified = false;
 
   return (
-    <Link to={`/animal/${animal.id}`} className="h-full" onClick={handleCardClick}>
+    <Link to={buildAnimalUrl(animal)} className="h-full" onClick={handleCardClick}>
       <Card 
         ref={cardRef}
         className="group hover:shadow-2xl transition-all duration-500 border-slate-200 bg-white overflow-hidden relative flex flex-col h-full"

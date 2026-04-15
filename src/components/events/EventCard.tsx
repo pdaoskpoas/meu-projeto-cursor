@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { analyticsService } from '@/services/analyticsService';
 import { useAuth } from '@/contexts/AuthContext';
+import { buildHarasUrl } from '@/utils/urls';
 
 interface EventCardProps {
   event: {
@@ -212,7 +213,13 @@ const EventCard: React.FC<EventCardProps> = ({ event, status = 'active', showSta
               <span className="font-medium">Publicado por:</span>
               {event.organizer_public_code || event.organizer_id ? (
                 <Link
-                  to={event.organizer_public_code ? `/profile/${event.organizer_public_code}` : `/haras/${event.organizer_id}`}
+                  to={buildHarasUrl({
+                    id: event.organizer_id ?? null,
+                    name: event.organizer_name ?? null,
+                    property_name: event.organizer_property ?? null,
+                    public_code: event.organizer_public_code ?? null,
+                    account_type: event.organizer_property ? 'institutional' : 'personal',
+                  })}
                   onClick={(eventClick) => eventClick.stopPropagation()}
                   className="font-semibold text-blue-600 hover:text-blue-700"
                 >

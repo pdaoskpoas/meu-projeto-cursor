@@ -18,10 +18,10 @@ export interface AnimalWithStats {
   impression_count: number;
 }
 
-export const useMostViewedAnimals = (limit: number = 10, _period: 'all' | 'month' = 'all') => {
+export const useMostViewedAnimals = (limit: number = 10, period: 'all' | 'month' = 'all') => {
   const { data, isLoading, error } = useQuery({
-    queryKey: ['most-viewed-animals', limit],
-    queryFn: () => queryWithSession(() => animalService.getMostViewedAnimals(limit)),
+    queryKey: ['most-viewed-animals', limit, period],
+    queryFn: () => queryWithSession(() => animalService.getMostViewedAnimals(limit, period)),
     staleTime: 60_000,
     gcTime: 5 * 60_000,
     refetchOnWindowFocus: false,

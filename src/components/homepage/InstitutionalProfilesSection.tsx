@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Building2, MapPin, ArrowRight } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { buildHarasUrl } from '@/utils/urls';
 
 interface InstitutionalProfile {
   id: string;
@@ -10,6 +11,8 @@ interface InstitutionalProfile {
   city: string | null;
   state: string | null;
   property_type: string | null;
+  public_code: string | null;
+  account_type: string | null;
 }
 
 const propertyTypeLabel: Record<string, string> = {
@@ -32,7 +35,7 @@ const InstitutionalProfilesSection: React.FC = () => {
         // Evita trazer milhares de linhas de page_visits para agrupar no client
         const { data, error } = await supabase
           .from('public_profiles')
-          .select('id, property_name, avatar_url, city, state, property_type')
+          .select('id, property_name, avatar_url, city, state, property_type, public_code, account_type')
           .eq('account_type', 'institutional')
           .eq('is_active', true)
           .eq('is_suspended', false)
@@ -86,7 +89,7 @@ const InstitutionalProfilesSection: React.FC = () => {
           {profiles.map((profile) => (
             <Link
               key={profile.id}
-              to={`/haras/${profile.id}`}
+              to={buildHarasUrl(profile)}
               className="group bg-white border border-slate-200 rounded-xl p-4 sm:p-5 hover:border-blue-300 hover:shadow-md transition-all duration-200 flex flex-col items-center text-center gap-3"
             >
               {/* Avatar / Logo */}

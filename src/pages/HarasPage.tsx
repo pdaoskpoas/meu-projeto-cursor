@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, Navigate } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { MapPin, Calendar, User, Verified, Instagram, ExternalLink, Crown, Star, Trophy, Building2, MessageCircle, ChevronRight } from 'lucide-react';
+import { buildAnimalUrl, buildHarasUrl, parseHarasParam } from '@/utils/urls';
 import BackButton from '@/components/ui/BackButton';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -24,6 +26,7 @@ import quarterHorseImg from '@/assets/quarter-horse.jpg';
 interface HarasAnimal {
   id: string;
   name: string;
+  share_code?: string | null;
   breed?: string;
   gender?: string;
   image_url?: string;
@@ -88,7 +91,7 @@ const HarasAnimalCard: React.FC<{
       key={animal.id} 
       className="bg-white rounded-2xl shadow-lg border border-slate-200 hover:shadow-xl transition-all duration-300 group cursor-pointer overflow-hidden flex flex-col"
     >
-      <Link to={`/animal/${animal.id}`} onClick={handleCardClick} className="flex flex-col h-full">
+      <Link to={buildAnimalUrl(animal)} onClick={handleCardClick} className="flex flex-col h-full">
         {/* Image Section */}
         <div className="relative">
           <div className="aspect-square overflow-hidden">
@@ -141,7 +144,9 @@ const HarasAnimalCard: React.FC<{
 };
 
 const HarasPage = () => {
-  const { id } = useParams();
+  const { id: routeParam } = useParams();
+  const parsedParam = parseHarasParam(routeParam);
+  const [canonicalRedirect, setCanonicalRedirect] = useState<string | null>(null);
   const { user } = useAuth();
   const { startConversation } = useChat();
   
@@ -202,24 +207,43 @@ const HarasPage = () => {
     };
 
     const fetchProfileAndAnimals = async () => {
-      if (!id) return;
-      
+      setCanonicalRedirect(null);
+      if (parsedParam.kind === 'invalid') {
+        setLoading(false);
+        return;
+      }
+
       setLoading(true);
       setErrorMessage(null);
       try {
         // Buscar perfil do usuário (view pública - sem dados sensíveis)
+        // public_profiles já filtra suspensos/inativos (migração 103), então
+        // usuários suspensos simplesmente não retornam nenhum registro.
+        // Query pode ser por id (UUID legado) ou por public_code (URL canônica).
+        // Nota: public_code usa ilike para tolerar variações de case em dados legados.
+        const profileQuery = supabase.from('public_profiles').select('*');
         const { data: profileData, error: profileError } = await withTimeout(
-          supabase
-            .from('public_profiles')
-            .select('*')
-            .eq('id', id)
-            .single(),
+          (parsedParam.kind === 'uuid'
+            ? profileQuery.eq('id', parsedParam.uuid)
+            : profileQuery.ilike('public_code', parsedParam.publicCode)
+          ).maybeSingle(),
           'carregar perfil'
         );
-        
+
         if (profileError) throw profileError;
         if (!mounted) return;
-        
+
+        // Perfil não existe ou está suspenso/inativo → renderiza "não encontrado"
+        if (!profileData) {
+          setProfile(null);
+          setGaranhoes([]);
+          setDoadoras([]);
+          setPotros([]);
+          setPotras([]);
+          setOutros([]);
+          return;
+        }
+
         const rawProfile = profileData as typeof profileData & {
           city?: string | null;
           state?: string | null;
@@ -239,13 +263,24 @@ const HarasPage = () => {
         }
         
         setProfile(normalizedProfile);
-        
+
+        // SEO: se usuário chegou via UUID (link antigo), redireciona para URL canônica
+        if (parsedParam.kind === 'uuid' && normalizedProfile?.public_code) {
+          const canonical = buildHarasUrl(normalizedProfile);
+          if (canonical && canonical !== `/haras/${parsedParam.uuid}`) {
+            setCanonicalRedirect(canonical);
+            return;
+          }
+        }
+
+        const profileId = normalizedProfile.id as string;
+
         // Buscar animais considerando sociedades
         // Usa função SQL que retorna animais próprios + sociedades aceitas (se usuário tem plano ativo)
         const { data: animalsData, error: animalsError } = await withTimeout(
           (supabase.rpc as (name: string, params: Record<string, unknown>) => ReturnType<typeof supabase.rpc>)(
             'get_profile_animals',
-            { profile_user_id: id }
+            { profile_user_id: profileId }
           ),
           'carregar animais do perfil'
         );
@@ -315,7 +350,7 @@ const HarasPage = () => {
     
     fetchProfileAndAnimals();
     return () => { mounted = false; };
-  }, [id]);
+  }, [routeParam, parsedParam.kind]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const getImageSrc = (imageName: string) => {
     switch (imageName) {
@@ -325,6 +360,11 @@ const HarasPage = () => {
       default: return mangalargaImg;
     }
   };
+
+  // Redirect de URL antiga (UUID) para URL canônica (slug-code) — SEO
+  if (canonicalRedirect) {
+    return <Navigate to={canonicalRedirect} replace />;
+  }
 
   if (loading) {
     return (
@@ -381,8 +421,38 @@ const HarasPage = () => {
     );
   }
 
+  // Metadata para SEO
+  const canonicalPath = buildHarasUrl(profile);
+  const canonicalUrl = `${window.location.origin}${canonicalPath}`;
+  const seoTitle = `${displayHarasName} | Vitrine do Cavalo`;
+  const seoDescription = [
+    displayHarasName,
+    displayData.location && displayData.location !== 'Não informado' ? `em ${displayData.location}` : null,
+    displayData.description && displayData.description !== 'Informações não disponíveis.'
+      ? displayData.description
+      : null,
+  ]
+    .filter(Boolean)
+    .join(' — ');
+  const seoImage = displayData.logo ?? undefined;
+
   return (
     <main className="min-h-screen bg-slate-50">
+      <Helmet>
+        <title>{seoTitle}</title>
+        <meta name="description" content={seoDescription} />
+        <link rel="canonical" href={canonicalUrl} />
+        <meta property="og:type" content="profile" />
+        <meta property="og:title" content={seoTitle} />
+        <meta property="og:description" content={seoDescription} />
+        <meta property="og:url" content={canonicalUrl} />
+        {seoImage && <meta property="og:image" content={seoImage} />}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={seoTitle} />
+        <meta name="twitter:description" content={seoDescription} />
+        {seoImage && <meta name="twitter:image" content={seoImage} />}
+      </Helmet>
+
       {/* Header Minimalista */}
       <div className="bg-white border-b border-slate-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
@@ -670,7 +740,7 @@ const HarasPage = () => {
                   }
                   
                   // Não pode enviar mensagem para si mesmo
-                  if (user.id === id) {
+                  if (user.id === profile?.id) {
                     toast.error('Você não pode enviar mensagem para si mesmo');
                     return;
                   }
@@ -688,7 +758,7 @@ const HarasPage = () => {
                     const conversationId = await startConversation(
                       firstAnimalId, // ID do primeiro animal (referência técnica)
                       'Mensagem Direta', // Marca como mensagem direta ao haras
-                      id as string, // ID do proprietário
+                      profile?.id as string, // ID do proprietário
                       displayData.owner, // Nome do proprietário
                       true // isDirectMessage = true (mensagem direta ao haras)
                     );
@@ -791,7 +861,7 @@ const HarasPage = () => {
             )}
           </div>
         </div>
-        <HarasEventsSection organizerId={id} />
+        <HarasEventsSection organizerId={profile?.id as string} />
       </div>
     </main>
   );

@@ -6,6 +6,26 @@ import { Filter, Search, X, ChevronDown, ChevronUp, SlidersHorizontal } from 'lu
 import { HORSE_BREEDS } from '@/constants/breeds';
 import { supabase } from '@/lib/supabase';
 
+// Categorias válidas por gênero — alinhadas ao cadastro em StepBasicInfo.
+// Evita mostrar "Doadora" sob Macho ou "Garanhão" sob Fêmea.
+const CATEGORIES_MALE = ['Potro', 'Garanhão', 'Castrado', 'Outro'] as const;
+const CATEGORIES_FEMALE = ['Potra', 'Doadora', 'Matriz', 'Outro'] as const;
+const CATEGORIES_ALL = [
+  'Potro',
+  'Garanhão',
+  'Castrado',
+  'Potra',
+  'Doadora',
+  'Matriz',
+  'Outro',
+] as const;
+
+const getCategoriesForGender = (gender: string): readonly string[] => {
+  if (gender === 'Macho') return CATEGORIES_MALE;
+  if (gender === 'Fêmea') return CATEGORIES_FEMALE;
+  return CATEGORIES_ALL;
+};
+
 interface RankingFiltersProps {
   searchTerm: string;
   setSearchTerm: (value: string) => void;
@@ -156,6 +176,18 @@ const RankingFilters: React.FC<RankingFiltersProps> = ({
 
   // Lista de raças oficiais
   const breeds = HORSE_BREEDS;
+
+  // Categorias disponíveis para o gênero selecionado (ou todas, se gênero = 'all')
+  const availableCategories = getCategoriesForGender(selectedGender);
+
+  // Resetar categoria se ela não for válida para o gênero selecionado.
+  // Ex.: usuário escolhe "Doadora", depois troca gênero para "Macho" → limpa.
+  useEffect(() => {
+    if (selectedCategory !== 'all' && !availableCategories.includes(selectedCategory)) {
+      setSelectedCategory('all');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedGender]);
 
   // ── Contadores de filtros ativos ──
 
@@ -421,13 +453,11 @@ const RankingFilters: React.FC<RankingFiltersProps> = ({
                 </SelectTrigger>
                 <SelectContent align="start" side="bottom" avoidCollisions={false}>
                   <SelectItem value="all">Todos</SelectItem>
-                  <SelectItem value="Garanhão">Garanhão</SelectItem>
-                  <SelectItem value="Castrado">Castrado</SelectItem>
-                  <SelectItem value="Doadora">Doadora</SelectItem>
-                  <SelectItem value="Matriz">Matriz</SelectItem>
-                  <SelectItem value="Potro">Potro</SelectItem>
-                  <SelectItem value="Potra">Potra</SelectItem>
-                  <SelectItem value="Outro">Outro</SelectItem>
+                  {availableCategories.map((category) => (
+                    <SelectItem key={category} value={category}>
+                      {category}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

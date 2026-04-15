@@ -7,6 +7,7 @@ import { formatNameUppercase } from '@/utils/nameFormat';
 export interface AnimalCardData {
   id: string;
   name: string;
+  share_code: string | null;
   breed: string;
   coat: string;
   gender: 'Macho' | 'Fêmea';
@@ -77,6 +78,7 @@ export const getPlaceholderGallery = (preferredKey?: string) => {
 export const mapAnimalRecordToCard = (record: Record<string, unknown>): AnimalCardData => ({
   id: record.id,
   name: formatNameUppercase(record.name),
+  share_code: (record.share_code as string | null | undefined) ?? null,
   breed: record.breed ?? '—',
   coat: record.coat ?? '—',
   gender: record.gender ?? 'Macho',

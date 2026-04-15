@@ -18,6 +18,7 @@ import PhotoGallery from '@/components/PhotoGallery';
 import { getAge } from '@/utils/animalAge';
 import { supabase } from '@/lib/supabase';
 import { AnimalCardData, getPlaceholderGallery, mapAnimalRecordToCard, normalizeSupabaseImages } from '@/utils/animalCard';
+import { buildAnimalUrl } from '@/utils/urls';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import CarouselSwipeIndicator from '@/components/ui/CarouselSwipeIndicator';
 
@@ -188,7 +189,7 @@ const RecentlyPublishedCarousel = () => {
                       analyticsService.recordClick('animal', horse.id);
                     }}
                   >
-                    <Link to={`/animal/${horse.id}`} className="block w-full">
+                    <Link to={buildAnimalUrl(horse)} className="block w-full">
                       <div className="bg-white border border-slate-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow cursor-pointer flex flex-col">
                       {/* Image Gallery */}
                       <div className="relative flex-shrink-0">

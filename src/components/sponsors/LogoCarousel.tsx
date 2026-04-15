@@ -51,6 +51,7 @@ export function LogoCarousel({ logos, speed = 30 }: LogoCarouselProps) {
     }
 
     // Perfil interno tem prioridade sobre website externo
+    // Link por UUID funciona — o HarasPage faz redirect para URL canônica
     if (logo.linkedProfileId) {
       navigate(`/haras/${logo.linkedProfileId}`);
     } else if (logo.url) {

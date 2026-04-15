@@ -17,9 +17,11 @@ import { Skeleton } from '@/components/ui/skeleton';
 interface RankingAnimal {
   id: string;
   name: string;
+  share_code?: string | null;
   breed: string;
   coat: string;
   gender: 'Macho' | 'Fêmea';
+  category?: string | null;
   image: string;
   images?: string[];
   currentLocation: {
@@ -173,9 +175,11 @@ const RankingPage = () => {
   ): RankingAnimal => ({
     id: a.id,
     name: a.name,
+    share_code: (a.share_code as string | null | undefined) ?? null,
     breed: a.breed,
     coat: a.coat ?? '—',
     gender: a.gender,
+    category: (a.category ?? null) as string | null,
     image: a.default_image_key ?? 'mangalarga',
     images: normalizeSupabaseImages(a),
     currentLocation: {
@@ -297,7 +301,12 @@ const RankingPage = () => {
                            horse.harasName.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesBreed = selectedBreed === 'all' || horse.breed === selectedBreed;
       const matchesGender = selectedGender === 'all' || horse.gender === selectedGender;
-      
+
+      // Category filter — redundância defensiva: o RPC search_animals já
+      // filtra por category_filter, mas se o fallback for acionado (ou a
+      // função no DB estiver desatualizada) o filtro era perdido.
+      const matchesCategory = selectedCategory === 'all' || horse.category === selectedCategory;
+
       // Profile filter based on account type
       const matchesProfile = selectedProfile === 'all' || 
         (selectedProfile === 'institutional' && horse.ownerAccountType === 'institutional') ||
@@ -330,7 +339,7 @@ const RankingPage = () => {
         (selectedRegistered === 'Sim' && horse.isRegistered) ||
         (selectedRegistered === 'Não' && !horse.isRegistered);
       
-      return matchesSearch && matchesBreed && matchesGender && matchesProfile && matchesLocation && matchesAwarded && matchesAge && matchesRegistered;
+      return matchesSearch && matchesBreed && matchesGender && matchesCategory && matchesProfile && matchesLocation && matchesAwarded && matchesAge && matchesRegistered;
     })
     .sort((a, b) => {
       const getClicks = (animal: RankingAnimal) => allStats[animal.id]?.clicks ?? animal.clicks ?? 0;

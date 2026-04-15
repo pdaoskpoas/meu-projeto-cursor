@@ -31,20 +31,24 @@ const normalizeAnimals = (records: Record<string, unknown>[]): AnimalWithStats[]
 export const useTopAnimalsByGender = (
   gender: 'Macho' | 'Fêmea',
   limit: number = 10,
-  period: 'all' | 'month' = 'month'
+  period: 'all' | 'month' = 'month',
+  category?: string
 ) => {
   const [animals, setAnimals] = useState<AnimalWithStats[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
   const buildBaseQuery = useCallback(
-    () =>
-      supabase
+    () => {
+      let q = supabase
         .from('animals_with_stats')
         .select('*')
         .eq('ad_status', 'active')
-        .eq('gender', gender),
-    [gender]
+        .eq('gender', gender);
+      if (category) q = q.eq('category', category);
+      return q;
+    },
+    [gender, category]
   );
 
   const fetchTopAnimals = useCallback(async () => {
@@ -69,6 +73,7 @@ export const useTopAnimalsByGender = (
         .rpc('get_top_animals_by_impressions', {
           p_gender: gender,
           p_limit: limit,
+          p_category: category ?? null,
         });
 
       if (rankError) throw rankError;
@@ -121,7 +126,7 @@ export const useTopAnimalsByGender = (
     } finally {
       setIsLoading(false);
     }
-  }, [buildBaseQuery, gender, limit, period]);
+  }, [buildBaseQuery, gender, limit, period, category]);
 
   useEffect(() => {
     fetchTopAnimals();

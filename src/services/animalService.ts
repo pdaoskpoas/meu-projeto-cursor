@@ -364,6 +364,35 @@ class AnimalService {
     }
   }
 
+  /**
+   * Busca animal pelo share_code (formato "ANI-XXXXXX-YY").
+   * Usado pelas URLs semânticas: /animal/nome-do-animal-xxxxxx-yy
+   * Reaproveita toda a lógica de stats/owner de getAnimalById.
+   */
+  async getAnimalByShareCode(shareCode: string): Promise<AnimalWithStats | null> {
+    try {
+      logSupabaseOperation('Get animal by share_code', { shareCode })
+
+      const { data: animal, error } = await supabase
+        .from('animals')
+        .select('id')
+        .eq('share_code', shareCode)
+        .maybeSingle()
+
+      if (error || !animal?.id) {
+        if (error) {
+          logSupabaseOperation('Get animal by share_code error', null, error)
+        }
+        return null
+      }
+
+      return this.getAnimalById(animal.id)
+    } catch (error) {
+      logSupabaseOperation('Get animal by share_code error', null, error)
+      return null
+    }
+  }
+
   private async getAnimalFromStatsView(id: string): Promise<AnimalWithStats | null> {
     try {
       const { data, error } = await supabase
@@ -704,15 +733,83 @@ class AnimalService {
   }
 
   // Obter animais mais visualizados
-  async getMostViewedAnimals(limit: number = 10): Promise<AnimalWithStats[]> {
+  // period='month' usa a RPC get_top_animals_by_impressions (SECURITY DEFINER,
+  // migração 114) para rankear apenas impressões do mês corrente. Quando o mês
+  // ainda não tem dados (ex: dia 1º), cai para all-time com impression_count=0
+  // para que o badge de visualizações fique escondido — mesma estratégia do
+  // Hero (useTopAnimalsByGender).
+  async getMostViewedAnimals(
+    limit: number = 10,
+    period: 'all' | 'month' = 'all'
+  ): Promise<AnimalWithStats[]> {
     try {
-      logSupabaseOperation('Get most viewed animals', { limit })
+      logSupabaseOperation('Get most viewed animals', { limit, period })
+
+      if (period === 'month') {
+        const { data: rankingData, error: rankError } = await supabase
+          .rpc('get_top_animals_by_impressions', {
+            p_gender: null,
+            p_limit: limit,
+          })
+
+        if (rankError) throw handleSupabaseError(rankError)
+
+        if (rankingData && rankingData.length > 0) {
+          const countMap: Record<string, number> = {}
+          const topIds: string[] = []
+          for (const row of rankingData as { animal_id: string; impressions: number }[]) {
+            countMap[row.animal_id] = Number(row.impressions)
+            topIds.push(row.animal_id)
+          }
+
+          const { data, error } = await supabase
+            .from('animals_with_stats')
+            .select('*')
+            .eq('ad_status', 'active')
+            .in('id', topIds)
+
+          if (error) throw handleSupabaseError(error)
+
+          // Sobrescreve impression_count pelo total do mês e ordena por ele
+          const enriched = (data || [])
+            .map((a) => ({
+              ...(a as Record<string, unknown>),
+              impression_count: countMap[(a as Record<string, unknown>).id as string] || 0,
+            }))
+            .sort(
+              (a, b) =>
+                ((b as Record<string, unknown>).impression_count as number) -
+                ((a as Record<string, unknown>).impression_count as number)
+            )
+
+          logSupabaseOperation('Get most viewed animals success (month)', { count: enriched.length })
+          return enriched as AnimalWithStats[]
+        }
+
+        // Fallback: mês sem impressões ainda — mostra all-time com badge escondido
+        const { data: fallback, error: fbError } = await supabase
+          .from('animals_with_stats')
+          .select('*')
+          .eq('ad_status', 'active')
+          .order('impression_count', { ascending: false })
+          .limit(limit)
+
+        if (fbError) throw handleSupabaseError(fbError)
+
+        const hidden = (fallback || []).map((a) => ({
+          ...(a as Record<string, unknown>),
+          impression_count: 0,
+        }))
+
+        logSupabaseOperation('Get most viewed animals success (month fallback)', { count: hidden.length })
+        return hidden as AnimalWithStats[]
+      }
 
       const { data, error } = await supabase
         .from('animals_with_stats')
         .select('*')
         .eq('ad_status', 'active')
-        .order('click_count', { ascending: false })
+        .order('impression_count', { ascending: false })
         .limit(limit)
 
       if (error) {

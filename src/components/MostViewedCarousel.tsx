@@ -18,6 +18,7 @@ import {
 import PhotoGallery from '@/components/PhotoGallery';
 import { supabase } from '@/lib/supabase';
 import { AnimalCardData, getPlaceholderGallery, mapAnimalRecordToCard } from '@/utils/animalCard';
+import { buildAnimalUrl } from '@/utils/urls';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import CarouselSwipeIndicator from '@/components/ui/CarouselSwipeIndicator';
 
@@ -57,9 +58,9 @@ const MostViewedCarousel = () => {
   const queryClient = useQueryClient();
 
   const { data: rawData, isLoading, error: queryError } = useQuery({
-    queryKey: ['most-viewed-animals', 10],
+    queryKey: ['most-viewed-animals', 10, 'month'],
     queryFn: async () => {
-      let list = await animalService.getMostViewedAnimals(10);
+      let list = await animalService.getMostViewedAnimals(10, 'month');
       if (!list || list.length === 0) {
         list = await animalService.getRecentAnimals(10);
       }
@@ -91,17 +92,17 @@ const MostViewedCarousel = () => {
       }, 500);
     };
 
-    const clicksChannel = supabase
-      .channel('home-most-viewed-clicks')
+    const impressionsChannel = supabase
+      .channel('home-most-viewed-impressions')
       .on(
         'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'clicks', filter: 'content_type=eq.animal' },
+        { event: 'INSERT', schema: 'public', table: 'impressions', filter: 'content_type=eq.animal' },
         debouncedInvalidate
       )
       .subscribe((status, err) => {
         if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-          console.warn('[MostViewedCarousel] Clicks subscription falhou:', status, err);
-          setTimeout(() => clicksChannel.subscribe(), 2000);
+          console.warn('[MostViewedCarousel] Impressions subscription falhou:', status, err);
+          setTimeout(() => impressionsChannel.subscribe(), 2000);
         }
       });
 
@@ -117,7 +118,7 @@ const MostViewedCarousel = () => {
 
     return () => {
       clearTimeout(debounceTimer);
-      supabase.removeChannel(clicksChannel);
+      supabase.removeChannel(impressionsChannel);
       supabase.removeChannel(animalsChannel);
     };
   }, [queryClient]);
@@ -154,6 +155,9 @@ const MostViewedCarousel = () => {
             <h2 className="text-xl sm:text-2xl font-bold text-slate-900">
               Todo mundo está de olho neles
             </h2>
+            <p className="text-xs sm:text-sm text-slate-500 mt-1">
+              Baseado em visualizações reais da plataforma durante o mês
+            </p>
           </div>
           <Button
             variant="outline"
@@ -205,7 +209,7 @@ const MostViewedCarousel = () => {
                       analyticsService.recordClick('animal', horse.id);
                     }}
                   >
-                    <Link to={`/animal/${horse.id}`} className="block w-full">
+                    <Link to={buildAnimalUrl(horse)} className="block w-full">
                       <div className="bg-white border border-slate-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow cursor-pointer flex flex-col" style={{ contain: 'layout' }}>
                       {/* Image Gallery */}
                       <div className="relative flex-shrink-0">

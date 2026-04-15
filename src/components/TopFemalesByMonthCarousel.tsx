@@ -19,13 +19,14 @@ import {
 import PhotoGallery from '@/components/PhotoGallery';
 import { getAge } from '@/utils/animalAge';
 import { getPlaceholderGallery, mapAnimalRecordToCard } from '@/utils/animalCard';
+import { buildAnimalUrl } from '@/utils/urls';
 import CarouselSwipeIndicator from '@/components/ui/CarouselSwipeIndicator';
 
 const TopFemalesByMonthCarousel = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toggleFavorite, isFavorite } = useFavorites();
-  const { animals, isLoading, error } = useTopAnimalsByGender('Fêmea', 10, 'month');
+  const { animals, isLoading, error } = useTopAnimalsByGender('Fêmea', 10, 'month', 'Doadora');
   const displayHorses = useMemo(() => animals.map(mapAnimalRecordToCard), [animals]);
 
   const handleFavoriteClick = async (e: React.MouseEvent, horseId: string) => {
@@ -61,7 +62,7 @@ const TopFemalesByMonthCarousel = () => {
           </div>
           <Button
             variant="outline"
-            onClick={() => navigate('/buscar?gender=Fêmea&sortBy=views')}
+            onClick={() => navigate('/buscar?gender=F%C3%AAmea&category=Doadora&sortBy=views')}
             className="flex items-center gap-2 font-semibold"
           >
             Ver todos
@@ -105,7 +106,7 @@ const TopFemalesByMonthCarousel = () => {
                     carouselName="top_females_month"
                     onAnimalClick={() => {}}
                   >
-                    <Link to={`/animal/${horse.id}`} className="block w-full">
+                    <Link to={buildAnimalUrl(horse)} className="block w-full">
                       <div className="bg-white border border-slate-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow cursor-pointer flex flex-col">
                       {/* Image Gallery */}
                       <div className="relative flex-shrink-0">
