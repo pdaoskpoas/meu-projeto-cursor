@@ -1,4 +1,4 @@
-import { SITE } from './supabase';
+import { SITE } from './supabase.js';
 
 export function esc(s: unknown): string {
   if (s == null) return '';

@@ -1,14 +1,27 @@
 <!doctype html>
 <html lang="pt-BR">
   <head>
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XYBL1VZFGL"></script>
+    <!-- Google tag (gtag.js) — Consent Mode v2 (LGPD)
+         O script só é carregado após consentimento explícito; enquanto isso,
+         todos os sinais de armazenamento permanecem em 'denied'. -->
     <script>
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
+      window.gtag = gtag;
 
-      gtag('config', 'G-XYBL1VZFGL');
+      // Defaults negados — obrigatório sob LGPD antes de qualquer coleta
+      gtag('consent', 'default', {
+        ad_storage: 'denied',
+        ad_user_data: 'denied',
+        ad_personalization: 'denied',
+        analytics_storage: 'denied',
+        functionality_storage: 'granted',
+        security_storage: 'granted',
+        wait_for_update: 500
+      });
+
+      gtag('js', new Date());
+      gtag('config', 'G-XYBL1VZFGL', { anonymize_ip: true });
     </script>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="/logo.png.png" />

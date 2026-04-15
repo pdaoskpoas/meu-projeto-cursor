@@ -114,7 +114,7 @@ const HeroSection: React.FC = () => {
               {/* CTA vitrine — scroll para seção de perfis */}
               <Button
                 size="lg"
-                className="w-full sm:w-auto bg-white/10 hover:bg-white/20 border-2 border-white/30 hover:border-white/50 text-white font-bold shadow-lg shadow-black/20 hover:shadow-xl hover:scale-[1.02] transition-all duration-200 text-sm sm:text-base px-5 sm:px-6 gap-2"
+                className="w-full sm:w-auto bg-white/10 hover:bg-white/20 border-2 border-white/30 hover:border-white/50 text-white font-semibold shadow-lg shadow-black/20 hover:shadow-xl hover:scale-[1.02] transition-all duration-200 text-sm sm:text-base px-5 sm:px-6 gap-2"
                 onClick={() => {
                   const el = document.getElementById('vitrine-profiles');
                   if (!el) return;

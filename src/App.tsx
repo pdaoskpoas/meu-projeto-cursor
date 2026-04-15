@@ -16,6 +16,7 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 import ChatProviderBoundary from "@/components/ChatProviderBoundary";
 import FavoritesProviderBoundary from "@/components/FavoritesProviderBoundary";
 import PageVisitTracker from "@/components/analytics/PageVisitTracker";
+import CookieConsentBanner from "@/components/cookies/CookieConsentBanner";
 
 // Páginas principais - carregadas imediatamente
 import Index from "./pages/Index";
@@ -187,6 +188,7 @@ const App = () => (
                   } />
                 </Routes>
               </Suspense>
+              <CookieConsentBanner />
               </BrowserRouter>
             </TooltipProvider>
         </AuthProvider>

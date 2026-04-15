@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Mail, MapPin, Instagram, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { openCookiePreferences } from '@/components/cookies/CookieConsentBanner';
 
 /** Accordion section — collapses on mobile, always open on desktop */
 const FooterSection: React.FC<{
@@ -178,6 +179,13 @@ const AppFooter: React.FC = () => {
               <Link to="/privacy" className="text-slate-500 hover:text-blue-400 transition-colors text-xs">
                 Privacidade
               </Link>
+              <button
+                type="button"
+                onClick={openCookiePreferences}
+                className="text-slate-500 hover:text-blue-400 transition-colors text-xs"
+              >
+                Preferências de cookies
+              </button>
               <Link
                 to={{ pathname: '/ajuda', hash: 'contato' }}
                 className="text-slate-500 hover:text-blue-400 transition-colors text-xs"

@@ -1,5 +1,5 @@
-import { sb, SITE } from './_lib/supabase';
-import { renderHtml, notFoundHtml, esc, stripHtml, truncate, absoluteUrl, canonical } from './_lib/seo';
+import { sb, SITE } from './_lib/supabase.js';
+import { renderHtml, notFoundHtml, esc, stripHtml, truncate, absoluteUrl, canonical } from './_lib/seo.js';
 
 export const config = { runtime: 'nodejs' };
 

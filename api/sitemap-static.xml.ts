@@ -1,4 +1,4 @@
-import { SITE } from './_lib/supabase';
+import { SITE } from './_lib/supabase.js';
 
 export const config = { runtime: 'nodejs' };
 
